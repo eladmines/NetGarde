@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.rule import RuleCreate
-from app.services.rule_service import create_rule, get_rule_by_id, get_rule_by_domain
+from app.services.rule_service import create_rule, get_rule_by_id, get_rule_by_domain, get_rules
 from app.errors.rule import RuleAlreadyExistsError, RuleNotFoundError
 from app.utils.logging import get_logger
 
@@ -49,3 +49,13 @@ def get_rule_by_domain_controller(rule_domain: str, db: Session):
     except Exception as e:
         logger.error("GET /rules/by-domain - error", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
+
+def get_rules_controller(db: Session):
+    try:
+        logger.info("GET /rules - fetch all")
+        rules = get_rules(db)
+        logger.info("GET /rules - ok", extra={"count": len(rules)})
+        return rules
+    except Exception as e:
+        logger.error("GET /rules - error", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to fetch rules")
