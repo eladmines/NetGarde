@@ -9,19 +9,22 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/netgarde
+      - DB_URL=${DB_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-netgarde}}
+      - PYTHONUNBUFFERED=1
     depends_on:
       - db
     restart: always
-    command: bash -c "until nc -z db 5432; do echo '⏳ Waiting for database...'; sleep 2; done; alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
+    volumes:
+      - ./backend:/app      
+      - /app/__pycache__   
+    command: bash -c "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done; alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
   db:
     image: postgres:16
     container_name: netgarde-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: netgarde
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-netgarde}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
