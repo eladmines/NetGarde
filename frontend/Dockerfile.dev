@@ -1,0 +1,16 @@
+# frontend/Dockerfile.dev
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy only package info first
+COPY package*.json ./
+
+# Install dependencies (for live reload)
+RUN npm install
+
+# Do NOT copy your source; it will be mounted as a volume
+EXPOSE 3000
+
+# Start React dev server (with hot reload)
+CMD ["npm", "start"]

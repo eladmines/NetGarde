@@ -1,0 +1,89 @@
+.circularDotsLoader {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: inline-block;
+}
+
+.loaderDot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  margin-left: -3px;
+  margin-top: -3px;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: fadeInOut 1s ease-in-out infinite;
+}
+
+.loaderDot:nth-child(1) {
+  transform: rotate(0deg) translateX(22px) rotate(0deg);
+  animation-delay: 0s;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.loaderDot:nth-child(2) {
+  transform: rotate(36deg) translateX(22px) rotate(-36deg);
+  animation-delay: 0.1s;
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.loaderDot:nth-child(3) {
+  transform: rotate(72deg) translateX(22px) rotate(-72deg);
+  animation-delay: 0.2s;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.loaderDot:nth-child(4) {
+  transform: rotate(108deg) translateX(22px) rotate(-108deg);
+  animation-delay: 0.3s;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.loaderDot:nth-child(5) {
+  transform: rotate(144deg) translateX(22px) rotate(-144deg);
+  animation-delay: 0.4s;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.loaderDot:nth-child(6) {
+  transform: rotate(180deg) translateX(22px) rotate(-180deg);
+  animation-delay: 0.5s;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.loaderDot:nth-child(7) {
+  transform: rotate(216deg) translateX(22px) rotate(-216deg);
+  animation-delay: 0.6s;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.loaderDot:nth-child(8) {
+  transform: rotate(252deg) translateX(22px) rotate(-252deg);
+  animation-delay: 0.7s;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.loaderDot:nth-child(9) {
+  transform: rotate(288deg) translateX(22px) rotate(-288deg);
+  animation-delay: 0.8s;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.loaderDot:nth-child(10) {
+  transform: rotate(324deg) translateX(22px) rotate(-324deg);
+  animation-delay: 0.9s;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
