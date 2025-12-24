@@ -1,13 +1,13 @@
 from unittest.mock import MagicMock
-from app.schemas.rule import RuleCreate
-from app.services.rule_service import create_rule,get_rule_by_id, get_rules
-from app.models.rule import Rule
+from app.features.rules.schemas.rule import RuleCreate
+from app.features.rules.services.rule_service import create_rule,get_rule_by_id, get_rules
+from app.features.rules.models.rule import Rule
 
 def test_create_rule_unit(monkeypatch):
     fake_db = MagicMock()
 
     monkeypatch.setattr(
-        "app.repositories.rule_repository.RuleRepository.get_by_domain",
+        "app.features.rules.repositories.rule_repository.RuleRepository.get_by_domain",
         lambda self, domain: None,
     )
 
@@ -28,7 +28,7 @@ def test_get_rule_by_id_unit(monkeypatch):
     fake_rule = Rule(id=1, domain="example.com", reason="Stam")
 
     monkeypatch.setattr(
-        "app.repositories.rule_repository.RuleRepository.get_by_id",
+        "app.features.rules.repositories.rule_repository.RuleRepository.get_by_id",
         lambda self, rule_id: fake_rule,
     )
 
@@ -46,7 +46,7 @@ def test_get_rules_unit(monkeypatch):
     ]
 
     monkeypatch.setattr(
-        "app.repositories.rule_repository.RuleRepository.get_rules",
+        "app.features.rules.repositories.rule_repository.RuleRepository.get_rules",
         lambda self: fake_rules,
     )
 

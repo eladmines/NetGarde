@@ -1,0 +1,76 @@
+.categoriesTableContainer {
+  height: 600px;
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dataGrid {
+  border: none;
+}
+
+.dataGrid .MuiDataGrid-cell:focus,
+.dataGrid .MuiDataGrid-cell:focus-within {
+  outline: none !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dataGrid .MuiDataGrid-row:focus-within {
+  outline: none;
+}
+
+.dataGrid .MuiDataGrid-cell {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 6px 8px;
+}
+
+.dataGrid .MuiDataGrid-cell.Mui-selected {
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: transparent !important;
+}
+
+.dataGrid .MuiDataGrid-cell.Mui-selected:focus {
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+.dataGrid .MuiDataGrid-cell--withBorder {
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.dataGrid .MuiDataGrid-cellContent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+}
+
+.dataGrid .MuiDataGrid-columnHeader {
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 6px 8px;
+}
+
+.dataGrid .MuiDataGrid-columnHeaders {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dataGrid .MuiDataGrid-footerContainer {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.emptyStateText {
+  margin-bottom: 16px;
+}
+

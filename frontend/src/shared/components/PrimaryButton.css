@@ -1,0 +1,35 @@
+.primaryButton {
+  text-transform: none;
+  font-weight: 500;
+  background-color: transparent;
+  border-color: rgb(8, 168, 255);
+  color: rgb(8, 168, 255);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  min-width: auto;
+  transition: all 0.2s ease-in-out;
+}
+
+.primaryButton:hover {
+  background-color: rgba(8, 168, 255, 0.08);
+  border-color: rgb(6, 140, 220);
+  color: rgb(6, 140, 220);
+  transform: translateY(-1px);
+}
+
+.primaryButton:active {
+  transform: translateY(0);
+  background-color: rgba(8, 168, 255, 0.12);
+}
+
+.primaryButton .MuiSvgIcon-root {
+  font-size: 1.125rem;
+}
+
+.primaryButton.Mui-disabled {
+  background-color: transparent;
+  border-color: rgba(8, 168, 255, 0.3);
+  color: rgba(8, 168, 255, 0.3);
+}
+

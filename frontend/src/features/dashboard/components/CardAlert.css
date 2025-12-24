@@ -1,0 +1,13 @@
+.cardAlert {
+  margin: 12px;
+  flex-shrink: 0;
+}
+
+.titleTypography {
+  font-weight: 600;
+}
+
+.descriptionTypography {
+  margin-bottom: 16px;
+}
+
