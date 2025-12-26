@@ -1,0 +1,2360 @@
+2025-11-02 20:04:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:04:53 ERROR app.services.rule_service - Database error while listing rules
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:04:53 ERROR app.controllers.rule_controller - GET /rules - error
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/controllers/rule_controller.py", line 56, in get_rules_controller
+    rules = get_rules(db)
+            ^^^^^^^^^^^^^
+  File "/app/app/services/rule_service.py", line 56, in get_rules
+    raise e
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:06:20 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:06:20 ERROR app.services.rule_service - Database error while listing rules
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:06:20 ERROR app.controllers.rule_controller - GET /rules - error
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/controllers/rule_controller.py", line 56, in get_rules_controller
+    rules = get_rules(db)
+            ^^^^^^^^^^^^^
+  File "/app/app/services/rule_service.py", line 56, in get_rules
+    raise e
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:07:11 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:07:11 ERROR app.services.rule_service - Database error while listing rules
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:07:11 ERROR app.controllers.rule_controller - GET /rules - error
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/controllers/rule_controller.py", line 56, in get_rules_controller
+    rules = get_rules(db)
+            ^^^^^^^^^^^^^
+  File "/app/app/services/rule_service.py", line 56, in get_rules
+    raise e
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:07:12 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:07:12 ERROR app.services.rule_service - Database error while listing rules
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:07:12 ERROR app.controllers.rule_controller - GET /rules - error
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/controllers/rule_controller.py", line 56, in get_rules_controller
+    rules = get_rules(db)
+            ^^^^^^^^^^^^^
+  File "/app/app/services/rule_service.py", line 56, in get_rules
+    raise e
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:08:48 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:08:48 ERROR app.services.rule_service - Database error while listing rules
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:08:48 ERROR app.controllers.rule_controller - GET /rules - error
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/controllers/rule_controller.py", line 56, in get_rules_controller
+    rules = get_rules(db)
+            ^^^^^^^^^^^^^
+  File "/app/app/services/rule_service.py", line 56, in get_rules
+    raise e
+  File "/app/app/services/rule_service.py", line 51, in get_rules
+    rules = repository.get_rules()
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/repositories/rule_repository.py", line 37, in get_rules
+    .all()
+     ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2237, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2106, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 674, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/psycopg/connection.py", line 748, in connect
+    raise last_ex.with_traceback(None)
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "172.18.0.2", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-11-02 20:09:45 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:09:45 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:09:45 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:12 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:12 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:12 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:22 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:22 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:22 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:25 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:25 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:25 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:27 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:27 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:27 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:30 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:34 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:34 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:34 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:11:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:11:41 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:11:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:12:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:12:55 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:12:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:12:57 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:12:57 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:12:57 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:13:02 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:13:02 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:13:02 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:16:11 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:16:11 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:16:11 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:17:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:17:44 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:17:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:19:45 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:19:45 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:19:45 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:21:45 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:21:45 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:21:45 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:23:45 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:23:45 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:23:45 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:25:45 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:25:45 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:25:45 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 20:27:45 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 20:27:45 INFO app.services.rule_service - Fetched rules
+2025-11-02 20:27:45 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-02 23:57:59 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-02 23:57:59 INFO app.services.rule_service - Fetched rules
+2025-11-02 23:57:59 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:35:29 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:35:29 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:35:29 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:37:29 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:37:29 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:37:29 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:39:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:39:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:39:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:41:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:41:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:41:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:43:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:43:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:43:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:45:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:45:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:45:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:47:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:47:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:47:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:49:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:49:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:49:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:51:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:51:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:51:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:53:30 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:53:30 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:53:30 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:55:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:55:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:55:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:57:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:57:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:57:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 06:59:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 06:59:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 06:59:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:01:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:01:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:01:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:03:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:03:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:03:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:05:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:05:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:05:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:07:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:07:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:07:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:09:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:09:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:09:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:11:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:11:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:11:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:13:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:13:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:13:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:15:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:15:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:15:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:17:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:17:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:17:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:19:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:19:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:19:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:21:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:21:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:21:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:23:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:23:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:23:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:25:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:25:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:25:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:27:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:27:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:27:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:29:31 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:29:31 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:29:31 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:31:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:31:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:31:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:33:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:33:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:33:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:35:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:35:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:35:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:37:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:37:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:37:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:39:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:39:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:39:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:41:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:41:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:41:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:43:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:43:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:43:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:45:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:45:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:45:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:47:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:47:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:47:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:49:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:49:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:49:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:51:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:51:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:51:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:53:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:53:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:53:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:55:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:55:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:55:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:57:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:57:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:57:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 07:59:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 07:59:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 07:59:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:01:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:01:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:01:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:03:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:03:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:03:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:05:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:05:32 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:05:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:07:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:07:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:07:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:09:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:09:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:09:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:11:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:11:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:11:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:13:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:13:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:13:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:15:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:15:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:15:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:17:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:17:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:17:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:19:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:19:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:19:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:21:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:21:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:21:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:23:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:23:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:23:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:25:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:25:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:25:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:27:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:27:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:27:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:29:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:29:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:29:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:31:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:31:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:31:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-03 08:33:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-03 08:33:33 INFO app.services.rule_service - Fetched rules
+2025-11-03 08:33:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:05:52 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:05:52 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:05:52 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:07:52 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:07:52 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:07:52 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:09:52 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:09:52 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:09:52 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:11:52 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:11:52 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:11:52 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:13:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:13:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:13:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:15:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:15:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:15:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:17:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:17:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:17:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:19:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:19:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:19:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:21:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:21:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:21:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:23:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:23:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:23:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:25:53 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:25:53 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:25:53 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:27:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:27:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:27:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:29:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:29:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:29:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:31:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:31:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:31:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:33:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:33:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:33:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:35:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:35:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:35:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:37:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:37:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:37:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:39:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:39:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:39:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:41:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:41:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:41:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:43:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:43:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:43:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:45:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:45:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:45:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:47:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:47:54 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:47:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:49:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:49:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:49:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:51:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:51:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:51:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:53:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:53:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:53:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:55:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:55:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:55:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:57:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:57:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:57:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 19:59:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 19:59:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 19:59:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:01:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:01:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:01:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:03:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:03:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:03:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:05:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:05:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:05:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:07:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:07:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:07:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:09:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:09:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:09:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:11:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:11:55 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:11:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:13:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:13:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:13:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:15:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:15:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:15:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:17:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:17:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:17:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:19:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:19:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:19:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:21:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:21:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:21:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:23:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:23:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:23:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:25:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:25:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:25:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:27:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:27:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:27:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:29:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:29:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:29:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:31:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:31:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:31:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:33:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:33:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:33:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:35:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:35:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:35:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:37:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:37:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:37:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:39:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:39:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:39:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:41:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:41:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:41:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:43:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:43:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:43:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:45:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:45:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:45:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:47:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:47:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:47:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:49:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:49:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:49:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:51:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:51:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:51:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:53:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:53:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:53:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:55:56 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:55:56 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:55:56 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:57:57 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 20:57:57 INFO app.services.rule_service - Fetched rules
+2025-11-04 20:57:57 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 20:59:59 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:00:08 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:00:08 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:02:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:02:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:02:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:04:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:04:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:04:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:06:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:06:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:06:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:08:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:08:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:08:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:10:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:10:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:10:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:12:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:12:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:12:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:14:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:14:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:14:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:16:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:16:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:16:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:18:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:18:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:18:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:20:10 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:20:10 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:20:10 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-04 21:22:12 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-04 21:22:12 INFO app.services.rule_service - Fetched rules
+2025-11-04 21:22:12 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:35:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:35:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:35:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:37:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:37:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:37:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:39:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:39:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:39:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:41:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:41:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:41:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:43:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:43:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:43:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:45:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:45:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:45:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:47:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:47:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:47:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:49:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:49:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:49:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:51:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:51:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:51:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:53:01 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:53:01 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:53:01 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:55:02 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:55:02 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:55:02 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:57:02 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:57:02 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:57:02 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 17:59:02 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 17:59:02 INFO app.services.rule_service - Fetched rules
+2025-11-05 17:59:02 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:08:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:08:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:08:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:10:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:10:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:10:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:12:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:12:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:12:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:14:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:14:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:14:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:16:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:16:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:16:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:18:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:18:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:18:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:20:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:20:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:20:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:22:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:22:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:22:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:24:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:24:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:24:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:26:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:26:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:26:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:28:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:28:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:28:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:30:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:30:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:30:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:32:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:32:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:32:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:34:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:34:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:34:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:36:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:36:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:36:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:38:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:38:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:38:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:40:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:40:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:40:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:42:05 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:42:05 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:42:05 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:44:06 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:44:06 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:44:06 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:46:06 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:46:06 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:46:06 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:48:06 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:48:06 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:48:06 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:52:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:52:41 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:52:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:54:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:54:41 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:54:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:56:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:56:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:56:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 18:58:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 18:58:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 18:58:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:00:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:00:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:00:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:02:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:02:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:02:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:04:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:04:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:04:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:06:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:06:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:06:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:08:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:08:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:08:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:10:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:10:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:10:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:12:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:12:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:12:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:14:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:14:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:14:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:16:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:16:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:16:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:18:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:18:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:18:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:20:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:20:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:20:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:22:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:22:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:22:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:24:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:24:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:24:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:26:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:26:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:26:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:28:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:28:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:28:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:30:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:30:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:30:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:32:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:32:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:32:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:34:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:34:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:34:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:36:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:36:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:36:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:38:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:38:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:38:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:40:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:40:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:40:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:42:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:42:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:42:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:44:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:44:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:44:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:46:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:46:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:46:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:48:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:48:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:48:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:50:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:50:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:50:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:52:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:52:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:52:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:54:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:54:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:54:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:56:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:56:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:56:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 19:58:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 19:58:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 19:58:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:00:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:00:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:00:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:02:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:02:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:02:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:04:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:04:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:04:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:06:42 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:06:42 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:06:42 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:08:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:08:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:08:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:10:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:10:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:10:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:12:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:12:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:12:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:14:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:14:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:14:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:16:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:16:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:16:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:18:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:18:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:18:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:20:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:20:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:20:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:22:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:22:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:22:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:24:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:24:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:24:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:26:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:26:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:26:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:28:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:28:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:28:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:30:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:30:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:30:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:32:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:32:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:32:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:34:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:34:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:34:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:36:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:36:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:36:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:38:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:38:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:38:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:40:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:40:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:40:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:42:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:42:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:42:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:44:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:44:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:44:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:46:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:46:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:46:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:48:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:48:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:48:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:50:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:50:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:50:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:52:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:52:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:52:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:54:43 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:54:43 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:54:43 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:56:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:56:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:56:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 20:58:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 20:58:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 20:58:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:00:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:00:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:00:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:02:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:02:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:02:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:04:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:04:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:04:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:06:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:06:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:06:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:08:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:08:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:08:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:10:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:10:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:10:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:12:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:12:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:12:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:14:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:14:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:14:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:16:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:16:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:16:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:18:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:18:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:18:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-05 21:20:44 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-05 21:20:44 INFO app.services.rule_service - Fetched rules
+2025-11-05 21:20:44 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 14:57:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 14:57:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 14:57:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 14:59:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 14:59:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 14:59:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:01:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:01:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:01:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:03:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:03:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:03:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:05:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:05:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:05:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:07:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:07:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:07:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:09:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:09:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:09:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:11:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:11:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:11:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:13:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:13:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:13:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:15:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:15:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:15:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:17:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:17:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:17:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 15:19:41 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 15:19:41 INFO app.services.rule_service - Fetched rules
+2025-11-06 15:19:41 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:01:37 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:01:37 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:01:37 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:03:37 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:03:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:03:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:05:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:05:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:05:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:07:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:07:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:07:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:09:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:09:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:09:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:11:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:11:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:11:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:13:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:13:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:13:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:15:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:15:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:15:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:17:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:17:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:17:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:19:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:19:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:19:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:21:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:21:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:21:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:23:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:23:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:23:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:25:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:25:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:25:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:27:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:27:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:27:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:29:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:29:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:29:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:31:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:31:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:31:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:33:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:33:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:33:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:35:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:35:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:35:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:37:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:37:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:37:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:39:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:39:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:39:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:41:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:41:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:41:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:43:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:43:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:43:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:45:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:45:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:45:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:47:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:47:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:47:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:49:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:49:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:49:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:51:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:51:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:51:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:53:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:53:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:53:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:55:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:55:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:55:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:57:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:57:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:57:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 18:59:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 18:59:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 18:59:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:01:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:01:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:01:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:03:38 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:03:38 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:03:38 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:05:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:05:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:05:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:07:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:07:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:07:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:09:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:09:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:09:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:11:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:11:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:11:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:13:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:13:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:13:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:15:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:15:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:15:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:17:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:17:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:17:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:19:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:19:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:19:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:21:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:21:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:21:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:23:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:23:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:23:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:25:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:25:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:25:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:27:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:27:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:27:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:29:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:29:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:29:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:31:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:31:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:31:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:33:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:33:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:33:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:35:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:35:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:35:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:37:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:37:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:37:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-06 19:39:39 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-06 19:39:39 INFO app.services.rule_service - Fetched rules
+2025-11-06 19:39:39 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 01:18:22 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 01:18:22 INFO app.services.rule_service - Fetched rules
+2025-11-07 01:18:22 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:21:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:21:54 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:21:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:23:54 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:23:54 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:23:54 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:25:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:25:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:25:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:27:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:27:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:27:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:29:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:29:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:29:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:31:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:31:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:31:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:33:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:33:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:33:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:35:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:35:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:35:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:37:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:37:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:37:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:39:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:39:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:39:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:41:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:41:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:41:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-07 08:43:55 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-07 08:43:55 INFO app.services.rule_service - Fetched rules
+2025-11-07 08:43:55 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:22:32 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:22:32 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:22:32 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:24:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:24:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:24:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:26:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:26:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:26:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:28:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:28:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:28:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:30:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:30:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:30:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:32:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:32:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:32:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:34:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:34:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:34:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:36:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:36:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:36:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:38:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:38:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:38:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:40:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:40:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:40:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:42:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:42:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:42:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:44:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:44:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:44:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:46:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:46:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:46:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:48:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:48:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:48:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:50:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:50:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:50:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:52:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:52:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:52:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:54:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:54:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:54:33 INFO app.controllers.rule_controller - GET /rules - ok
+2025-11-08 07:56:33 INFO app.controllers.rule_controller - GET /rules - fetch all
+2025-11-08 07:56:33 INFO app.services.rule_service - Fetched rules
+2025-11-08 07:56:33 INFO app.controllers.rule_controller - GET /rules - ok
