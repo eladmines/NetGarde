@@ -5,10 +5,12 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from app.config import settings
-from app.database import Base
+from app.shared.config import settings
+from app.shared.database import Base
 
-import app.models.rule 
+# Import all models so Alembic can detect them
+from app.features.blocked_sites.models.blocked_site import BlockedSite
+from app.features.categories.models.category import Category 
 
 
 config = context.config
