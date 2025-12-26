@@ -1,0 +1,24 @@
+name: Deploy develop to AWS
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to AWS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            cd ${{ secrets.AWS_APP_PATH }}
+            git fetch origin
+            git checkout develop
+            git pull origin develop
+            docker compose up -d --build
