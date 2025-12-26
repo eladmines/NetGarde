@@ -18,7 +18,13 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             cd ${{ secrets.AWS_APP_PATH }}
+            
+            git reset --hard
+            git clean -fd
+
             git fetch origin
             git checkout develop
             git pull origin develop
+
             docker compose up -d --build
+
