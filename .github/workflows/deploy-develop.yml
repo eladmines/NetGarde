@@ -1,9 +1,11 @@
-name: Deploy to AWS (Development)
+name: Deploy to AWS (Develop)
 
 on:
   push:
     branches:
       - develop
+
+  workflow_dispatch:
 
 jobs:
   deploy:
