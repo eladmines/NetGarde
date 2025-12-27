@@ -23,6 +23,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
+            export COMPOSE_HTTP_TIMEOUT=300
             cd ${{ secrets.APP_DIR }}
             git pull origin develop
             docker-compose -f docker-compose.dev.yml down
