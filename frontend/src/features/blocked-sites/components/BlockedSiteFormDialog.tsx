@@ -55,7 +55,22 @@ export default function BlockedSiteFormDialog({
 
   const handleCategoryChange = (e: SelectChangeEvent<string>) => {
     const selectedCategoryName = e.target.value;
-    onFormDataChange({ ...formData, category: selectedCategoryName || null });
+    // Convert empty string to null for optional field
+    onFormDataChange({ ...formData, category: selectedCategoryName === '' ? null : selectedCategoryName });
+  };
+
+  const handleFormSubmit = () => {
+    // Validate required fields
+    if (!formData.domain.trim()) {
+      alert('Please enter a domain');
+      return;
+    }
+    if (!formData.reason.trim()) {
+      alert('Please enter a reason');
+      return;
+    }
+    // The hook's handleSubmit will clean the category field (empty string -> null)
+    onSubmit();
   };
 
   return (
@@ -125,7 +140,7 @@ export default function BlockedSiteFormDialog({
         >
           Cancel
         </Button>
-        <PrimaryButton onClick={onSubmit} disabled={submitting}>
+        <PrimaryButton onClick={handleFormSubmit} disabled={submitting}>
           {mode === FORM_MODE.EDIT ? 'Save Changes' : 'Add Blocked Site'}
         </PrimaryButton>
       </DialogActions>
