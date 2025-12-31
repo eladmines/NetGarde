@@ -38,7 +38,6 @@ export default function BlockedSiteFormDialog({
 }: BlockedSiteFormDialogProps) {
   const { categories, loading: categoriesLoading, fetchCategories } = useCategories();
 
-  // Fetch categories when dialog opens to ensure we have the latest list
   React.useEffect(() => {
     if (open) {
       fetchCategories();
@@ -55,7 +54,6 @@ export default function BlockedSiteFormDialog({
 
   const handleCategoryChange = (e: SelectChangeEvent<string>) => {
     const selectedCategoryName = e.target.value;
-    // Convert empty string to null for optional field
     onFormDataChange({ ...formData, category: selectedCategoryName === '' ? null : selectedCategoryName });
   };
 
