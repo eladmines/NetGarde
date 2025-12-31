@@ -1,7 +1,7 @@
 """Update deleted_at field
 
 Revision ID: e8f7eb0a723a
-Revises: 8e0aff0285a1
+Revises: 
 Create Date: 2025-10-18 18:15:42.357764
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'e8f7eb0a723a'
-down_revision: Union[str, Sequence[str], None] = '8e0aff0285a1'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

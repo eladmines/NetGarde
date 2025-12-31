@@ -10,6 +10,12 @@ import { useBlockedSiteActions } from './hooks/useBlockedSiteActions';
 
 export default function BlockedSites() {
   const { blockedSites, loading, totalCount, page, pageSize, setPage, setPageSize, domainSearch, setDomainSearch, fetchBlockedSites } = useBlockedSites();
+  
+  // Wrap fetchBlockedSites to match the expected callback signature
+  const refreshBlockedSites = React.useCallback(() => {
+    fetchBlockedSites(page, pageSize, domainSearch);
+  }, [fetchBlockedSites, page, pageSize, domainSearch]);
+  
   const {
     openDialog,
     dialogMode,
@@ -20,7 +26,7 @@ export default function BlockedSites() {
     handleOpenEditDialog,
     handleCloseDialog,
     handleSubmit,
-  } = useBlockedSiteForm(fetchBlockedSites);
+  } = useBlockedSiteForm(refreshBlockedSites);
 
   const {
     deleteDialogOpen,
@@ -29,7 +35,7 @@ export default function BlockedSites() {
     handleOpenDeleteDialog,
     handleCloseDeleteDialog,
     handleConfirmDelete,
-  } = useBlockedSiteActions(fetchBlockedSites);
+  } = useBlockedSiteActions(refreshBlockedSites);
 
   const handleEdit = (blockedSiteId: number) => {
     // Find in current page data

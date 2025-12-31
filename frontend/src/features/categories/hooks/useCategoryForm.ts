@@ -58,10 +58,13 @@ export function useCategoryForm(onSuccess?: () => void) {
         handleCloseDialog();
         onSuccess?.();
       } else {
-        console.error(isEdit ? 'Error updating category' : 'Error creating category');
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        console.error(isEdit ? 'Error updating category' : 'Error creating category', errorData);
+        alert(errorData.detail || (isEdit ? 'Failed to update category' : 'Failed to create category'));
       }
     } catch (error) {
       console.error(isEdit ? 'Error updating category:' : 'Error creating category:', error);
+      alert(isEdit ? 'Failed to update category. Please try again.' : 'Failed to create category. Please try again.');
     } finally {
       setSubmitting(false);
     }

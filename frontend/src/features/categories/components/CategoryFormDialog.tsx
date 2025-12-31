@@ -34,6 +34,14 @@ export default function CategoryFormDialog({
     onFormDataChange({ ...formData, name: e.target.value });
   };
 
+  const handleFormSubmit = () => {
+    if (!formData.name.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+    onSubmit();
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{mode === FORM_MODE.EDIT ? 'Edit Category' : 'Add New Category'}</DialogTitle>
@@ -62,7 +70,7 @@ export default function CategoryFormDialog({
         >
           Cancel
         </Button>
-        <PrimaryButton onClick={onSubmit} disabled={submitting}>
+        <PrimaryButton onClick={handleFormSubmit} disabled={submitting}>
           {mode === FORM_MODE.EDIT ? 'Save Changes' : 'Add Category'}
         </PrimaryButton>
       </DialogActions>
