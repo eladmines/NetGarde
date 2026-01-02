@@ -49,8 +49,8 @@
   border-color: rgba(0, 0, 0, 0.87);
 }
 
-/* Active/Selected page button - matches table header color */
-/* Override ALL MUI Button contained variant states with maximum specificity */
+
+
 .paginationPageButton.active,
 .paginationPageButton.MuiButton-contained,
 .paginationPageButton.active.MuiButton-contained,
@@ -76,8 +76,8 @@ button.paginationPageButton.active.MuiButton-contained:hover {
   color: #ffffff !important;
 }
 
-/* Override MUI contained button styles - more specific */
-/* Target all possible MUI class combinations */
+
+
 button.paginationPageButton.MuiButton-contained,
 button.paginationPageButton.active.MuiButton-contained,
 .paginationPageButton.MuiButton-contained,
@@ -92,7 +92,7 @@ button.MuiButtonBase-root.MuiButton-contained.paginationPageButton.active,
   border: 1px solid #25a0ff !important;
 }
 
-/* Override MUI's default primary color for contained buttons */
+
 button.MuiButton-contained.paginationPageButton.active,
 .MuiButton-contained.paginationPageButton.active {
   background-color: #25a0ff !important;
@@ -120,7 +120,7 @@ button.paginationPageButton.active.MuiButton-contained:hover,
   padding: 0 4px;
 }
 
-/* Disable MUI dark focus overlay */
+
 .paginationPageButton.Mui-focusVisible,
 button.paginationPageButton.Mui-focusVisible {
   background-color: #25a0ff !important;
@@ -130,7 +130,7 @@ button.paginationPageButton.Mui-focusVisible {
   box-shadow: none !important;
 }
 
-/* Remove MUI internal dark focus overlay */
+
 .paginationPageButton.MuiButton-contained.Mui-focusVisible,
 button.paginationPageButton.MuiButton-contained.Mui-focusVisible,
 button.MuiButtonBase-root.MuiButton-contained.paginationPageButton.active.Mui-focusVisible {
@@ -139,7 +139,7 @@ button.MuiButtonBase-root.MuiButton-contained.paginationPageButton.active.Mui-fo
   box-shadow: none !important;
 }
 
-/* Override MUI's active/pressed state */
+
 button.MuiButton-contained.paginationPageButton.active:active,
 button.MuiButtonBase-root.MuiButton-contained.paginationPageButton.active:active,
 .paginationPageButton.active.MuiButton-contained:active {
@@ -148,7 +148,7 @@ button.MuiButtonBase-root.MuiButton-contained.paginationPageButton.active:active
   box-shadow: none !important;
 }
 
-/* Override MUI's disabled state (shouldn't apply but just in case) */
+
 button.MuiButton-contained.paginationPageButton.active.Mui-disabled {
   background-color: #25a0ff !important;
   background: #25a0ff !important;

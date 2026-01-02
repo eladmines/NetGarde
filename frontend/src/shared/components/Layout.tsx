@@ -34,7 +34,6 @@ export default function Layout({ children, disableCustomTheme }: LayoutProps) {
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />
-        {/* Main content */}
         <Box
           component="main"
           sx={(theme) => ({

@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useMemo } from 'react';
+import { useMemo, ChangeEvent } from 'react';
 import { GridColDef, GridColumnHeaderParams, GridSortModel } from '@mui/x-data-grid';
 import Box from '@mui/material/Box';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -20,7 +19,7 @@ interface UseBlockedSitesColumnsProps {
   onEdit: (blockedSiteId: number) => void;
   onDelete: (blockedSite: BlockedSite) => void;
   domainSearchQuery: string;
-  onDomainSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDomainSearchChange: (e: ChangeEvent<HTMLInputElement>) => void;
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
   allCategoryNames: string[];
@@ -67,18 +66,14 @@ export function useBlockedSitesColumns({
               onChange={onDomainSearchChange}
               onClick={(e) => {
                 e.stopPropagation();
-                // Find and focus the input element
                 const input = (e.currentTarget as HTMLElement).querySelector('input') as HTMLInputElement;
                 if (input) {
                   input.focus();
                 }
               }}
               onMouseDown={(e) => {
-                // Stop propagation to prevent DataGrid from capturing the click
                 e.stopPropagation();
-                // Don't prevent default - let the browser handle focus
                 if ((e.target as HTMLElement).tagName !== 'INPUT') {
-                  // If clicking on the OutlinedInput wrapper, focus the input
                   const input = (e.currentTarget as HTMLElement).querySelector('input') as HTMLInputElement;
                   if (input) {
                     e.preventDefault();
@@ -93,7 +88,6 @@ export function useBlockedSitesColumns({
               }
               inputProps={{
                 'aria-label': 'search domain',
-                // Let the browser handle focus naturally - don't interfere
               }}
             />
           </Box>
@@ -108,7 +102,7 @@ export function useBlockedSitesColumns({
         sortable: false,
         renderCell: (params) => {
           const reason = params.value || '';
-          const isLong = reason.length > 50; // Adjust threshold as needed
+          const isLong = reason.length > 50;
           
           return (
             <Tooltip title={isLong ? reason : ''} arrow placement="top">

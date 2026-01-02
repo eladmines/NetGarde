@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { ReactNode } from 'react';
 import Button from '@mui/material/Button';
 import { SxProps, Theme } from '@mui/material/styles';
 import './PrimaryButton.css';
@@ -6,9 +6,9 @@ import './PrimaryButton.css';
 interface PrimaryButtonProps {
   onClick: () => void;
   disabled?: boolean;
-  children: React.ReactNode;
-  startIcon?: React.ReactNode;
-  endIcon?: React.ReactNode;
+  children: ReactNode;
+  startIcon?: ReactNode;
+  endIcon?: ReactNode;
   size?: 'small' | 'medium' | 'large';
   sx?: SxProps<Theme>;
   className?: string;

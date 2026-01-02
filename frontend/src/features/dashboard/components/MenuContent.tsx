@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -53,11 +53,10 @@ interface MenuContentProps {
 
 export default function MenuContent({ open = true }: MenuContentProps) {
   const location = useLocation();
-  const [manageNetworkOpen, setManageNetworkOpen] = React.useState(true);
-  const [analyticsOpen, setAnalyticsOpen] = React.useState(false);
+  const [manageNetworkOpen, setManageNetworkOpen] = useState(true);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
-  // Check if any child item is selected to keep dropdown open
-  React.useEffect(() => {
+  useEffect(() => {
     const hasSelectedChild = manageNetworkItems.some(item => location.pathname === item.path);
     if (hasSelectedChild) {
       setManageNetworkOpen(true);
@@ -154,7 +153,6 @@ export default function MenuContent({ open = true }: MenuContentProps) {
       <List dense sx={{ px: 0 }}>
         {mainListItems.map((item, index) => renderNavItem(item, index))}
         
-        {/* Manage my network dropdown */}
         {open && (
           <>
             <ListItem disablePadding sx={{ display: 'block' }}>
@@ -264,7 +262,6 @@ export default function MenuContent({ open = true }: MenuContentProps) {
           </>
         )}
         
-        {/* Analytics dropdown */}
         {open && (
           <>
             <ListItem disablePadding sx={{ display: 'block' }}>
@@ -374,7 +371,6 @@ export default function MenuContent({ open = true }: MenuContentProps) {
           </>
         )}
 
-        {/* Collapsed state: show individual items with tooltips */}
         {!open && (
           <>
             {manageNetworkItems.map((item, index) => {

@@ -1,27 +1,27 @@
-import * as React from 'react';
+import { useState, useCallback } from 'react';
 import { Category, CategoryCreate } from '../types/category';
 import { API_ENDPOINTS } from '../config/api';
 import { FORM_MODE, FormMode } from '../constants/formMode';
 
 export function useCategoryForm(onSuccess?: () => void) {
-  const [openDialog, setOpenDialog] = React.useState(false);
-  const [dialogMode, setDialogMode] = React.useState<FormMode>(FORM_MODE.CREATE);
-  const [formData, setFormData] = React.useState<CategoryCreate>({ name: '', created_by: null, updated_by: null });
-  const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
-  const [submitting, setSubmitting] = React.useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<FormMode>(FORM_MODE.CREATE);
+  const [formData, setFormData] = useState<CategoryCreate>({ name: '', created_by: null, updated_by: null });
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const resetForm = React.useCallback(() => {
+  const resetForm = useCallback(() => {
     setFormData({ name: '', created_by: null, updated_by: null });
   }, []);
 
-  const handleOpenCreateDialog = React.useCallback(() => {
+  const handleOpenCreateDialog = useCallback(() => {
     setDialogMode(FORM_MODE.CREATE);
     setEditingCategory(null);
     resetForm();
     setOpenDialog(true);
   }, [resetForm]);
 
-  const handleOpenEditDialog = React.useCallback((category: Category) => {
+  const handleOpenEditDialog = useCallback((category: Category) => {
     setDialogMode(FORM_MODE.EDIT);
     setEditingCategory(category);
     setFormData({
@@ -32,14 +32,14 @@ export function useCategoryForm(onSuccess?: () => void) {
     setOpenDialog(true);
   }, []);
 
-  const handleCloseDialog = React.useCallback(() => {
+  const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
     resetForm();
     setEditingCategory(null);
     setDialogMode(FORM_MODE.CREATE);
   }, [resetForm]);
 
-  const handleSubmit = React.useCallback(async () => {
+  const handleSubmit = useCallback(async () => {
     const isEdit = dialogMode === FORM_MODE.EDIT && editingCategory;
     try {
       setSubmitting(true);

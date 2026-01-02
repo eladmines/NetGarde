@@ -1,12 +1,12 @@
-import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Category } from '../types/category';
 import { API_ENDPOINTS } from '../config/api';
 
 export function useCategories() {
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchCategories = React.useCallback(async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(API_ENDPOINTS.categories);
@@ -28,7 +28,7 @@ export function useCategories() {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 

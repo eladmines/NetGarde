@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState, useEffect } from 'react';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { DataGrid, GridRowsProp } from '@mui/x-data-grid';
@@ -24,11 +24,10 @@ export default function CategoriesTable({
   onEdit,
   onDelete,
 }: CategoriesTableProps) {
-  const [blockedSitesCounts, setBlockedSitesCounts] = React.useState<Record<string, number>>({});
-  const [loadingCounts, setLoadingCounts] = React.useState(true);
+  const [blockedSitesCounts, setBlockedSitesCounts] = useState<Record<string, number>>({});
+  const [loadingCounts, setLoadingCounts] = useState(true);
 
-  // Fetch blocked sites counts by category from the API
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBlockedSitesCounts = async () => {
       try {
         setLoadingCounts(true);

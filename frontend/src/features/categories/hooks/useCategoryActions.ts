@@ -1,25 +1,25 @@
-import * as React from 'react';
+import { useState, useCallback } from 'react';
 import { Category } from '../types/category';
 import { API_ENDPOINTS } from '../config/api';
 
 export function useCategoryActions(onDeleteSuccess?: () => void) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
-  const [deleting, setDeleting] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleOpenDeleteDialog = React.useCallback((category: Category) => {
+  const handleOpenDeleteDialog = useCallback((category: Category) => {
     setCategoryToDelete(category);
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleCloseDeleteDialog = React.useCallback(() => {
+  const handleCloseDeleteDialog = useCallback(() => {
     if (!deleting) {
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
     }
   }, [deleting]);
 
-  const handleConfirmDelete = React.useCallback(async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!categoryToDelete) return;
 
     try {

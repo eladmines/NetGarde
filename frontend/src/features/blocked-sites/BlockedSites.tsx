@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useCallback } from 'react';
 import Box from '@mui/material/Box';
 import BlockedSitesTable from './components/table/BlockedSitesTable';
 import BlockedSiteFormDialog from './components/BlockedSiteFormDialog';
@@ -11,8 +11,7 @@ import { useBlockedSiteActions } from './hooks/useBlockedSiteActions';
 export default function BlockedSites() {
   const { blockedSites, loading, totalCount, page, pageSize, setPage, setPageSize, domainSearch, setDomainSearch, fetchBlockedSites } = useBlockedSites();
   
-  // Wrap fetchBlockedSites to match the expected callback signature
-  const refreshBlockedSites = React.useCallback(() => {
+  const refreshBlockedSites = useCallback(() => {
     fetchBlockedSites(page, pageSize, domainSearch);
   }, [fetchBlockedSites, page, pageSize, domainSearch]);
   
@@ -38,11 +37,9 @@ export default function BlockedSites() {
   } = useBlockedSiteActions(refreshBlockedSites);
 
   const handleEdit = (blockedSiteId: number) => {
-    // Find in current page data
     const blockedSite = blockedSites.find((item) => item.id === blockedSiteId);
     if (!blockedSite) {
       console.warn(`Blocked site with id ${blockedSiteId} not found on current page`);
-      // Could fetch by ID if not found on current page
       return;
     }
     handleOpenEditDialog(blockedSite);

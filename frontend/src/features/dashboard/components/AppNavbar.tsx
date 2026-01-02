@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -36,7 +36,7 @@ const AzureToolbar = styled(MuiToolbar)({
 });
 
 export default function AppNavbar() {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
@@ -44,7 +44,6 @@ export default function AppNavbar() {
 
   return (
     <>
-      {/* Mobile Navbar */}
       <AppBar
         position="fixed"
         sx={{
@@ -86,7 +85,6 @@ export default function AppNavbar() {
         </Toolbar>
       </AppBar>
 
-      {/* Desktop Azure-style Horizontal Navbar */}
       <AppBar
         position="fixed"
         sx={{
@@ -101,7 +99,6 @@ export default function AppNavbar() {
         className="azure-navbar"
       >
         <AzureToolbar>
-          {/* Left: Logo/Brand */}
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <Box
               sx={{
@@ -130,7 +127,6 @@ export default function AppNavbar() {
             </Typography>
           </Stack>
 
-          {/* Right: Global Actions */}
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <MenuButton
               aria-label="notifications"

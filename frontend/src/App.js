@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './shared/components/Layout';
 import DashboardContent from './features/dashboard/DashboardContent';

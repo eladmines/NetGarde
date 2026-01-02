@@ -1,27 +1,27 @@
-import * as React from 'react';
+import { useState, useCallback } from 'react';
 import { BlockedSite, BlockedSiteCreate } from '../types/blockedSite';
 import { API_ENDPOINTS } from '../config/api';
 import { FORM_MODE, FormMode } from '../constants/formMode';
 
 export function useBlockedSiteForm(onSuccess?: () => void) {
-  const [openDialog, setOpenDialog] = React.useState(false);
-  const [dialogMode, setDialogMode] = React.useState<FormMode>(FORM_MODE.CREATE);
-  const [formData, setFormData] = React.useState<BlockedSiteCreate>({ domain: '', reason: '', category: null });
-  const [editingBlockedSite, setEditingBlockedSite] = React.useState<BlockedSite | null>(null);
-  const [submitting, setSubmitting] = React.useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<FormMode>(FORM_MODE.CREATE);
+  const [formData, setFormData] = useState<BlockedSiteCreate>({ domain: '', reason: '', category: null });
+  const [editingBlockedSite, setEditingBlockedSite] = useState<BlockedSite | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const resetForm = React.useCallback(() => {
+  const resetForm = useCallback(() => {
     setFormData({ domain: '', reason: '', category: null });
   }, []);
 
-  const handleOpenCreateDialog = React.useCallback(() => {
+  const handleOpenCreateDialog = useCallback(() => {
     setDialogMode(FORM_MODE.CREATE);
     setEditingBlockedSite(null);
     resetForm();
     setOpenDialog(true);
   }, [resetForm]);
 
-  const handleOpenEditDialog = React.useCallback((blockedSite: BlockedSite) => {
+  const handleOpenEditDialog = useCallback((blockedSite: BlockedSite) => {
     console.log('Editing blocked site:', blockedSite);
     setDialogMode(FORM_MODE.EDIT);
     setEditingBlockedSite(blockedSite);
@@ -33,19 +33,18 @@ export function useBlockedSiteForm(onSuccess?: () => void) {
     setOpenDialog(true);
   }, []);
 
-  const handleCloseDialog = React.useCallback(() => {
+  const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
     resetForm();
     setEditingBlockedSite(null);
     setDialogMode(FORM_MODE.CREATE);
   }, [resetForm]);
 
-  const handleSubmit = React.useCallback(async () => {
+  const handleSubmit = useCallback(async () => {
     const isEdit = dialogMode === FORM_MODE.EDIT && editingBlockedSite;
     try {
       setSubmitting(true);
       
-      // Clean the form data: ensure category is null if empty string
       const cleanedFormData = {
         ...formData,
         category: formData.category === '' || formData.category === null ? null : formData.category,
@@ -64,7 +63,7 @@ export function useBlockedSiteForm(onSuccess?: () => void) {
 
       if (response.ok) {
         handleCloseDialog();
-        onSuccess?.(); // Refresh the list
+        onSuccess?.();
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
         console.error(isEdit ? 'Error updating blocked site' : 'Error creating blocked site', errorData);

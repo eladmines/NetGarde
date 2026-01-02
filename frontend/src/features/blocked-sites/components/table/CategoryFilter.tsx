@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState, useMemo, MouseEvent } from 'react';
 import IconButton from '@mui/material/IconButton';
 import Popover from '@mui/material/Popover';
 import Box from '@mui/material/Box';
@@ -12,7 +12,7 @@ import './CategoryFilter.css';
 interface CategoryFilterProps {
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
-  allCategoryNames?: string[]; // Categories from blocked sites data
+  allCategoryNames?: string[];
 }
 
 export default function CategoryFilter({
@@ -20,10 +20,10 @@ export default function CategoryFilter({
   onCategoryChange,
   allCategoryNames = [],
 }: CategoryFilterProps) {
-  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const { categories, loading } = useCategories();
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
@@ -41,16 +41,13 @@ export default function CategoryFilter({
 
   const open = Boolean(anchorEl);
 
-  // Extract unique category names from both categories table and blocked sites data
-  const uniqueCategories = React.useMemo(() => {
+  const uniqueCategories = useMemo(() => {
     const categorySet = new Set<string>();
-    // Add categories from the categories table
     categories.forEach((cat) => {
       if (cat.name) {
         categorySet.add(cat.name);
       }
     });
-    // Add categories from blocked sites data (in case some categories are deleted but still referenced)
     allCategoryNames.forEach((name) => {
       if (name) {
         categorySet.add(name);

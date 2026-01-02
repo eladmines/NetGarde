@@ -1,5 +1,5 @@
 .categoryFilterIcon {
-  margin-left: auto !important;  /* ❤️ pushes icon to right side */
+  margin-left: auto !important;  
   padding: 0 !important;
   color: #ffffff !important;
   background: transparent !important;
@@ -27,7 +27,7 @@
   background-color: transparent !important;
 }
 
-/* Remove MUI IconButton default styles */
+
 .categoryFilterIcon.MuiIconButton-root {
   border: none !important;
   background-color: transparent !important;
