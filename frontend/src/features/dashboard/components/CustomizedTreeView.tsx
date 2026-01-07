@@ -1,3 +1,4 @@
+import { ReactNode, HTMLAttributes, forwardRef, Ref } from 'react';
 import clsx from 'clsx';
 import { animated, useSpring } from '@react-spring/web';
 import { TransitionProps } from '@mui/material/transitions';
@@ -93,7 +94,7 @@ function TransitionComponent(props: TransitionProps) {
 }
 
 interface CustomLabelProps {
-  children: React.ReactNode;
+  children: ReactNode;
   color?: Color;
   expandable?: boolean;
 }
@@ -122,13 +123,28 @@ function CustomLabel({ color, expandable, children, ...other }: CustomLabelProps
 
 interface CustomTreeItemProps
   extends Omit<UseTreeItemParameters, 'rootRef'>,
-    Omit<React.HTMLAttributes<HTMLLIElement>, 'onFocus'> {}
+    Omit<HTMLAttributes<HTMLLIElement>, 'onFocus'> {}
 
-const CustomTreeItem = React.forwardRef(function CustomTreeItem(
+const CustomTreeItem = forwardRef(function CustomTreeItem(
   props: CustomTreeItemProps,
-  ref: React.Ref<HTMLLIElement>,
+  ref: Ref<HTMLLIElement>,
 ) {
   const { id, itemId, label, disabled, children, ...other } = props;
+
+  if (!id) {
+    throw new Error('CustomTreeItem requires an id prop');
+  }
+
+  const treeItemId: string = id;
+
+  const useTreeItemParams: UseTreeItemParameters = {
+    id: treeItemId,
+    itemId,
+    children,
+    label,
+    rootRef: ref,
+    ...(disabled !== undefined && { disabled }),
+  };
 
   const {
     getRootProps,
@@ -138,7 +154,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
     getGroupTransitionProps,
     status,
     publicAPI,
-  } = useTreeItem({ id, itemId, children, label, disabled, rootRef: ref });
+  } = useTreeItem(useTreeItemParams);
 
   const item = publicAPI.getItem(itemId);
   const color = item?.color;

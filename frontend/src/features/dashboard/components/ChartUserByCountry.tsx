@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useDrawingArea } from '@mui/x-charts/hooks';
 import { styled } from '@mui/material/styles';
@@ -102,14 +103,14 @@ function PieCenterLabel({ primaryText, secondaryText }: PieCenterLabelProps) {
   const secondaryY = primaryY + 24;
 
   return (
-    <React.Fragment>
+    <Fragment>
       <StyledText variant="primary" x={left + width / 2} y={primaryY}>
         {primaryText}
       </StyledText>
       <StyledText variant="secondary" x={left + width / 2} y={secondaryY}>
         {secondaryText}
       </StyledText>
-    </React.Fragment>
+    </Fragment>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useMemo, ReactNode } from 'react';
+import { useMemo, ReactNode, Fragment } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ThemeOptions } from '@mui/material/styles';
 import { inputsCustomizations } from './customizations/inputs';
@@ -39,7 +39,7 @@ export default function AppTheme(props: AppThemeProps) {
         });
   }, [disableCustomTheme, themeComponents]);
   if (disableCustomTheme) {
-    return <React.Fragment>{children}</React.Fragment>;
+    return <Fragment>{children}</Fragment>;
   }
   return (
     <ThemeProvider theme={theme} disableTransitionOnChange>
