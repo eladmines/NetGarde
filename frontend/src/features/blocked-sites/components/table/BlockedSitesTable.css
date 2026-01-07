@@ -1,5 +1,5 @@
 .blockedSitesTableContainer {
-  /* height: 600px; */ /* Removed fixed height to allow auto-sizing and remove vertical scrollbar */
+   
   width: 100%;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 0;
@@ -10,7 +10,7 @@
 }
 
 .blockedSitesTableContainer .dataGrid {
-  overflow: visible !important; /* Allow pagination to be fully visible */
+  overflow: visible !important; 
 }
 
 .dataGrid {
@@ -25,7 +25,7 @@
   border-right: none !important;
 }
 
-/* Azure-style row hover effect */
+
 .dataGrid .MuiDataGrid-row:hover {
   background-color: #f5f5f5 !important;
 }
@@ -85,7 +85,7 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
 }
 
-/* Hide ALL MUI's default sort icons and containers for created_at and updated_at columns (we use custom ones in renderHeader) */
+
 .dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-iconButtonContainer,
 .dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-iconButtonContainer,
 .dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-sortIcon,
@@ -104,9 +104,9 @@
   overflow: hidden !important;
 }
 
-/* All MUI default sort icons are hidden - we use custom ones in renderHeader */
 
-/* Remove right border from the last column (Actions) */
+
+
 .dataGrid .MuiDataGrid-columnHeader:last-child {
   border-right: none !important;
 }
@@ -117,7 +117,7 @@
   border: none !important;
 }
 
-/* Make search input and filter icon fully interactive */
+
 .dataGrid .MuiDataGrid-columnHeader .domainHeaderContainer {
   pointer-events: auto !important;
   z-index: 10;
@@ -150,7 +150,7 @@
 
 .dataGrid .MuiDataGrid-columnHeader .categoryHeaderContainer {
   display: flex;
-  justify-content: space-between;   /* LEFT ←→ RIGHT */
+  justify-content: space-between;   
   align-items: center;
   width: 100%;
   padding: 0;
@@ -163,7 +163,7 @@
 }
 
 .dataGrid .MuiDataGrid-columnHeader .categoryFilterWrapper {
-  margin-left: auto;                 /* push filter to right */
+  margin-left: auto;                 
   display: flex;
   align-items: center;
 }
@@ -196,7 +196,7 @@
   background-color: #fafafa !important;
 }
 
-/* Style sort arrows for Created and Updated columns */
+
 .dataGrid .MuiDataGrid-columnHeader[data-field="created_at"],
 .dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] {
   display: flex !important;
@@ -220,25 +220,25 @@
   margin-right: auto !important;
 }
 
-/* All MUI default sort icon styling removed - we use custom arrows in renderHeader */
+
 
 .dataGrid .MuiDataGrid-footerContainer {
   border-top: 1px solid rgba(0, 0, 0, 0.12);
   padding-top: 0 !important;
-  padding-bottom: 4px !important; /* Add bottom padding to prevent cutting */
+  padding-bottom: 4px !important; 
   min-height: auto !important;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
   height: auto !important;
-  overflow: visible !important; /* Ensure content is not clipped */
+  overflow: visible !important; 
 }
 
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-root {
   margin: 0 !important;
-  padding: 8px 8px !important; /* Increased padding to ensure full visibility */
-  min-height: auto !important; /* Let it size naturally */
-  height: auto !important; /* Remove fixed height */
-  overflow: visible !important; /* Ensure no clipping */
+  padding: 8px 8px !important; 
+  min-height: auto !important; 
+  height: auto !important; 
+  overflow: visible !important; 
 }
 
 .dataGrid .MuiDataGrid-row:last-child .MuiDataGrid-cell {
@@ -262,14 +262,14 @@
 
 .dataGrid .MuiDataGrid-root {
   border: none;
-  overflow: visible !important; /* Ensure pagination is not clipped */
+  overflow: visible !important; 
 }
 
 .dataGrid .MuiDataGrid-container--bottom {
   margin-top: 0 !important;
   padding-top: 0 !important;
   margin-bottom: 0 !important;
-  padding-bottom: 4px !important; /* Add bottom padding to prevent cutting */
+  padding-bottom: 4px !important; 
   overflow: visible !important;
 }
 
@@ -299,19 +299,19 @@
   display: none !important;
 }
 
-/* Hide all scrollbars in the footer container area */
+
 .dataGrid .MuiDataGrid-footerContainer * {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; 
+  -ms-overflow-style: none !important; 
 }
 
 .dataGrid .MuiDataGrid-footerContainer *::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Opera */
+  display: none !important; 
   width: 0 !important;
   height: 0 !important;
 }
 
-/* Hide scrollbars in pagination area but allow content to be fully visible */
+
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-root * {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
@@ -323,14 +323,14 @@
   height: 0 !important;
 }
 
-/* Hide the "Rows per page" selector (label and select) */
+
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-selectLabel,
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-select,
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-input {
   display: none !important;
 }
 
-/* Ensure the pagination info and navigation remain visible */
+
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-displayedRows {
   display: block !important;
 }
@@ -339,7 +339,7 @@
   display: flex !important;
 }
 
-/* Make pagination buttons square */
+
 .dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-actions .MuiIconButton-root {
   border-radius: 0 !important;
   min-width: 32px !important;

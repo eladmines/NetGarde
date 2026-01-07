@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { ChangeEvent } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
@@ -30,7 +30,7 @@ export default function CategoryFormDialog({
   onSubmit,
   onFormDataChange,
 }: CategoryFormDialogProps) {
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     onFormDataChange({ ...formData, name: e.target.value });
   };
 

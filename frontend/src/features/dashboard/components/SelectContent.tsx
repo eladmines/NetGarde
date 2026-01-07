@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import MuiAvatar from '@mui/material/Avatar';
 import MuiListItemAvatar from '@mui/material/ListItemAvatar';
 import MenuItem from '@mui/material/MenuItem';
@@ -27,7 +27,7 @@ const ListItemAvatar = styled(MuiListItemAvatar)({
 });
 
 export default function SelectContent() {
-  const [company, setCompany] = React.useState('');
+  const [company, setCompany] = useState('');
 
   const handleChange = (event: SelectChangeEvent) => {
     setCompany(event.target.value as string);

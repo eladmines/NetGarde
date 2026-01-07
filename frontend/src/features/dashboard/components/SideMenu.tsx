@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
 import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
@@ -42,7 +42,7 @@ const Drawer = styled(MuiDrawer, {
 }));
 
 export default function SideMenu() {
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = useState(true);
 
   const handleDrawerToggle = () => {
     setOpen(!open);
@@ -56,7 +56,6 @@ export default function SideMenu() {
         display: { xs: 'none', md: 'block' },
       }}
     >
-      {/* Header with toggle button */}
       <Box
         sx={{
           display: 'flex',
@@ -93,7 +92,6 @@ export default function SideMenu() {
         </IconButton>
       </Box>
 
-      {/* Menu Content */}
       <Box
         sx={{
           overflow: 'auto',
@@ -105,7 +103,6 @@ export default function SideMenu() {
         <MenuContent open={open} />
       </Box>
 
-      {/* Footer with user info */}
       <Divider sx={{ borderColor: 'rgba(0, 0, 0, 0.12)' }} />
       <Stack
         direction="row"

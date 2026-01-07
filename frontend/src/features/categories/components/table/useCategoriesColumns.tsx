@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useMemo } from 'react';
 import { GridColDef } from '@mui/x-data-grid';
 import { Category } from '../../types/category';

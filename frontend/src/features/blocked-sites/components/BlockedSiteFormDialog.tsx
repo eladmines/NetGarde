@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useEffect, ChangeEvent } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
@@ -38,17 +38,17 @@ export default function BlockedSiteFormDialog({
 }: BlockedSiteFormDialogProps) {
   const { categories, loading: categoriesLoading, fetchCategories } = useCategories();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       fetchCategories();
     }
   }, [open, fetchCategories]);
 
-  const handleDomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDomainChange = (e: ChangeEvent<HTMLInputElement>) => {
     onFormDataChange({ ...formData, domain: e.target.value });
   };
 
-  const handleReasonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReasonChange = (e: ChangeEvent<HTMLInputElement>) => {
     onFormDataChange({ ...formData, reason: e.target.value });
   };
 
@@ -58,7 +58,6 @@ export default function BlockedSiteFormDialog({
   };
 
   const handleFormSubmit = () => {
-    // Validate required fields
     if (!formData.domain.trim()) {
       alert('Please enter a domain');
       return;
@@ -67,7 +66,6 @@ export default function BlockedSiteFormDialog({
       alert('Please enter a reason');
       return;
     }
-    // The hook's handleSubmit will clean the category field (empty string -> null)
     onSubmit();
   };
 

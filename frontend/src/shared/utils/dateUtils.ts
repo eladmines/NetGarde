@@ -1,8 +1,3 @@
-/**
- * Formats a date string to a readable format
- * @param dateString - ISO date string or date string
- * @returns Formatted date string or '-' if invalid/empty
- */
 export function formatDate(dateString?: string | null): string {
   if (!dateString) return '-';
   try {

@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import type {} from '@mui/x-date-pickers/themeAugmentation';
 import type {} from '@mui/x-charts/themeAugmentation';
 import type {} from '@mui/x-data-grid/themeAugmentation';
@@ -23,7 +24,7 @@ const xThemeComponents = {
 };
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   disableCustomTheme?: boolean;
 }
 
@@ -34,7 +35,6 @@ export default function Layout({ children, disableCustomTheme }: LayoutProps) {
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />
-        {/* Main content */}
         <Box
           component="main"
           sx={(theme) => ({

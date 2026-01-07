@@ -1,16 +1,16 @@
-import * as React from 'react';
-import { BlockedSite, BlockedSiteCreate, PaginatedResponse } from '../types/blockedSite';
+import { useState, useCallback, useEffect } from 'react';
+import { BlockedSite, PaginatedResponse } from '../types/blockedSite';
 import { API_ENDPOINTS } from '../config/api';
 
 export function useBlockedSites() {
-  const [blockedSites, setBlockedSites] = React.useState<BlockedSite[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
-  const [domainSearch, setDomainSearch] = React.useState('');
+  const [blockedSites, setBlockedSites] = useState<BlockedSite[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [domainSearch, setDomainSearch] = useState('');
 
-  const fetchBlockedSites = React.useCallback(async (currentPage: number, currentPageSize: number, currentDomainSearch?: string) => {
+  const fetchBlockedSites = useCallback(async (currentPage: number, currentPageSize: number, currentDomainSearch?: string) => {
     try {
       setLoading(true);
       const response = await fetch(API_ENDPOINTS.blockedSites(currentPage, currentPageSize, currentDomainSearch));
@@ -41,15 +41,13 @@ export function useBlockedSites() {
     }
   }, []);
 
-  React.useEffect(() => {
-    // Reset to page 1 when domain search changes
+  useEffect(() => {
     setPage(1);
   }, [domainSearch]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchBlockedSites(page, pageSize, domainSearch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, domainSearch]); // fetchBlockedSites is intentionally excluded to avoid circular dependency
+  }, [page, pageSize, domainSearch]); 
 
   return {
     blockedSites,

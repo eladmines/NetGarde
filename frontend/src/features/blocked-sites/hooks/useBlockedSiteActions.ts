@@ -1,25 +1,25 @@
-import * as React from 'react';
+import { useState, useCallback } from 'react';
 import { BlockedSite } from '../types/blockedSite';
 import { API_ENDPOINTS } from '../config/api';
 
 export function useBlockedSiteActions(onDeleteSuccess?: () => void) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [blockedSiteToDelete, setBlockedSiteToDelete] = React.useState<BlockedSite | null>(null);
-  const [deleting, setDeleting] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [blockedSiteToDelete, setBlockedSiteToDelete] = useState<BlockedSite | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleOpenDeleteDialog = React.useCallback((blockedSite: BlockedSite) => {
+  const handleOpenDeleteDialog = useCallback((blockedSite: BlockedSite) => {
     setBlockedSiteToDelete(blockedSite);
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleCloseDeleteDialog = React.useCallback(() => {
+  const handleCloseDeleteDialog = useCallback(() => {
     if (!deleting) {
       setDeleteDialogOpen(false);
       setBlockedSiteToDelete(null);
     }
   }, [deleting]);
 
-  const handleConfirmDelete = React.useCallback(async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!blockedSiteToDelete) return;
 
     try {
