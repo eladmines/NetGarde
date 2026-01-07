@@ -131,11 +131,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
 ) {
   const { id, itemId, label, disabled, children, ...other } = props;
 
-  if (!id) {
-    throw new Error('CustomTreeItem requires an id prop');
-  }
-
-  const treeItemId: string = id;
+  const treeItemId: string = id ?? itemId;
 
   const useTreeItemParams: UseTreeItemParameters = {
     id: treeItemId,
@@ -159,7 +155,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
   const item = publicAPI.getItem(itemId);
   const color = item?.color;
   return (
-    <TreeItemProvider id={id} itemId={itemId}>
+    <TreeItemProvider id={treeItemId} itemId={itemId}>
       <TreeItemRoot {...getRootProps(other)}>
         <TreeItemContent
           {...getContentProps({
