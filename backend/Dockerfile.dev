@@ -11,5 +11,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Do NOT copy backend source; volume mount will handle that
 EXPOSE 8000
 
+# Set environment variables for hot reload
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
 # Start FastAPI in auto-reload mode
-CMD ["bash", "-c", "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done; alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+# --reload enables hot reload for code changes
+# --reload-dir specifies which directories to watch (defaults to current directory)
+CMD ["bash", "-c", "until nc -z db 5432; do echo 'Waiting for database...'; sleep 2; done; alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app"]

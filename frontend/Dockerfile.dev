@@ -15,5 +15,11 @@ COPY public ./public
 # Do NOT copy src; it will be mounted as a volume for hot reload
 EXPOSE 3000
 
+# Set environment variables for hot reload
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+ENV FAST_REFRESH=true
+
 # Start React dev server (with hot reload)
+# Use 0.0.0.0 to allow connections from outside the container
 CMD ["npm", "start"]
