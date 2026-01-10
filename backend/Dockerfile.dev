@@ -5,8 +5,8 @@ WORKDIR /app
 # Install netcat for wait logic
 RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements*.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 # Do NOT copy backend source; volume mount will handle that
 EXPOSE 8000

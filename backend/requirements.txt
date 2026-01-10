@@ -1,12 +1,15 @@
+# Web Framework
 fastapi==0.114.0
 uvicorn[standard]==0.30.6
+
+# Database
 sqlalchemy==2.0.35
-pydantic==2.9.2
-python-dotenv==1.0.1
-pydantic-settings==2.5.2
 psycopg2-binary==2.9.9
 alembic==1.13.2
-pytest
-pytest-asyncio
-httpx
-pytest-cov
+
+# Validation & Settings
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# Environment
+python-dotenv==1.0.1
