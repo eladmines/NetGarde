@@ -221,9 +221,12 @@ class TestBlockedSiteRepository:
 
     def test_get_counts_by_category_excludes_deleted(self, db_session):
         repository = BlockedSiteRepository(db_session)
-        BlockedSite(domain="deleted1.com", reason="test", category="Malware", is_deleted=True)
-        BlockedSite(domain="active1.com", reason="test", category="Malware", is_deleted=False)
-        BlockedSite(domain="active2.com", reason="test", category="Malware", is_deleted=False)
+        deleted = BlockedSite(domain="deleted1.com", reason="test", category="Malware", is_deleted=True)
+        active1 = BlockedSite(domain="active1.com", reason="test", category="Malware", is_deleted=False)
+        active2 = BlockedSite(domain="active2.com", reason="test", category="Malware", is_deleted=False)
+        db_session.add(deleted)
+        db_session.add(active1)
+        db_session.add(active2)
         db_session.commit()
         
         counts = repository.get_counts_by_category()
