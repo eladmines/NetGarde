@@ -1,0 +1,13 @@
+# Python cache (global)
+__pycache__/
+*.pyc
+
+# Environment files (global)
+.env
+.env.*
+
+# Node
+node_modules/
+
+# GitHub
+.github/secrets

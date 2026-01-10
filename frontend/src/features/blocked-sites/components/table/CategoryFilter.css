@@ -1,0 +1,74 @@
+.categoryFilterIcon {
+  margin-left: auto !important;  
+  padding: 0 !important;
+  color: #ffffff !important;
+  background: transparent !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.categoryFilterIcon:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+  background-color: transparent !important;
+}
+
+.categoryFilterIcon:focus {
+  outline: none !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+.categoryFilterIcon.hasFilters {
+  color: #ffffff !important;
+}
+
+.categoryFilterIcon.hasFilters:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+  background-color: transparent !important;
+}
+
+
+.categoryFilterIcon.MuiIconButton-root {
+  border: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.categoryFilterIcon.MuiIconButton-root:hover {
+  background-color: transparent !important;
+}
+
+.categoryFilterIcon.MuiIconButton-root:focus {
+  outline: none !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+.categoryFilterPopover .MuiPopover-paper {
+  margin-top: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.categoryFilterContent {
+  padding: 8px;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.categoryFilterCheckbox {
+  margin: 4px 0;
+}
+
+.categoryFilterLoading,
+.categoryFilterEmpty {
+  padding: 12px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875rem;
+}
+

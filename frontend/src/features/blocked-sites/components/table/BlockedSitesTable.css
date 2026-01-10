@@ -1,0 +1,409 @@
+.blockedSitesTableContainer {
+   
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+  background-color: #ffffff;
+  box-shadow: none;
+}
+
+.blockedSitesTableContainer .dataGrid {
+  overflow: visible !important; 
+}
+
+.dataGrid {
+  border: none;
+}
+
+.dataGrid .MuiDataGrid-cell:focus,
+.dataGrid .MuiDataGrid-cell:focus-within {
+  outline: none !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: none !important;
+}
+
+
+.dataGrid .MuiDataGrid-row:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.dataGrid .MuiDataGrid-row:hover .MuiDataGrid-cell {
+  background-color: #f5f5f5 !important;
+}
+
+.dataGrid .MuiDataGrid-row:focus-within {
+  outline: none;
+}
+
+.dataGrid .MuiDataGrid-cell {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: none;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.dataGrid .MuiDataGrid-cell.Mui-selected {
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: transparent !important;
+}
+
+.dataGrid .MuiDataGrid-cell.Mui-selected:focus {
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+.dataGrid .MuiDataGrid-cell--withBorder {
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: none !important;
+}
+
+.dataGrid .MuiDataGrid-cellContent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+}
+
+.dataGrid .MuiDataGrid-columnHeader {
+  border-right: none !important;
+  padding: 12px 16px;
+  background-color: #fafafa !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+  cursor: default !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-iconButtonContainer,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-iconButtonContainer,
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-sortIcon,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-sortIcon,
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-iconButtonContainer *,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-iconButtonContainer *,
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-columnHeaderTitleContainer .MuiDataGrid-iconButtonContainer,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-columnHeaderTitleContainer .MuiDataGrid-iconButtonContainer,
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-columnHeaderTitleContainer > .MuiDataGrid-iconButtonContainer,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-columnHeaderTitleContainer > .MuiDataGrid-iconButtonContainer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+
+
+
+.dataGrid .MuiDataGrid-columnHeader:last-child {
+  border-right: none !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader:focus,
+.dataGrid .MuiDataGrid-columnHeader:focus-within {
+  outline: none !important;
+  border: none !important;
+}
+
+
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderContainer {
+  pointer-events: auto !important;
+  z-index: 10;
+  position: relative;
+  width: 100%;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderSearch {
+  pointer-events: auto !important;
+  cursor: text !important;
+  z-index: 11;
+  position: relative;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderSearch * {
+  pointer-events: auto !important;
+  cursor: text !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderSearch input,
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderSearch .MuiOutlinedInput-root,
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderSearch .MuiOutlinedInput-input {
+  pointer-events: auto !important;
+  cursor: text !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .domainHeaderSearch .MuiInputAdornment-root {
+  pointer-events: none !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .categoryHeaderContainer {
+  display: flex;
+  justify-content: space-between;   
+  align-items: center;
+  width: 100%;
+  padding: 0;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .categoryHeaderTitle {
+  flex-shrink: 0;
+  color: rgba(0, 0, 0, 0.87) !important;
+  font-weight: 600;
+}
+
+.dataGrid .MuiDataGrid-columnHeader .categoryFilterWrapper {
+  margin-left: auto;                 
+  display: flex;
+  align-items: center;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.dataGrid .MuiDataGrid-columnHeaderTitle {
+  color: rgba(0, 0, 0, 0.87) !important;
+  font-weight: 600;
+}
+
+.dataGrid .MuiDataGrid-columnHeaders {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background-color: #fafafa !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader {
+  background-color: #fafafa !important;
+}
+
+
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"],
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  position: relative !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-columnHeaderTitleContainer,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-columnHeaderTitleContainer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  flex: 1 !important;
+}
+
+.dataGrid .MuiDataGrid-columnHeader[data-field="created_at"] .MuiDataGrid-columnHeaderTitle,
+.dataGrid .MuiDataGrid-columnHeader[data-field="updated_at"] .MuiDataGrid-columnHeaderTitle {
+  flex-shrink: 0 !important;
+  margin-right: auto !important;
+}
+
+
+
+.dataGrid .MuiDataGrid-footerContainer {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  padding-top: 0 !important;
+  padding-bottom: 4px !important; 
+  min-height: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  height: auto !important;
+  overflow: visible !important; 
+}
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-root {
+  margin: 0 !important;
+  padding: 8px 8px !important; 
+  min-height: auto !important; 
+  height: auto !important; 
+  overflow: visible !important; 
+}
+
+.dataGrid .MuiDataGrid-row:last-child .MuiDataGrid-cell {
+  border-bottom: none;
+}
+
+.dataGrid .MuiDataGrid-main {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-virtualScroller {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-virtualScrollerContent {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-root {
+  border: none;
+  overflow: visible !important; 
+}
+
+.dataGrid .MuiDataGrid-container--bottom {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 4px !important; 
+  overflow: visible !important;
+}
+
+.dataGrid .MuiDataGrid-rowsContainer {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-window {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-scrollbar--vertical {
+  display: none !important;
+}
+
+.dataGrid .MuiDataGrid-virtualScroller {
+  overflow-y: hidden !important;
+}
+
+.dataGrid .MuiDataGrid-virtualScrollerContent {
+  overflow-y: hidden !important;
+}
+
+.dataGrid .MuiDataGrid-footerContainer .MuiDataGrid-scrollbar--vertical {
+  display: none !important;
+}
+
+
+.dataGrid .MuiDataGrid-footerContainer * {
+  scrollbar-width: none !important; 
+  -ms-overflow-style: none !important; 
+}
+
+.dataGrid .MuiDataGrid-footerContainer *::-webkit-scrollbar {
+  display: none !important; 
+  width: 0 !important;
+  height: 0 !important;
+}
+
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-root * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-root *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-selectLabel,
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-select,
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-input {
+  display: none !important;
+}
+
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-displayedRows {
+  display: block !important;
+}
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-actions {
+  display: flex !important;
+}
+
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-actions .MuiIconButton-root {
+  border-radius: 0 !important;
+  min-width: 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-actions .MuiIconButton-root:hover {
+  border-radius: 0 !important;
+}
+
+.dataGrid .MuiDataGrid-footerContainer .MuiTablePagination-actions .MuiIconButton-root:focus {
+  border-radius: 0 !important;
+}
+
+.emptyStateText {
+  margin-bottom: 16px;
+}
+
+.searchStack {
+  margin-bottom: 16px;
+}
+
+.searchFormControl {
+  max-width: 400px;
+  width: 100%;
+}
+
+.searchInput {
+  background-color: white;
+}
+
+.searchInput .MuiOutlinedInput-root {
+  background-color: white;
+}
+
+.searchInput .MuiOutlinedInput-root:hover {
+  background-color: white;
+}
+
+.searchInput .MuiOutlinedInput-root.Mui-focused {
+  background-color: white;
+}
+
+.searchResultsText {
+  white-space: nowrap;
+}
+
+.inputAdornment {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 1000;
+  pointer-events: none;
+}
+

@@ -1,0 +1,16 @@
+.searchFormControl {
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .searchFormControl {
+    width: 25ch;
+  }
+}
+
+.outlinedInput {
+  flex-grow: 1;
+}
+
+
+
