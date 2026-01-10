@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from fastapi import HTTPException
 from app.features.blocked_sites.controllers.blocked_site_controller import (
     create_blocked_site_controller,
@@ -126,15 +126,22 @@ class TestBlockedSiteController:
         mock_paginated_response.items = mock_sites
         mock_paginated_response.page = 1
         mock_paginated_response.page_size = 10
+        mock_paginated_response.total_pages = 1
         
         mock_service.get_blocked_sites.return_value = (mock_sites, 3)
         
+        mock_param_type = Mock()
+        mock_param_type.create = Mock(return_value=mock_paginated_response)
+        
         with patch('app.features.blocked_sites.controllers.blocked_site_controller.PaginatedResponse') as mock_paginated:
-            mock_paginated.create.return_value = mock_paginated_response
+            mock_paginated.__getitem__ = Mock(return_value=mock_param_type)
             result = get_blocked_sites_controller(mock_db_session, mock_service, page=1, page_size=10)
         
         assert result.total == 3
         assert len(result.items) == 3
+        assert result.page == 1
+        assert result.page_size == 10
+        assert result.total_pages == 1
         mock_service.get_blocked_sites.assert_called_once_with(mock_db_session, page=1, page_size=10, domain_search=None)
 
     def test_get_blocked_sites_controller_handles_error(self, mock_db_session, mock_service):
@@ -220,16 +227,17 @@ class TestBlockedSiteController:
         assert exc_info.value.status_code == 500
 
     def test_get_blocked_sites_counts_by_category_controller_success(self, mock_db_session, mock_service):
+        from app.features.blocked_sites.schemas.blocked_site import CategoryCountsResponse
+        
         mock_counts = {"Malware": 5, "Phishing": 3}
-        mock_response = Mock()
-        mock_response.counts = mock_counts
         
         mock_service.get_blocked_sites_counts_by_category.return_value = mock_counts
         
-        with patch('app.features.blocked_sites.controllers.blocked_site_controller.CategoryCountsResponse', return_value=mock_response):
-            result = get_blocked_sites_counts_by_category_controller(mock_db_session, mock_service)
+        result = get_blocked_sites_counts_by_category_controller(mock_db_session, mock_service)
         
+        assert isinstance(result, CategoryCountsResponse)
         assert result.counts["Malware"] == 5
+        assert result.counts["Phishing"] == 3
         mock_service.get_blocked_sites_counts_by_category.assert_called_once_with(mock_db_session)
 
     def test_get_blocked_sites_counts_by_category_controller_handles_error(self, mock_db_session, mock_service):
