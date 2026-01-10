@@ -131,6 +131,11 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
 ) {
   const { id, itemId, label, disabled, children, ...other } = props;
 
+  if (!itemId) {
+    console.error('CustomTreeItem: itemId is required', props);
+    return null;
+  }
+
   const treeItemId: string = id ?? itemId;
 
   const useTreeItemParams: UseTreeItemParameters = {
