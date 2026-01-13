@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
     container_name: netgarde-api
     ports:
       - "8000:8000"

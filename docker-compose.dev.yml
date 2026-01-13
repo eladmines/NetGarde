@@ -4,7 +4,8 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: development
     container_name: netgarde-api-dev
     ports:
       - "8000:8000"
@@ -27,7 +28,8 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: development
     container_name: netgarde-frontend-dev
     ports:
       - "3000:3000"
