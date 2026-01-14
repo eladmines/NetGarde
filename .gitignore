@@ -5,6 +5,9 @@ __pycache__/
 # Environment files (global)
 .env
 .env.*
+!.env.example
+!.env.development.example
+!.env.production.example
 
 # Node
 node_modules/

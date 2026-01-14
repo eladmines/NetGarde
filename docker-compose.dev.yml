@@ -4,12 +4,13 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: development
     container_name: netgarde-api-dev
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - ./backend/.env.development
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-12345}
@@ -29,10 +30,13 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: development
     container_name: netgarde-frontend-dev
     ports:
       - "3000:3000"
+    env_file:
+      - ./frontend/.env.development
     volumes:
       - ./frontend:/app
       - /app/node_modules
