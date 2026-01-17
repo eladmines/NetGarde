@@ -131,19 +131,20 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
 ) {
   const { id, itemId, label, disabled, children, ...other } = props;
 
-  // Ensure we always have an itemId for the hook
-  const treeItemId: string = id ?? itemId ?? '';
+  // Ensure we always have an itemId for the hook (use fallback to satisfy Rules of Hooks)
+  const safeItemId = itemId || 'fallback-id';
+  const treeItemId: string = id ?? safeItemId;
 
   const useTreeItemParams: UseTreeItemParameters = {
     id: treeItemId,
-    itemId: itemId ?? '',
+    itemId: safeItemId,
     children,
     label,
     rootRef: ref,
     ...(disabled !== undefined && { disabled }),
   };
 
-  // Hook must be called unconditionally
+  // Hook must be called unconditionally (Rules of Hooks requirement)
   const {
     getRootProps,
     getContentProps,
@@ -154,7 +155,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     publicAPI,
   } = useTreeItem(useTreeItemParams);
 
-  // Check for error after hook is called
+  // Handle missing itemId case (but hook was already called)
   if (!itemId) {
     console.error('CustomTreeItem: itemId is required', props);
     return null;
