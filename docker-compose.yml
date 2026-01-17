@@ -2,12 +2,15 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
     container_name: netgarde-api
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - ./backend/.env.production
     environment:
       - DB_URL=${DB_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-netgarde}}
       - PYTHONUNBUFFERED=1

@@ -131,21 +131,19 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
 ) {
   const { id, itemId, label, disabled, children, ...other } = props;
 
-  if (!id) {
-    throw new Error('CustomTreeItem requires an id prop');
-  }
-
-  const treeItemId: string = id;
+  // Ensure we always have an itemId for the hook
+  const treeItemId: string = id ?? itemId ?? '';
 
   const useTreeItemParams: UseTreeItemParameters = {
     id: treeItemId,
-    itemId,
+    itemId: itemId ?? '',
     children,
     label,
     rootRef: ref,
     ...(disabled !== undefined && { disabled }),
   };
 
+  // Hook must be called unconditionally
   const {
     getRootProps,
     getContentProps,
@@ -156,10 +154,16 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     publicAPI,
   } = useTreeItem(useTreeItemParams);
 
+  // Check for error after hook is called
+  if (!itemId) {
+    console.error('CustomTreeItem: itemId is required', props);
+    return null;
+  }
+
   const item = publicAPI.getItem(itemId);
   const color = item?.color;
   return (
-    <TreeItemProvider id={id} itemId={itemId}>
+    <TreeItemProvider id={treeItemId} itemId={itemId}>
       <TreeItemRoot {...getRootProps(other)}>
         <TreeItemContent
           {...getContentProps({

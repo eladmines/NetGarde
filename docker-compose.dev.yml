@@ -4,38 +4,51 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: development
     container_name: netgarde-api-dev
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - ./backend/.env.development
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-12345}
       - POSTGRES_DB=${POSTGRES_DB:-netgarde}
       - DB_URL=${DB_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@db:5432/${POSTGRES_DB:-netgarde}}
       - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/__pycache__
+      - /app/.pytest_cache
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: development
     container_name: netgarde-frontend-dev
     ports:
       - "3000:3000"
+    env_file:
+      - ./frontend/.env.development
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - WDS_SOCKET_HOST=localhost
+      - WDS_SOCKET_PORT=3000
+      - REACT_APP_API_BASE_URL=http://localhost:8000
+    stdin_open: true
+    tty: true
     command: npm start
     depends_on:
       - backend
