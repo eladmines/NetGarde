@@ -47,7 +47,7 @@ export function useBlockedSites() {
 
   useEffect(() => {
     fetchBlockedSites(page, pageSize, domainSearch);
-  }, [page, pageSize, domainSearch]); 
+  }, [page, pageSize, domainSearch, fetchBlockedSites]); 
 
   return {
     blockedSites,
