@@ -1,5 +1,5 @@
 import { useMemo, ChangeEvent } from 'react';
-import { GridColDef, GridColumnHeaderParams, GridSortModel } from '@mui/x-data-grid';
+import { GridColDef, GridSortModel } from '@mui/x-data-grid';
 import Box from '@mui/material/Box';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';

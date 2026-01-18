@@ -10,6 +10,7 @@ import IconButton from '@mui/material/IconButton';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MenuContent from './MenuContent';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import CardAlert from './CardAlert';
 import OptionsMenu from './OptionsMenu';
 import './SideMenu.css';
