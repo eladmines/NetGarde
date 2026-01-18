@@ -25,6 +25,7 @@ export default function CategoriesTable({
   onDelete,
 }: CategoriesTableProps) {
   const [blockedSitesCounts, setBlockedSitesCounts] = useState<Record<string, number>>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loadingCounts, setLoadingCounts] = useState(true);
 
   useEffect(() => {

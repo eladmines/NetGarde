@@ -79,6 +79,7 @@ export function useCategoriesColumns({
         },
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [onEdit, onDelete, blockedSitesCounts],
   );
 }
