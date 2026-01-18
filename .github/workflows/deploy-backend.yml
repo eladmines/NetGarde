@@ -72,6 +72,8 @@ jobs:
             cd ~/netgarde
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
             docker compose pull
+            echo "Running database migrations..."
+            docker compose run --rm backend alembic upgrade head
             docker compose up -d
             docker compose ps 
 
