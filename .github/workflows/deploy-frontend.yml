@@ -11,7 +11,7 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: netgarde-frontend
   CLOUDFRONT_DISTRIBUTION_ID: E26UGOT5YUPFRY
-  BACKEND_API_URL: http://44.218.45.174:8000
+  BACKEND_API_URL: https://daemixzdg8jfd.cloudfront.net
 
 jobs:
   build-and-deploy:

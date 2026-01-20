@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 
 
 # revision identifiers, used by Alembic.
@@ -20,14 +21,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Drop old rules table if it exists
-    try:
-        op.drop_index(op.f('ix_rules_id'), table_name='rules')
-        op.drop_index(op.f('ix_rules_domain'), table_name='rules')
-        op.drop_table('rules')
-    except Exception:
-        # Table might not exist, continue
-        pass
+    # Drop old rules table if it exists (using raw SQL with IF EXISTS to avoid transaction errors)
+    connection = op.get_bind()
+    
+    # Drop indexes if they exist (using IF EXISTS to avoid errors)
+    connection.execute(text("DROP INDEX IF EXISTS ix_rules_id"))
+    connection.execute(text("DROP INDEX IF EXISTS ix_rules_domain"))
+    
+    # Drop table if it exists (using IF EXISTS to avoid errors)
+    connection.execute(text("DROP TABLE IF EXISTS rules CASCADE"))
     
     # Create new blocked_sites table
     op.create_table('blocked_sites',
