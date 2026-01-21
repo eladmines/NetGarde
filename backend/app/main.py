@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 from sqlalchemy.orm import Session
 
 from app.shared.utils.logging import setup_logging
@@ -11,14 +11,18 @@ from app.features.categories.routes.category_route import router as category_rou
 # Initialize logging early
 setup_logging()
 
-app = FastAPI(title="NetGarde API")
+app = FastAPI(
+    title="NetGarde API",
+    redirect_slashes=False,  # prevent 307 redirects
+)
 
+# Trust proxy headers (CloudFront / ALB)
 app.add_middleware(
     ProxyHeadersMiddleware,
     trusted_hosts="*",
 )
 
-# Add CORS middleware
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
