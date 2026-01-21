@@ -11,14 +11,18 @@ from app.features.categories.routes.category_route import router as category_rou
 # Initialize logging early
 setup_logging()
 
-app = FastAPI(title="NetGarde API")
+app = FastAPI(
+    title="NetGarde API",
+    redirect_slashes=False,  # prevent 307 redirects
+)
 
+# Trust proxy headers (CloudFront / ALB)
 app.add_middleware(
     ProxyHeadersMiddleware,
     trusted_hosts="*",
 )
 
-# Add CORS middleware
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
