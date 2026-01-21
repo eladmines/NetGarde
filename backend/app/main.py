@@ -13,7 +13,7 @@ setup_logging()
 
 app = FastAPI(
     title="NetGarde API",
-    redirect_slashes=False,  # prevent 307 redirects
+    redirect_slashes=True,  # allow redirects for trailing slash handling
 )
 
 # Trust proxy headers (CloudFront / ALB)
