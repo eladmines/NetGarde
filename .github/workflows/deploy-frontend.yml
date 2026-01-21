@@ -38,7 +38,7 @@ jobs:
       - name: Build React app
         working-directory: ./frontend
         env:
-          REACT_APP_API_BASE_URL: ${{ env.BACKEND_API_URL }}
+          REACT_APP_API_BASE_URL: "test
         run: npm run build
 
       - name: Configure AWS credentials
