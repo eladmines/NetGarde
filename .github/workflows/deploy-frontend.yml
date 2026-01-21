@@ -38,7 +38,7 @@ jobs:
       - name: Build React app
         working-directory: ./frontend
         env:
-          REACT_APP_API_BASE_URL: "https://google.com"
+          REACT_APP_API_BASE_URL: "https://daemixzdg8jfd.cloudfront.net"
         run: npm run build
 
       - name: Configure AWS credentials
