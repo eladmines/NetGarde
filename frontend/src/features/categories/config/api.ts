@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://test.cloudfront.net"
+const API_BASE_URL = "https://daemixzdg8jfd.cloudfront.net"
 
 export const API_ENDPOINTS = {
   categories: `${API_BASE_URL}/categories`,
