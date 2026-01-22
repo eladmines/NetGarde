@@ -34,7 +34,7 @@ class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI(
     title="NetGarde API",
-    redirect_slashes=True,  # allow redirects for trailing slash handling
+    redirect_slashes=False,  # allow redirects for trailing slash handling
 )
 
 # Add HTTPS redirect middleware first (before other middleware)
