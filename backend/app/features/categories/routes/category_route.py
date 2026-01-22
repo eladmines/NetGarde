@@ -13,12 +13,12 @@ from app.shared.dependencies import get_db
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-@router.post("/")
+@router.post("")
 def create_category_endpoint(category_data: CategoryCreate, db: Session = Depends(get_db)):
     return create_category_controller(category_data, db)
 
 
-@router.get("/")
+@router.get("")
 def get_categories_endpoint(db: Session = Depends(get_db)):
     return get_categories_controller(db)
 
