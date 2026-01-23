@@ -69,12 +69,35 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/netgarde
+            set -e
+            echo "Checking deployment directory..."
+            if [ ! -d ~/netgarde ]; then
+              echo "Directory ~/netgarde does not exist. Creating it..."
+              mkdir -p ~/netgarde
+            fi
+            cd ~/netgarde || { echo "Failed to change to ~/netgarde directory"; exit 1; }
+            echo "Current directory: $(pwd)"
+            echo "Pulling latest code from ${{ github.ref_name }} branch..."
+            if [ -d .git ]; then
+              git fetch origin
+              git checkout ${{ github.ref_name }} || git checkout -b ${{ github.ref_name }} origin/${{ github.ref_name }}
+              git pull origin ${{ github.ref_name }}
+            else
+              echo "Git repository not found. Initializing..."
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git || git remote set-url origin https://github.com/${{ github.repository }}.git
+              git fetch origin
+              git checkout -b ${{ github.ref_name }} origin/${{ github.ref_name }} || git checkout ${{ github.ref_name }}
+            fi
+            echo "Logging into ECR..."
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+            echo "Pulling latest Docker images..."
             docker compose pull
             echo "Running database migrations..."
             docker compose run --rm backend alembic upgrade head
+            echo "Restarting services..."
             docker compose up -d
+            echo "Service status:"
             docker compose ps 
 
             
