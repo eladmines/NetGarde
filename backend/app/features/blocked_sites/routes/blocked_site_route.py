@@ -23,7 +23,7 @@ def create_blocked_site_endpoint(
 ):
     return create_blocked_site_controller(blocked_site_data, db, service)
 
-@router.get("/")
+@router.get("")
 def get_blocked_sites_endpoint(
     page: int = Query(default=1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(default=10, ge=1, le=100, description="Number of items per page"),
