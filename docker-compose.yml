@@ -55,13 +55,15 @@ services:
     volumes:
       - /etc/dnsmasq.d:/etc/dnsmasq.d:rw
     environment:
-      - API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
+      - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
       - API_ENDPOINT=${API_ENDPOINT:-/blocked-sites}
       - BLOCK_IP=${BLOCK_IP:-0.0.0.0}
       - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/netgarde-blocked.conf}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0}
       - PAGE_SIZE=${PAGE_SIZE:-100}
       - DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
+    depends_on:
+      - backend
     # No restart policy for cron mode - container runs once and exits
 
 volumes:
