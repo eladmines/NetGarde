@@ -114,6 +114,18 @@ jobs:
             fi
             echo "Code updated successfully!"
             
+            # Create .env.production if it doesn't exist
+            echo "Checking for backend/.env.production..."
+            if [ ! -f backend/.env.production ]; then
+              echo "Creating backend/.env.production with default values..."
+              mkdir -p backend
+              echo "# Production environment variables" > backend/.env.production
+              echo "# Generated automatically - update with your actual values if needed" >> backend/.env.production
+              echo "Created backend/.env.production"
+            else
+              echo "backend/.env.production already exists"
+            fi
+            
             # Login to ECR and pull backend image
             echo "Logging into ECR..."
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
