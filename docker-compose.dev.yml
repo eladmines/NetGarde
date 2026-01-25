@@ -72,5 +72,25 @@ services:
       retries: 5
     restart: unless-stopped
 
+  dns-sync:
+    build:
+      context: ./dns-sync
+      dockerfile: Dockerfile
+    container_name: netgarde-dns-sync-dev
+    volumes:
+      # Use local directory for dev instead of system dnsmasq.d
+      - ./dns-sync/output:/etc/dnsmasq.d:rw
+    environment:
+      - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
+      - API_ENDPOINT=${API_ENDPOINT:-/blocked-sites}
+      - BLOCK_IP=${BLOCK_IP:-0.0.0.0}
+      - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/netgarde-blocked.conf}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-0}  # Run once and exit (for manual testing)
+      - PAGE_SIZE=${PAGE_SIZE:-100}
+      - DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-}  # Empty for dev
+    depends_on:
+      - backend
+    # No restart policy - run manually when needed
+
 volumes:
   pgdata:
