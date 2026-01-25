@@ -12,19 +12,13 @@ services:
     env_file:
       - ./backend/.env.production
     environment:
-      DB_URL: ${DB_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-netgarde}}
+      DB_URL: ${DB_URL}
       PYTHONUNBUFFERED: "1"
-    depends_on:
-      - db
     restart: always
     volumes:
       - ./backend:/app
     command: >
       bash -c "
-      until nc -z db 5432; do
-        echo 'Waiting for database...';
-        sleep 2;
-      done &&
       alembic upgrade head &&
       uvicorn app.main:app
         --host 0.0.0.0
@@ -32,19 +26,6 @@ services:
         --proxy-headers
         --forwarded-allow-ips='*'
       "
-
-  db:
-    image: postgres:16
-    container_name: netgarde-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-netgarde}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: always
 
   dns-sync:
     build:
@@ -66,5 +47,3 @@ services:
       - backend
     # No restart policy for cron mode - container runs once and exits
 
-volumes:
-  pgdata:
