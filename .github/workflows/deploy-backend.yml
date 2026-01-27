@@ -114,17 +114,64 @@ jobs:
             fi
             echo "Code updated successfully!"
             
-            # Create .env.production if it doesn't exist
-            echo "Checking for backend/.env.production..."
-            if [ ! -f backend/.env.production ]; then
-              echo "Creating backend/.env.production with default values..."
-              mkdir -p backend
-              echo "# Production environment variables" > backend/.env.production
-              echo "# Generated automatically - update with your actual values if needed" >> backend/.env.production
-              echo "Created backend/.env.production"
-            else
-              echo "backend/.env.production already exists"
+            # Fetch RDS credentials from AWS Secrets Manager
+            echo "Fetching RDS credentials from AWS Secrets Manager..."
+            SECRET_ARN=$(aws rds describe-db-instances \
+              --db-instance-identifier netgarde \
+              --region us-east-1 \
+              --query 'DBInstances[0].MasterUserSecret.SecretArn' \
+              --output text 2>/dev/null || echo "None")
+            
+            if [ -z "$SECRET_ARN" ] || [ "$SECRET_ARN" == "None" ]; then
+              echo "ERROR: RDS instance does not have a master user secret in Secrets Manager!"
+              echo "Please enable 'Manage master credentials in AWS Secrets Manager' in RDS console."
+              exit 1
             fi
+            
+            echo "Found secret ARN: $SECRET_ARN"
+            
+            # Retrieve the secret value
+            echo "Retrieving secret from Secrets Manager..."
+            SECRET_JSON=$(aws secretsmanager get-secret-value \
+              --secret-id "$SECRET_ARN" \
+              --region us-east-1 \
+              --query SecretString \
+              --output text)
+            
+            if [ -z "$SECRET_JSON" ]; then
+              echo "ERROR: Failed to retrieve secret from Secrets Manager!"
+              echo "Please check IAM permissions for the EC2 instance role."
+              exit 1
+            fi
+            
+            # Parse JSON to extract connection details using Python
+            echo "Parsing secret JSON..."
+            DB_USER=$(echo "$SECRET_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['username'])" 2>/dev/null)
+            DB_PASSWORD=$(echo "$SECRET_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['password'])" 2>/dev/null)
+            DB_HOST=$(echo "$SECRET_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['host'])" 2>/dev/null)
+            DB_PORT=$(echo "$SECRET_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['port'])" 2>/dev/null)
+            DB_NAME=$(echo "$SECRET_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('dbname', 'postgres'))" 2>/dev/null)
+            
+            # Validate parsed values
+            if [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_HOST" ]; then
+              echo "ERROR: Failed to parse secret JSON. Missing required fields."
+              echo "Secret JSON structure: $SECRET_JSON"
+              exit 1
+            fi
+            
+            # Build DB_URL connection string (URL encode password to handle special characters)
+            DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD'))")
+            DB_URL="postgresql+psycopg2://${DB_USER}:${DB_PASSWORD_ENCODED}@${DB_HOST}:${DB_PORT}/${DB_NAME:-postgres}"
+            
+            echo "Successfully retrieved RDS credentials from Secrets Manager"
+            echo "Database host: $DB_HOST"
+            echo "Database name: ${DB_NAME:-postgres}"
+            
+            # Create .env.production with the credentials
+            mkdir -p backend
+            echo "DB_URL=$DB_URL" > backend/.env.production
+            echo "PYTHONUNBUFFERED=1" >> backend/.env.production
+            echo "Created backend/.env.production with credentials from Secrets Manager"
             
             # Login to ECR and pull backend image
             echo "Logging into ECR..."
