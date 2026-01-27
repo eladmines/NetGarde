@@ -116,15 +116,58 @@ jobs:
             
             # Fetch RDS credentials from AWS Secrets Manager
             echo "Fetching RDS credentials from AWS Secrets Manager..."
+            
+            # First, try to find the RDS instance (try common identifiers)
+            DB_INSTANCE_ID=""
+            for identifier in "netgarde" "netgarde-db" "netgarde-rds"; do
+              echo "Checking for RDS instance: $identifier"
+              if aws rds describe-db-instances --db-instance-identifier "$identifier" --region us-east-1 --query 'DBInstances[0].DBInstanceIdentifier' --output text 2>/dev/null | grep -q "$identifier"; then
+                DB_INSTANCE_ID="$identifier"
+                echo "Found RDS instance: $DB_INSTANCE_ID"
+                break
+              fi
+            done
+            
+            # If not found, list all RDS instances to help debug
+            if [ -z "$DB_INSTANCE_ID" ]; then
+              echo "WARNING: Could not find RDS instance with common identifiers."
+              echo "Listing all RDS instances in us-east-1:"
+              aws rds describe-db-instances --region us-east-1 --query 'DBInstances[*].[DBInstanceIdentifier,DBInstanceStatus]' --output table 2>/dev/null || echo "Could not list RDS instances"
+              echo ""
+              echo "Please update the script with the correct DB instance identifier."
+              echo "Trying with 'netgarde' as fallback..."
+              DB_INSTANCE_ID="netgarde"
+            fi
+            
+            # Get the secret ARN
             SECRET_ARN=$(aws rds describe-db-instances \
-              --db-instance-identifier netgarde \
+              --db-instance-identifier "$DB_INSTANCE_ID" \
               --region us-east-1 \
               --query 'DBInstances[0].MasterUserSecret.SecretArn' \
               --output text 2>/dev/null || echo "None")
             
+            # Check if modification is in progress
+            MODIFICATION_STATUS=$(aws rds describe-db-instances \
+              --db-instance-identifier "$DB_INSTANCE_ID" \
+              --region us-east-1 \
+              --query 'DBInstances[0].PendingModifiedValues' \
+              --output text 2>/dev/null || echo "")
+            
             if [ -z "$SECRET_ARN" ] || [ "$SECRET_ARN" == "None" ]; then
-              echo "ERROR: RDS instance does not have a master user secret in Secrets Manager!"
-              echo "Please enable 'Manage master credentials in AWS Secrets Manager' in RDS console."
+              echo "ERROR: RDS instance '$DB_INSTANCE_ID' does not have a master user secret in Secrets Manager!"
+              echo ""
+              echo "Troubleshooting steps:"
+              echo "1. Check if the RDS modification to enable Secrets Manager has completed:"
+              echo "   aws rds describe-db-instances --db-instance-identifier $DB_INSTANCE_ID --region us-east-1 --query 'DBInstances[0].[DBInstanceStatus,PendingModifiedValues]'"
+              echo ""
+              echo "2. Verify Secrets Manager is enabled in RDS console:"
+              echo "   - Go to RDS Console > Databases > $DB_INSTANCE_ID"
+              echo "   - Check 'Manage master credentials in AWS Secrets Manager' is enabled"
+              echo ""
+              echo "3. If modification is in progress, wait for it to complete (can take 5-10 minutes)"
+              echo ""
+              echo "4. Check if the secret exists in Secrets Manager:"
+              echo "   aws secretsmanager list-secrets --region us-east-1 --filters Key=tag-key,Values=aws:rds:primary-secret-for-db-instance-id"
               exit 1
             fi
             
