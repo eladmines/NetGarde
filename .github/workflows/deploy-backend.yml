@@ -11,6 +11,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: netgarde-backend
   ECR_REGISTRY: 804012660077.dkr.ecr.us-east-1.amazonaws.com
+  RDS_INSTANCE_ID: ${{ secrets.RDS_INSTANCE_ID || 'netgarde' }}
 
 jobs:
   build-and-push:
@@ -117,57 +118,87 @@ jobs:
             # Fetch RDS credentials from AWS Secrets Manager
             echo "Fetching RDS credentials from AWS Secrets Manager..."
             
-            # First, try to find the RDS instance (try common identifiers)
-            DB_INSTANCE_ID=""
-            for identifier in "netgarde" "netgarde-db" "netgarde-rds"; do
-              echo "Checking for RDS instance: $identifier"
-              if aws rds describe-db-instances --db-instance-identifier "$identifier" --region us-east-1 --query 'DBInstances[0].DBInstanceIdentifier' --output text 2>/dev/null | grep -q "$identifier"; then
-                DB_INSTANCE_ID="$identifier"
-                echo "Found RDS instance: $DB_INSTANCE_ID"
-                break
-              fi
-            done
+            # Use RDS instance ID from environment variable or default to 'netgarde'
+            DB_INSTANCE_ID="${RDS_INSTANCE_ID:-netgarde}"
+            echo "Using RDS instance identifier: $DB_INSTANCE_ID"
             
-            # If not found, list all RDS instances to help debug
-            if [ -z "$DB_INSTANCE_ID" ]; then
-              echo "WARNING: Could not find RDS instance with common identifiers."
-              echo "Listing all RDS instances in us-east-1:"
-              aws rds describe-db-instances --region us-east-1 --query 'DBInstances[*].[DBInstanceIdentifier,DBInstanceStatus]' --output table 2>/dev/null || echo "Could not list RDS instances"
+            # Verify AWS CLI is configured
+            echo "Checking AWS CLI configuration..."
+            if ! aws sts get-caller-identity > /dev/null 2>&1; then
+              echo "ERROR: AWS CLI is not configured or credentials are invalid"
+              echo "The EC2 instance needs an IAM role with appropriate permissions."
+              exit 1
+            fi
+            AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "Unknown")
+            echo "AWS Account: $AWS_ACCOUNT"
+            
+            # Get the secret ARN and instance status
+            echo "Describing RDS instance: $DB_INSTANCE_ID"
+            
+            # First check if we can describe the instance
+            RDS_DESCRIBE_OUTPUT=$(aws rds describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" --region us-east-1 2>&1)
+            RDS_DESCRIBE_EXIT_CODE=$?
+            
+            if [ $RDS_DESCRIBE_EXIT_CODE -ne 0 ]; then
+              echo "ERROR: Failed to describe RDS instance '$DB_INSTANCE_ID'"
+              echo "AWS CLI error output:"
+              echo "$RDS_DESCRIBE_OUTPUT"
               echo ""
-              echo "Please update the script with the correct DB instance identifier."
-              echo "Trying with 'netgarde' as fallback..."
-              DB_INSTANCE_ID="netgarde"
+              echo "Possible issues:"
+              if echo "$RDS_DESCRIBE_OUTPUT" | grep -q "DBInstanceNotFound"; then
+                echo "  1. RDS instance '$DB_INSTANCE_ID' does not exist in region us-east-1"
+                echo "     - Verify the identifier is correct in RDS Console"
+                echo "     - Check if the instance is in a different region"
+              elif echo "$RDS_DESCRIBE_OUTPUT" | grep -q "AccessDenied\|UnauthorizedOperation"; then
+                echo "  1. IAM permissions issue: EC2 instance role needs 'rds:DescribeDBInstances' permission"
+                echo "     - Go to IAM Console > Roles > [Your EC2 instance role]"
+                echo "     - Attach policy: AmazonRDSReadOnlyAccess"
+                echo "     - Or create custom policy with: rds:DescribeDBInstances"
+              else
+                echo "  1. Unknown error - see AWS CLI output above"
+              fi
+              echo ""
+              echo "  2. Verify the RDS instance identifier is correct (you said it's 'netgarde')"
+              echo "  3. Verify the region is correct (currently checking us-east-1)"
+              echo ""
+              echo "To fix IAM permissions:"
+              echo "  - IAM Console > Roles > [EC2 instance role] > Add permissions > Attach policies"
+              echo "  - Search for: AmazonRDSReadOnlyAccess"
+              exit 1
             fi
             
-            # Get the secret ARN
             SECRET_ARN=$(aws rds describe-db-instances \
               --db-instance-identifier "$DB_INSTANCE_ID" \
               --region us-east-1 \
               --query 'DBInstances[0].MasterUserSecret.SecretArn' \
               --output text 2>/dev/null || echo "None")
             
-            # Check if modification is in progress
-            MODIFICATION_STATUS=$(aws rds describe-db-instances \
+            DB_STATUS=$(aws rds describe-db-instances \
               --db-instance-identifier "$DB_INSTANCE_ID" \
               --region us-east-1 \
-              --query 'DBInstances[0].PendingModifiedValues' \
-              --output text 2>/dev/null || echo "")
+              --query 'DBInstances[0].DBInstanceStatus' \
+              --output text 2>/dev/null || echo "Unknown")
+            
+            echo "RDS instance status: $DB_STATUS"
             
             if [ -z "$SECRET_ARN" ] || [ "$SECRET_ARN" == "None" ]; then
               echo "ERROR: RDS instance '$DB_INSTANCE_ID' does not have a master user secret in Secrets Manager!"
               echo ""
               echo "Troubleshooting steps:"
-              echo "1. Check if the RDS modification to enable Secrets Manager has completed:"
-              echo "   aws rds describe-db-instances --db-instance-identifier $DB_INSTANCE_ID --region us-east-1 --query 'DBInstances[0].[DBInstanceStatus,PendingModifiedValues]'"
+              echo "1. Check RDS instance status (should be 'available', not 'modifying'):"
+              echo "   Current status: $DB_STATUS"
               echo ""
               echo "2. Verify Secrets Manager is enabled in RDS console:"
               echo "   - Go to RDS Console > Databases > $DB_INSTANCE_ID"
-              echo "   - Check 'Manage master credentials in AWS Secrets Manager' is enabled"
+              echo "   - Click 'Modify'"
+              echo "   - Scroll to 'Database authentication' section"
+              echo "   - Check 'Manage master credentials in AWS Secrets Manager'"
+              echo "   - Click 'Continue' and 'Modify DB instance'"
               echo ""
-              echo "3. If modification is in progress, wait for it to complete (can take 5-10 minutes)"
+              echo "3. Wait for modification to complete (can take 5-10 minutes)"
+              echo "   Status will change from 'modifying' to 'available'"
               echo ""
-              echo "4. Check if the secret exists in Secrets Manager:"
-              echo "   aws secretsmanager list-secrets --region us-east-1 --filters Key=tag-key,Values=aws:rds:primary-secret-for-db-instance-id"
+              echo "4. After modification completes, the secret will be automatically created"
               exit 1
             fi
             
