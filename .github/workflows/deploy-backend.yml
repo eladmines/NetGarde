@@ -204,6 +204,27 @@ jobs:
             
             echo "Found secret ARN: $SECRET_ARN"
             
+            # Get RDS endpoint from instance description (in case it's not in the secret)
+            echo "Getting RDS endpoint..."
+            DB_HOST=$(aws rds describe-db-instances \
+              --db-instance-identifier "$DB_INSTANCE_ID" \
+              --region us-east-1 \
+              --query 'DBInstances[0].Endpoint.Address' \
+              --output text 2>/dev/null || echo "")
+            
+            if [ -z "$DB_HOST" ]; then
+              echo "ERROR: Failed to get RDS endpoint from instance description"
+              exit 1
+            fi
+            
+            DB_PORT=$(aws rds describe-db-instances \
+              --db-instance-identifier "$DB_INSTANCE_ID" \
+              --region us-east-1 \
+              --query 'DBInstances[0].Endpoint.Port' \
+              --output text 2>/dev/null || echo "5432")
+            
+            echo "RDS endpoint: $DB_HOST:$DB_PORT"
+            
             # Retrieve the secret value
             echo "Retrieving secret from Secrets Manager..."
             SECRET_JSON=$(aws secretsmanager get-secret-value \
@@ -239,15 +260,25 @@ jobs:
               exit 1
             fi
             
-            DB_HOST=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('host') or d.get('endpoint') or d.get('address') or '')" 2>&1)
-            if [ $? -ne 0 ] || [ -z "$DB_HOST" ]; then
-              echo "ERROR: Failed to extract host from secret JSON"
-              echo "Error: $DB_HOST"
-              exit 1
+            # Try to get host from secret, but use RDS endpoint if not found
+            DB_HOST_FROM_SECRET=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('host') or d.get('endpoint') or d.get('address') or '')" 2>&1)
+            if [ $? -eq 0 ] && [ -n "$DB_HOST_FROM_SECRET" ]; then
+              echo "Using host from secret: $DB_HOST_FROM_SECRET"
+              DB_HOST="$DB_HOST_FROM_SECRET"
+            else
+              echo "Host not found in secret, using RDS endpoint: $DB_HOST"
             fi
             
-            DB_PORT=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('port') or '5432')" 2>&1 || echo "5432")
-            DB_NAME=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('dbname') or d.get('database') or d.get('db') or 'postgres')" 2>&1 || echo "postgres")
+            # Try to get port from secret, but use RDS port if not found
+            DB_PORT_FROM_SECRET=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('port') or '')" 2>&1)
+            if [ $? -eq 0 ] && [ -n "$DB_PORT_FROM_SECRET" ]; then
+              echo "Using port from secret: $DB_PORT_FROM_SECRET"
+              DB_PORT="$DB_PORT_FROM_SECRET"
+            else
+              echo "Port not found in secret, using RDS port: $DB_PORT"
+            fi
+            
+            DB_NAME=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('dbname') or d.get('database') or d.get('db') or d.get('dbInstanceIdentifier') or 'postgres')" 2>&1 || echo "postgres")
             
             echo "Successfully parsed secret JSON"
             echo "  Username: $DB_USER"
