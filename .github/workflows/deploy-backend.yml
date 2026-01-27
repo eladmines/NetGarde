@@ -300,6 +300,9 @@ jobs:
             echo "PYTHONUNBUFFERED=1" >> backend/.env.production
             echo "Created backend/.env.production with credentials from Secrets Manager"
             
+            # Export DB_URL so docker compose can use it
+            export DB_URL="$DB_URL"
+            
             # Login to ECR and pull backend image
             echo "Logging into ECR..."
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
@@ -310,9 +313,9 @@ jobs:
             echo "Building dns-sync container..."
             docker compose build dns-sync || echo "Warning: dns-sync build failed, but continuing..."
             
-            # Run migrations
+            # Run migrations with DB_URL explicitly passed to the container
             echo "Running database migrations..."
-            docker compose run --rm backend alembic upgrade head
+            docker compose run --rm -e DB_URL="$DB_URL" backend alembic upgrade head
             
             # Start all services
             echo "Starting services..."
