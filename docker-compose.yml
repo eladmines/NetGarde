@@ -14,6 +14,12 @@ services:
       PYTHONUNBUFFERED: "1"
       LOG_TO_FILE: "0"  # Disable file logging in production (logs go to stdout/stderr)
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     volumes:
       - ./backend:/app
     command: >
@@ -39,6 +45,7 @@ services:
       - PAGE_SIZE=${PAGE_SIZE:-100}
       - DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy  # Wait for backend to be healthy before starting
     # No restart policy for cron mode - container runs once and exits
 
