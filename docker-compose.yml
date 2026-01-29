@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     build:
@@ -20,11 +18,7 @@ services:
     command: >
       bash -c "
       alembic upgrade head &&
-      uvicorn app.main:app
-        --host 0.0.0.0
-        --port 8000
-        --proxy-headers
-        --forwarded-allow-ips='*'
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
       "
 
   dns-sync:

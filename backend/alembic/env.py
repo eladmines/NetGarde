@@ -15,7 +15,10 @@ from app.features.categories.models.category import Category
 
 config = context.config
 
-config.set_main_option("sqlalchemy.url", settings.DB_URL)
+# Escape % characters for ConfigParser (used by Alembic)
+# ConfigParser interprets % as interpolation syntax, so we need %%
+db_url_escaped = settings.DB_URL.replace('%', '%%')
+config.set_main_option("sqlalchemy.url", db_url_escaped)
 
 
 if config.config_file_name is not None:

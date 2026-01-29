@@ -291,22 +291,19 @@ jobs:
             DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD'))")
             DB_URL="postgresql+psycopg2://${DB_USER}:${DB_PASSWORD_ENCODED}@${DB_HOST}:${DB_PORT}/${DB_NAME:-postgres}"
             
-            # Escape % characters for ConfigParser (used by Alembic) - % needs to be %% for ConfigParser
-            DB_URL_ESCAPED=$(echo "$DB_URL" | sed 's/%/%%/g')
-            
             echo "Successfully retrieved RDS credentials from Secrets Manager"
             echo "Database host: $DB_HOST"
             echo "Database name: ${DB_NAME:-postgres}"
             
-            # Create .env.production with the credentials (use escaped version for Alembic)
+            # Create .env.production with the credentials
+            # Note: alembic/env.py will handle escaping % characters for ConfigParser
             mkdir -p backend
-            echo "DB_URL=$DB_URL_ESCAPED" > backend/.env.production
+            echo "DB_URL=$DB_URL" > backend/.env.production
             echo "PYTHONUNBUFFERED=1" >> backend/.env.production
             echo "Created backend/.env.production with credentials from Secrets Manager"
             
-            # Export both versions - use escaped for Alembic, original for docker compose
+            # Export DB_URL for docker compose
             export DB_URL="$DB_URL"
-            export DB_URL_ESCAPED="$DB_URL_ESCAPED"
             
             # Handle image source based on branch
             if [ "${{ github.ref_name }}" == "main" ]; then
@@ -324,9 +321,10 @@ jobs:
             echo "Building dns-sync container..."
             docker compose -f docker-compose.yml build dns-sync || echo "Warning: dns-sync build failed, but continuing..."
             
-            # Run migrations with DB_URL_ESCAPED explicitly passed to the container (for Alembic ConfigParser)
+            # Run migrations with DB_URL explicitly passed to the container
+            # Note: alembic/env.py will handle escaping % characters for ConfigParser
             echo "Running database migrations..."
-            docker compose -f docker-compose.yml run --rm -e DB_URL="$DB_URL_ESCAPED" backend alembic upgrade head
+            docker compose -f docker-compose.yml run --rm -e DB_URL="$DB_URL" backend alembic upgrade head
             
             # Start all services and remove orphaned containers (like old postgres containers)
             echo "Starting services..."
