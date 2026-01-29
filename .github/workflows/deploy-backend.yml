@@ -49,6 +49,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
+        if: github.ref == 'refs/heads/main'  # Only push to ECR for production (main branch)
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -307,26 +308,32 @@ jobs:
             export DB_URL="$DB_URL"
             export DB_URL_ESCAPED="$DB_URL_ESCAPED"
             
-            # Login to ECR and pull backend image
-            echo "Logging into ECR..."
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
-            echo "Pulling latest Docker images..."
-            docker compose pull
+            # Handle image source based on branch
+            if [ "${{ github.ref_name }}" == "main" ]; then
+              # Production: Pull from ECR (image was just pushed)
+              echo "Production deployment: Pulling image from ECR..."
+              aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+              docker compose -f docker-compose.yml pull backend || echo "Warning: Failed to pull from ECR, will build locally"
+            else
+              # Development: Build locally (no ECR push for develop branch)
+              echo "Development deployment: Building image locally..."
+              docker compose -f docker-compose.yml build backend || echo "Warning: Backend build failed"
+            fi
             
             # Build dns-sync (since it's not in ECR, it needs to be built locally)
             echo "Building dns-sync container..."
-            docker compose build dns-sync || echo "Warning: dns-sync build failed, but continuing..."
+            docker compose -f docker-compose.yml build dns-sync || echo "Warning: dns-sync build failed, but continuing..."
             
             # Run migrations with DB_URL_ESCAPED explicitly passed to the container (for Alembic ConfigParser)
             echo "Running database migrations..."
-            docker compose run --rm -e DB_URL="$DB_URL_ESCAPED" backend alembic upgrade head
+            docker compose -f docker-compose.yml run --rm -e DB_URL="$DB_URL_ESCAPED" backend alembic upgrade head
             
-            # Start all services
+            # Start all services and remove orphaned containers (like old postgres containers)
             echo "Starting services..."
-            docker compose up -d
+            docker compose -f docker-compose.yml up -d --remove-orphans
             
             # Show status
             echo "Service status:"
-            docker compose ps 
+            docker compose -f docker-compose.yml ps 
 
             
