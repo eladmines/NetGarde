@@ -28,27 +28,24 @@ services:
       uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
       "
 
-dns-sync:
-  build:
-    context: ./dns-sync
-    dockerfile: Dockerfile
+  dns-sync:
+    build:
+      context: ./dns-sync
+      dockerfile: Dockerfile
+    # Note: For cron mode, set SYNC_INTERVAL=0 and use 'docker compose run --rm dns-sync'
+    # For continuous mode, keep restart: unless-stopped and SYNC_INTERVAL > 0
+    volumes:
+      - /etc/dnsmasq.d:/etc/dnsmasq.d:rw
+    environment:
+      - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
+      - API_ENDPOINT=${API_ENDPOINT:-/blocked-sites}
+      - BLOCK_IP=${BLOCK_IP:-0.0.0.0}
+      - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/blocked-domains.conf}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-0}
+      - PAGE_SIZE=${PAGE_SIZE:-100}
+      - DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
+    depends_on:
+      backend:
+        condition: service_healthy  # Wait for backend to be healthy before starting
+    # No restart policy for cron mode - container runs once and exits
 
-  privileged: true
-
-  volumes:
-    - /etc/dnsmasq.d:/etc/dnsmasq.d:rw
-    - /run/systemd:/run/systemd
-    - /bin/systemctl:/bin/systemctl
-
-  environment:
-    - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
-    - API_ENDPOINT=${API_ENDPOINT:-/blocked-sites}
-    - BLOCK_IP=${BLOCK_IP:-0.0.0.0}
-    - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/blocked-domains.conf}
-    - SYNC_INTERVAL=${SYNC_INTERVAL:-0}
-    - PAGE_SIZE=${PAGE_SIZE:-100}
-    - DNSMASQ_RESTART_CMD=systemctl reload dnsmasq
-
-  depends_on:
-    backend:
-      condition: service_healthy
