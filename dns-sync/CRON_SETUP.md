@@ -74,7 +74,7 @@ Make sure to set these in your environment or `.env` file:
 API_BASE_URL=https://daemixzdg8jfd.cloudfront.net
 API_ENDPOINT=/blocked-sites
 BLOCK_IP=0.0.0.0
-DNS_CONFIG_PATH=/etc/dnsmasq.d/netgarde-blocked.conf
+DNS_CONFIG_PATH=/etc/dnsmasq.d/blocked-domains.conf
 SYNC_INTERVAL=0  # Important: Set to 0 for cron mode
 PAGE_SIZE=100
 DNSMASQ_RESTART_CMD=killall -HUP dnsmasq
@@ -126,5 +126,5 @@ tail -f /var/log/dns-sync.log
 ### DNS not updating
 - Check container logs: `docker compose logs dns-sync`
 - Verify API is accessible: `curl https://daemixzdg8jfd.cloudfront.net/blocked-sites`
-- Check dnsmasq config file: `cat /etc/dnsmasq.d/netgarde-blocked.conf`
+- Check dnsmasq config file: `cat /etc/dnsmasq.d/blocked-domains.conf`
 - Verify dnsmasq reloaded: `systemctl status dnsmasq`

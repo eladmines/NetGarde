@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 API_ENDPOINT = os.getenv('API_ENDPOINT', '/blocked-sites')
 BLOCK_IP = os.getenv('BLOCK_IP', '0.0.0.0')  # IP to redirect blocked domains to
-DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/netgarde-blocked.conf')
+DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
 SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))  # Default: 1 hour
 DNSMASQ_RESTART_CMD = os.getenv('DNSMASQ_RESTART_CMD', 'killall -HUP dnsmasq')
 PAGE_SIZE = int(os.getenv('PAGE_SIZE', '100'))  # Max items per page
@@ -176,6 +176,10 @@ def reload_dnsmasq(restart_cmd: str) -> bool:
     """
     Reload dnsmasq configuration.
     """
+    if not restart_cmd or not restart_cmd.strip():
+        logger.info("DNSMASQ_RESTART_CMD is empty, skipping reload (host script will handle it)")
+        return True
+    
     try:
         logger.info("Reloading dnsmasq...")
         result = subprocess.run(
@@ -222,10 +226,13 @@ def sync_dns():
         logger.error("Failed to write DNS configuration")
         return False
     
-    # Reload dnsmasq
-    if not reload_dnsmasq(DNSMASQ_RESTART_CMD):
-        logger.warning("Failed to reload dnsmasq, but config was updated")
-        return False
+    # Reload dnsmasq (skip if DNSMASQ_RESTART_CMD is empty - host script will handle it)
+    if DNSMASQ_RESTART_CMD:
+        if not reload_dnsmasq(DNSMASQ_RESTART_CMD):
+            logger.warning("Failed to reload dnsmasq, but config was updated")
+            return False
+    else:
+        logger.info("Skipping dnsmasq reload (will be done on host)")
     
     logger.info("DNS sync completed successfully")
     return True
