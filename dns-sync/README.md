@@ -93,4 +93,4 @@ crontab -e
 - The script handles pagination automatically to fetch all blocked sites
 - Domains are normalized (removes http://, https://, www., paths, query strings)
 - Deleted sites (`is_deleted=true`) are automatically excluded
-- The configuration file is written to `/etc/dnsmasq.d/netgarde-blocked.conf` by default
+- The configuration file is written to `/etc/dnsmasq.d/blocked-domains.conf` by default

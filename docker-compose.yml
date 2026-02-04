@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     build:
@@ -12,39 +10,23 @@ services:
     env_file:
       - ./backend/.env.production
     environment:
-      DB_URL: ${DB_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-netgarde}}
+      DB_URL: ${DB_URL}
       PYTHONUNBUFFERED: "1"
-    depends_on:
-      - db
+      LOG_TO_FILE: "0"  # Disable file logging in production (logs go to stdout/stderr)
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     volumes:
       - ./backend:/app
     command: >
       bash -c "
-      until nc -z db 5432; do
-        echo 'Waiting for database...';
-        sleep 2;
-      done &&
       alembic upgrade head &&
-      uvicorn app.main:app
-        --host 0.0.0.0
-        --port 8000
-        --proxy-headers
-        --forwarded-allow-ips='*'
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
       "
-
-  db:
-    image: postgres:16
-    container_name: netgarde-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-netgarde}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: always
 
   dns-sync:
     build:
@@ -55,14 +37,15 @@ services:
     volumes:
       - /etc/dnsmasq.d:/etc/dnsmasq.d:rw
     environment:
-      - API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
+      - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
       - API_ENDPOINT=${API_ENDPOINT:-/blocked-sites}
       - BLOCK_IP=${BLOCK_IP:-0.0.0.0}
-      - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/netgarde-blocked.conf}
+      - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/blocked-domains.conf}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0}
       - PAGE_SIZE=${PAGE_SIZE:-100}
       - DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
+    depends_on:
+      backend:
+        condition: service_healthy  # Wait for backend to be healthy before starting
     # No restart policy for cron mode - container runs once and exits
 
-volumes:
-  pgdata:

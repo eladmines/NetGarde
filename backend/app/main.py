@@ -9,6 +9,7 @@ from app.shared.utils.logging import setup_logging
 from app.shared.dependencies import get_db
 from app.features.blocked_sites.routes.blocked_site_route import router as blocked_site_router
 from app.features.categories.routes.category_route import router as category_router
+from app.features.dns_queries.routes.dns_query_route import router as dns_query_router
 
 # Initialize logging early
 setup_logging()
@@ -66,3 +67,4 @@ def health(db: Session = Depends(get_db)):
 # Include routers
 app.include_router(blocked_site_router)
 app.include_router(category_router)
+app.include_router(dns_query_router)

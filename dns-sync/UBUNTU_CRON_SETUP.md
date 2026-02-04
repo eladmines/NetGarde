@@ -58,7 +58,7 @@ Add these variables:
 API_BASE_URL=https://daemixzdg8jfd.cloudfront.net
 API_ENDPOINT=/blocked-sites
 BLOCK_IP=0.0.0.0
-DNS_CONFIG_PATH=/etc/dnsmasq.d/netgarde-blocked.conf
+DNS_CONFIG_PATH=/etc/dnsmasq.d/blocked-domains.conf
 SYNC_INTERVAL=0
 PAGE_SIZE=100
 DNSMASQ_RESTART_CMD=killall -HUP dnsmasq
@@ -138,7 +138,7 @@ tail -f ~/logs/dns-sync.log
 ### Check dnsmasq config
 
 ```bash
-cat /etc/dnsmasq.d/netgarde-blocked.conf
+cat /etc/dnsmasq.d/blocked-domains.conf
 ```
 
 ### Test manually

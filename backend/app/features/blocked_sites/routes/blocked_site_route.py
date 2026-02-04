@@ -15,7 +15,7 @@ from app.shared.dependencies import get_db
 
 router = APIRouter(prefix="/blocked-sites", tags=["Blocked Sites"])
 
-@router.post("/")
+@router.post("")
 def create_blocked_site_endpoint(
     blocked_site_data: BlockedSiteCreate, 
     db: Session = Depends(get_db),
