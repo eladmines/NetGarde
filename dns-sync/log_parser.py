@@ -116,8 +116,11 @@ def parse_log_lines(lines: List[str], blocked_domains: Set[str]) -> List[Dict[st
     """
     Parse dnsmasq log lines into DNS query records.
     Only 'query[...]' lines are parsed — these contain client IP and domain info.
+    Deduplicates by (timestamp, domain, client_ip) to avoid double-counting
+    A and AAAA queries for the same lookup.
     """
     queries = []
+    seen = set()  # Track (timestamp, domain, client_ip) to deduplicate
 
     for line in lines:
         match = QUERY_PATTERN.search(line)
@@ -134,6 +137,12 @@ def parse_log_lines(lines: List[str], blocked_domains: Set[str]) -> List[Dict[st
         # Skip internal/noise queries (like localhost, arpa, etc.)
         if domain.endswith('.in-addr.arpa') or domain.endswith('.ip6.arpa'):
             continue
+
+        # Deduplicate: keep only one entry per (timestamp, domain, client_ip)
+        dedup_key = (timestamp.isoformat(), domain.lower(), client_ip)
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
 
         # Check if domain is in the blocked list
         is_blocked = domain.lower() in blocked_domains
