@@ -104,3 +104,23 @@ def get_unique_clients_controller(db: Session):
 def cleanup_old_records_controller(db: Session, days: int = 30):
     service = get_service(db)
     return service.cleanup_old_records(days=days)
+
+
+def get_grouped_sites_controller(
+    db: Session,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    client_ip: Optional[str] = None,
+    blocked_only: bool = False,
+    filter_noise: bool = True,
+    limit: int = 50
+):
+    service = get_service(db)
+    return service.get_grouped_by_site(
+        start_date=start_date,
+        end_date=end_date,
+        client_ip=client_ip,
+        blocked_only=blocked_only,
+        filter_noise=filter_noise,
+        limit=limit
+    )

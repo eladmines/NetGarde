@@ -25,3 +25,22 @@ export interface DnsQueryPaginatedResponse {
   page_size: number;
   pages: number;
 }
+
+export interface DnsSiteGroup {
+  root_domain: string;
+  total_queries: number;
+  subdomains: string[];
+  last_seen: string | null;
+  first_seen: string | null;
+  blocked: boolean;
+}
+
+export interface DnsSitesResponse {
+  sites: DnsSiteGroup[];
+  total_sites: number;
+  noise_filtered: number;
+  period: {
+    start: string;
+    end: string;
+  };
+}

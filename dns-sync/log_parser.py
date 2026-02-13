@@ -18,6 +18,7 @@ import json
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Set
+from noise_filter import is_noise_domain
 
 # Configure logging
 logging.basicConfig(
@@ -136,6 +137,10 @@ def parse_log_lines(lines: List[str], blocked_domains: Set[str]) -> List[Dict[st
 
         # Skip internal/noise queries (like localhost, arpa, etc.)
         if domain.endswith('.in-addr.arpa') or domain.endswith('.ip6.arpa'):
+            continue
+
+        # Skip system noise (telemetry, CDN, updates, etc.)
+        if is_noise_domain(domain):
             continue
 
         # Deduplicate: keep only one entry per (timestamp, domain, client_ip)
