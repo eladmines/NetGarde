@@ -24,9 +24,15 @@ import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import { useDnsSites } from '../../dns-queries/hooks/useDnsSites';
 import { DnsSiteGroup } from '../../dns-queries/types/dnsQuery';
 
+function toLocalDate(timestamp: string): Date {
+  // Backend sends UTC timestamps without 'Z' — append it so JS treats them as UTC
+  const ts = timestamp.endsWith('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z';
+  return new Date(ts);
+}
+
 function formatTime(timestamp: string | null): string {
   if (!timestamp) return '';
-  const date = new Date(timestamp);
+  const date = toLocalDate(timestamp);
   return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',

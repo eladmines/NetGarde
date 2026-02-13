@@ -32,13 +32,17 @@ function renderAction(params: GridRenderCellParams) {
 
 function formatTimestamp(params: GridRenderCellParams) {
   if (!params.value) return '';
-  const date = new Date(params.value as string);
+  // Backend sends UTC timestamps without 'Z' — append it so JS treats them as UTC
+  const raw = params.value as string;
+  const ts = raw.endsWith('Z') || raw.includes('+') ? raw : raw + 'Z';
+  const date = new Date(ts);
   return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
+    hour12: false,
   });
 }
 
