@@ -56,3 +56,21 @@ class DnsQueryService:
     def cleanup_old_records(self, days: int = 30) -> dict:
         count = self.repository.delete_old_records(days=days)
         return {"deleted": count}
+
+    def get_grouped_by_site(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        client_ip: Optional[str] = None,
+        blocked_only: bool = False,
+        filter_noise: bool = True,
+        limit: int = 50
+    ) -> dict:
+        return self.repository.get_grouped_by_site(
+            start_date=start_date,
+            end_date=end_date,
+            client_ip=client_ip,
+            blocked_only=blocked_only,
+            filter_noise=filter_noise,
+            limit=limit
+        )
