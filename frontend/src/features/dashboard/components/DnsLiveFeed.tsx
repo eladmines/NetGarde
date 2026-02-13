@@ -17,7 +17,9 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import { useDnsLiveFeed, LiveDnsQuery } from '../../dns-queries/hooks/useDnsLiveFeed';
 
 function formatTime(timestamp: string): string {
-  const date = new Date(timestamp);
+  // Backend sends UTC timestamps without 'Z' — append it so JS treats them as UTC
+  const ts = timestamp.endsWith('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z';
+  const date = new Date(ts);
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
