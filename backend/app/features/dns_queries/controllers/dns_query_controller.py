@@ -1,9 +1,14 @@
+import asyncio
+import logging
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
 from app.features.dns_queries.services.dns_query_service import DnsQueryService
 from app.features.dns_queries.repositories.dns_query_repository import DnsQueryRepository
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryBulkCreate
+from app.shared.websocket_manager import ws_manager
+
+logger = logging.getLogger(__name__)
 
 
 def get_service(db: Session) -> DnsQueryService:
@@ -13,12 +18,51 @@ def get_service(db: Session) -> DnsQueryService:
 
 def create_dns_query_controller(dns_query_data: DnsQueryCreate, db: Session):
     service = get_service(db)
-    return service.create_query(dns_query_data)
+    result = service.create_query(dns_query_data)
+    # Broadcast to WebSocket clients
+    _broadcast_queries([dns_query_data])
+    return result
 
 
 def bulk_create_dns_queries_controller(bulk_data: DnsQueryBulkCreate, db: Session):
     service = get_service(db)
-    return service.bulk_create_queries(bulk_data.queries)
+    result = service.bulk_create_queries(bulk_data.queries)
+    # Broadcast to WebSocket clients
+    _broadcast_queries(bulk_data.queries)
+    return result
+
+
+def _broadcast_queries(queries: List[DnsQueryCreate]):
+    """Broadcast new DNS queries to all connected WebSocket clients."""
+    if ws_manager.connection_count == 0:
+        return  # No clients connected, skip
+
+    data = {
+        "type": "dns_queries",
+        "queries": [
+            {
+                "timestamp": q.timestamp.isoformat(),
+                "client_ip": q.client_ip,
+                "domain": q.domain,
+                "query_type": q.query_type,
+                "action": q.action,
+                "blocked": q.blocked,
+            }
+            for q in queries
+        ]
+    }
+
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(ws_manager.broadcast(data))
+        else:
+            loop.run_until_complete(ws_manager.broadcast(data))
+    except RuntimeError:
+        # If no event loop exists, create one
+        asyncio.run(ws_manager.broadcast(data))
+    except Exception as e:
+        logger.warning(f"Failed to broadcast DNS queries via WebSocket: {e}")
 
 
 def get_dns_queries_controller(

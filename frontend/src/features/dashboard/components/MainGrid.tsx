@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import Copyright from '../internals/components/Copyright';
 import CustomizedDataGrid from './CustomizedDataGrid';
 import DnsStatsCards from './DnsStatsCards';
+import DnsLiveFeed from './DnsLiveFeed';
 
 export default function MainGrid() {
   return (
@@ -12,6 +13,14 @@ export default function MainGrid() {
         Overview
       </Typography>
       <DnsStatsCards />
+      <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 4 }}>
+        Live DNS Feed
+      </Typography>
+      <Grid container spacing={2} columns={12}>
+        <Grid size={{ xs: 12 }}>
+          <DnsLiveFeed />
+        </Grid>
+      </Grid>
       <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 4 }}>
         DNS Query Log
       </Typography>
