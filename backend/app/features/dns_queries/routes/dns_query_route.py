@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
+import logging
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryBulkCreate
 from app.features.dns_queries.controllers.dns_query_controller import (
     create_dns_query_controller,
@@ -12,6 +13,9 @@ from app.features.dns_queries.controllers.dns_query_controller import (
     cleanup_old_records_controller
 )
 from app.shared.dependencies import get_db
+from app.shared.websocket_manager import ws_manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dns-queries", tags=["DNS Queries"])
 
@@ -81,3 +85,23 @@ def cleanup_old_records_endpoint(
 ):
     """Delete DNS query records older than specified days."""
     return cleanup_old_records_controller(db, days=days)
+
+
+@router.websocket("/ws")
+async def dns_queries_websocket(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time DNS query streaming.
+    Clients connect here to receive live DNS queries as they are logged.
+    """
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # Keep the connection alive by waiting for any client message
+            # (clients can send ping/pong or just keep the connection open)
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+        logger.info("WebSocket client disconnected normally")
+    except Exception as e:
+        ws_manager.disconnect(websocket)
+        logger.warning(f"WebSocket connection error: {e}")
