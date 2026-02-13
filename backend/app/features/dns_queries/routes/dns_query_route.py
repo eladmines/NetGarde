@@ -92,13 +92,15 @@ async def dns_queries_websocket(websocket: WebSocket):
     """
     WebSocket endpoint for real-time DNS query streaming.
     Clients connect here to receive live DNS queries as they are logged.
+    Supports ping/pong keepalive to prevent proxy idle timeout.
     """
     await ws_manager.connect(websocket)
     try:
         while True:
-            # Keep the connection alive by waiting for any client message
-            # (clients can send ping/pong or just keep the connection open)
-            await websocket.receive_text()
+            # Keep the connection alive — handle client ping messages
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
         logger.info("WebSocket client disconnected normally")
