@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from app.features.dns_queries.models.dns_query import DnsQuery
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
@@ -84,9 +84,9 @@ class DnsQueryRepository:
     ) -> dict:
         """Get statistics about DNS queries."""
         if not start_date:
-            start_date = datetime.now() - timedelta(days=1)
+            start_date = datetime.now(timezone.utc) - timedelta(days=1)
         if not end_date:
-            end_date = datetime.now()
+            end_date = datetime.now(timezone.utc)
 
         query = self.db.query(DnsQuery).filter(
             DnsQuery.timestamp >= start_date,
@@ -135,7 +135,7 @@ class DnsQueryRepository:
 
     def delete_old_records(self, days: int = 30) -> int:
         """Delete records older than specified days. Returns count of deleted records."""
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         count = self.db.query(DnsQuery).filter(DnsQuery.timestamp < cutoff_date).delete()
         self.db.commit()
         return count
@@ -154,9 +154,9 @@ class DnsQueryRepository:
         Returns aggregated view: root domain, total queries, subdomains, last seen, etc.
         """
         if not start_date:
-            start_date = datetime.now() - timedelta(days=1)
+            start_date = datetime.now(timezone.utc) - timedelta(days=1)
         if not end_date:
-            end_date = datetime.now()
+            end_date = datetime.now(timezone.utc)
 
         # Query: group by domain, get counts
         query = self.db.query(
@@ -210,7 +210,7 @@ class DnsQueryRepository:
         # Sort by most recent activity and apply limit
         sorted_groups = sorted(
             groups.values(),
-            key=lambda x: x["last_seen"] or datetime.min,
+            key=lambda x: x["last_seen"] or datetime.min.replace(tzinfo=timezone.utc),
             reverse=True
         )[:limit]
 

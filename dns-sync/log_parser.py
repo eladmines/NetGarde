@@ -16,7 +16,7 @@ import sys
 import re
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Set
 from noise_filter import is_noise_domain
 
@@ -101,13 +101,14 @@ def save_position(state_file: str, position: int):
 
 def parse_timestamp(timestamp_str: str) -> Optional[datetime]:
     """
-    Parse dnsmasq log timestamp (e.g. 'Feb  9 12:34:56') into a datetime object.
+    Parse dnsmasq log timestamp (e.g. 'Feb  9 12:34:56') into a timezone-aware (UTC) datetime.
     dnsmasq logs don't include the year, so we use the current year.
     """
     try:
-        current_year = datetime.now().year
+        current_year = datetime.now(timezone.utc).year
         dt = datetime.strptime(f"{current_year} {timestamp_str}", "%Y %b %d %H:%M:%S")
-        return dt
+        # Server runs in UTC — mark the parsed timestamp as UTC
+        return dt.replace(tzinfo=timezone.utc)
     except ValueError as e:
         logger.debug(f"Could not parse timestamp '{timestamp_str}': {e}")
         return None

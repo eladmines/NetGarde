@@ -1,6 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from app.features.categories.models.category import Category
 from app.features.categories.schemas.category import CategoryCreate
 
@@ -39,7 +39,7 @@ class CategoryRepository:
         category.name = data.name
         # Set mock user_id if not provided
         category.updated_by = data.updated_by if data.updated_by is not None else 1  # Mock user_id
-        category.updated_at = datetime.now()
+        category.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(category)
         return category
@@ -49,7 +49,7 @@ class CategoryRepository:
         if not category:
             return False
         category.is_deleted = True
-        category.updated_at = datetime.now()
+        category.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         return True
 
