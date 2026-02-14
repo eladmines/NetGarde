@@ -8,6 +8,7 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useDnsQueries } from '../../dns-queries/hooks/useDnsQueries';
+import { formatDateTime } from '../../../shared/utils/dateUtils';
 
 function renderBlockedStatus(params: GridRenderCellParams) {
   return (
@@ -31,19 +32,7 @@ function renderAction(params: GridRenderCellParams) {
 }
 
 function formatTimestamp(params: GridRenderCellParams) {
-  if (!params.value) return '';
-  // Backend sends UTC timestamps without 'Z' — append it so JS treats them as UTC
-  const raw = params.value as string;
-  const ts = raw.endsWith('Z') || raw.includes('+') ? raw : raw + 'Z';
-  const date = new Date(ts);
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+  return formatDateTime(params.value as string);
 }
 
 const columns: GridColDef[] = [

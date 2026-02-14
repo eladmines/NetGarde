@@ -23,24 +23,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import { useDnsSites } from '../../dns-queries/hooks/useDnsSites';
 import { DnsSiteGroup } from '../../dns-queries/types/dnsQuery';
-
-function toLocalDate(timestamp: string): Date {
-  // Backend sends UTC timestamps without 'Z' — append it so JS treats them as UTC
-  const ts = timestamp.endsWith('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z';
-  return new Date(ts);
-}
-
-function formatTime(timestamp: string | null): string {
-  if (!timestamp) return '';
-  const date = toLocalDate(timestamp);
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
+import { formatShortDateTime } from '../../../shared/utils/dateUtils';
 
 function SiteRow({ site }: { site: DnsSiteGroup }) {
   const [expanded, setExpanded] = useState(false);
@@ -99,7 +82,7 @@ function SiteRow({ site }: { site: DnsSiteGroup }) {
           }
           secondary={
             <Typography variant="caption" color="text.secondary">
-              Last seen: {formatTime(site.last_seen)}
+              Last seen: {formatShortDateTime(site.last_seen)}
             </Typography>
           }
         />

@@ -15,18 +15,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import { useDnsLiveFeed, LiveDnsQuery } from '../../dns-queries/hooks/useDnsLiveFeed';
-
-function formatTime(timestamp: string): string {
-  // Backend sends UTC timestamps without 'Z' — append it so JS treats them as UTC
-  const ts = timestamp.endsWith('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z';
-  const date = new Date(ts);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-}
+import { formatTime } from '../../../shared/utils/dateUtils';
 
 function QueryRow({ query }: { query: LiveDnsQuery }) {
   return (
