@@ -3,30 +3,22 @@ import logging
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
-from app.features.dns_queries.services.dns_query_service import DnsQueryService
-from app.features.dns_queries.repositories.dns_query_repository import DnsQueryRepository
+from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryBulkCreate
 from app.shared.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
 
 
-def get_service(db: Session) -> DnsQueryService:
-    repository = DnsQueryRepository(db)
-    return DnsQueryService(repository)
-
-
-def create_dns_query_controller(dns_query_data: DnsQueryCreate, db: Session):
-    service = get_service(db)
-    result = service.create_query(dns_query_data)
+def create_dns_query_controller(dns_query_data: DnsQueryCreate, db: Session, service: IDnsQueryService):
+    result = service.create_query(dns_query_data, db)
     # Broadcast to WebSocket clients
     _broadcast_queries([dns_query_data])
     return result
 
 
-def bulk_create_dns_queries_controller(bulk_data: DnsQueryBulkCreate, db: Session):
-    service = get_service(db)
-    result = service.bulk_create_queries(bulk_data.queries)
+def bulk_create_dns_queries_controller(bulk_data: DnsQueryBulkCreate, db: Session, service: IDnsQueryService):
+    result = service.bulk_create_queries(bulk_data.queries, db)
     # Broadcast to WebSocket clients
     _broadcast_queries(bulk_data.queries)
     return result
@@ -67,6 +59,7 @@ def _broadcast_queries(queries: List[DnsQueryCreate]):
 
 def get_dns_queries_controller(
     db: Session,
+    service: IDnsQueryService,
     page: int = 1,
     page_size: int = 50,
     domain_search: Optional[str] = None,
@@ -75,8 +68,8 @@ def get_dns_queries_controller(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None
 ):
-    service = get_service(db)
     return service.get_queries(
+        db=db,
         page=page,
         page_size=page_size,
         domain_search=domain_search,
@@ -89,25 +82,24 @@ def get_dns_queries_controller(
 
 def get_dns_stats_controller(
     db: Session,
+    service: IDnsQueryService,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None
 ):
-    service = get_service(db)
-    return service.get_stats(start_date=start_date, end_date=end_date)
+    return service.get_stats(db=db, start_date=start_date, end_date=end_date)
 
 
-def get_unique_clients_controller(db: Session):
-    service = get_service(db)
-    return service.get_unique_clients()
+def get_unique_clients_controller(db: Session, service: IDnsQueryService):
+    return service.get_unique_clients(db)
 
 
-def cleanup_old_records_controller(db: Session, days: int = 30):
-    service = get_service(db)
-    return service.cleanup_old_records(days=days)
+def cleanup_old_records_controller(db: Session, service: IDnsQueryService, days: int = 30):
+    return service.cleanup_old_records(db, days=days)
 
 
 def get_grouped_sites_controller(
     db: Session,
+    service: IDnsQueryService,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     client_ip: Optional[str] = None,
@@ -115,8 +107,8 @@ def get_grouped_sites_controller(
     filter_noise: bool = True,
     limit: int = 50
 ):
-    service = get_service(db)
     return service.get_grouped_by_site(
+        db=db,
         start_date=start_date,
         end_date=end_date,
         client_ip=client_ip,
