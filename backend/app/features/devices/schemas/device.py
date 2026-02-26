@@ -35,6 +35,7 @@ class DeviceRead(BaseModel):
     client_ip: str
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
+    vendor: Optional[str] = None
     source: str
     is_active: bool
     created_at: Optional[datetime] = None

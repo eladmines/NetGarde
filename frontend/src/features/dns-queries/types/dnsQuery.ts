@@ -3,6 +3,7 @@ export interface DnsQuery {
   timestamp: string;
   client_ip: string;
   device_name?: string | null;
+  device_vendor?: string | null;
   domain: string;
   query_type: string | null;
   action: string | null;

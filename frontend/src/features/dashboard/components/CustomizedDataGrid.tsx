@@ -37,6 +37,7 @@ function formatTimestamp(params: GridRenderCellParams) {
 
 function renderMachine(params: GridRenderCellParams) {
   const deviceName = params.row.device_name as string | null | undefined;
+  const deviceVendor = params.row.device_vendor as string | null | undefined;
   const clientIp = params.row.client_ip as string;
 
   return (
@@ -45,7 +46,7 @@ function renderMachine(params: GridRenderCellParams) {
         {deviceName || 'Unknown device'}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', lineHeight: 1.2 }}>
-        {clientIp}
+        {deviceVendor ? `${deviceVendor} - ${clientIp}` : clientIp}
       </Typography>
     </Stack>
   );
