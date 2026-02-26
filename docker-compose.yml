@@ -1,4 +1,13 @@
 services:
+  block-page:
+    build:
+      context: ./block-page
+      dockerfile: Dockerfile
+    container_name: netgarde-block-page
+    ports:
+      - "80:80"
+    restart: always
+
   backend:
     build:
       context: ./backend
@@ -42,7 +51,7 @@ services:
       - DEVICE_SYNC_ENDPOINT=${DEVICE_SYNC_ENDPOINT:-/devices/sync-dhcp}
       - DHCP_LEASES_PATH=${DHCP_LEASES_PATH:-/var/lib/misc/dnsmasq.leases}
       - DEVICE_SYNC_ENABLED=${DEVICE_SYNC_ENABLED:-1}
-      - BLOCK_IP=${BLOCK_IP:-0.0.0.0}
+      - BLOCK_IP=${BLOCK_IP:-${BLOCK_PAGE_IP:-0.0.0.0}}
       - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/blocked-domains.conf}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0}
       - PAGE_SIZE=${PAGE_SIZE:-100}
@@ -50,5 +59,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy  # Wait for backend to be healthy before starting
+      block-page:
+        condition: service_started
     # No restart policy for cron mode - container runs once and exits
 

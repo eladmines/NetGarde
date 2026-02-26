@@ -344,8 +344,8 @@ def main():
     logger.info(f"  DHCP_LEASES_PATH: {DHCP_LEASES_PATH}")
     
     # Run once immediately
-    sync_cycle()
-    
+    first_ok = sync_cycle()
+
     # Then run on interval
     if SYNC_INTERVAL > 0:
         logger.info(f"Starting periodic sync (every {SYNC_INTERVAL} seconds)")
@@ -354,7 +354,7 @@ def main():
             sync_cycle()
     else:
         logger.info("SYNC_INTERVAL is 0, running once and exiting")
-        sys.exit(0 if sync_cycle() else 1)
+        sys.exit(0 if first_ok else 1)
 
 
 if __name__ == '__main__':
