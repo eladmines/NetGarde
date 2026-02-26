@@ -28,6 +28,9 @@ DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/blocked-domains.c
 SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))  # Default: 1 hour
 DNSMASQ_RESTART_CMD = os.getenv('DNSMASQ_RESTART_CMD', 'killall -HUP dnsmasq')
 PAGE_SIZE = int(os.getenv('PAGE_SIZE', '100'))  # Max items per page
+DEVICE_SYNC_ENDPOINT = os.getenv('DEVICE_SYNC_ENDPOINT', '/devices/sync-dhcp')
+DHCP_LEASES_PATH = os.getenv('DHCP_LEASES_PATH', '/var/lib/misc/dnsmasq.leases')
+DEVICE_SYNC_ENABLED = os.getenv('DEVICE_SYNC_ENABLED', '1').lower() not in ('0', 'false', 'no')
 
 
 def fetch_blocked_sites_from_api(api_url: str, endpoint: str, page_size: int = 100) -> Optional[List[Dict[str, Any]]]:
@@ -199,7 +202,78 @@ def reload_dnsmasq(restart_cmd: str) -> bool:
         return False
 
 
-def sync_dns():
+def parse_dhcp_leases(leases_path: str) -> List[Dict[str, Optional[str]]]:
+    """
+    Parse dnsmasq DHCP lease file.
+    Lease format: <expiry> <mac> <ip> <hostname> <client-id>
+    """
+    lease_file = Path(leases_path)
+    if not lease_file.exists():
+        logger.warning(f"DHCP lease file not found: {leases_path}")
+        return []
+
+    leases: List[Dict[str, Optional[str]]] = []
+    try:
+        for line in lease_file.read_text(encoding='utf-8', errors='ignore').splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+
+            parts = line.split()
+            if len(parts) < 4:
+                continue
+
+            mac = parts[1].strip().lower()
+            client_ip = parts[2].strip()
+            hostname = parts[3].strip()
+            if hostname == '*':
+                hostname = None
+
+            leases.append({
+                'client_ip': client_ip,
+                'hostname': hostname,
+                'mac_address': mac,
+            })
+    except Exception as e:
+        logger.error(f"Error parsing DHCP leases from {leases_path}: {e}", exc_info=True)
+        return []
+
+    logger.info(f"Parsed {len(leases)} DHCP lease records from {leases_path}")
+    return leases
+
+
+def sync_devices_from_dhcp(api_url: str, endpoint: str, leases_path: str) -> bool:
+    """Sync device IP/hostname/MAC mappings from DHCP leases into backend devices table."""
+    leases = parse_dhcp_leases(leases_path)
+    if not leases:
+        logger.info("No DHCP leases available to sync")
+        return True
+
+    payload = {'leases': leases}
+    try:
+        import urllib.request
+
+        url = f"{api_url.rstrip('/')}{endpoint}"
+        data = json.dumps(payload).encode('utf-8')
+
+        logger.info(f"Syncing {len(leases)} DHCP leases to {url}")
+        req = urllib.request.Request(url, data=data, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('Accept', 'application/json')
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            body = response.read().decode('utf-8') if response.length != 0 else ''
+            if response.status not in (200, 201):
+                logger.error(f"Device sync failed with status {response.status}: {body}")
+                return False
+            logger.info(f"Device sync completed: {body}")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to sync DHCP leases to backend: {e}", exc_info=True)
+        return False
+
+
+def sync_blocked_domains():
     """
     Main sync function.
     """
@@ -212,14 +286,10 @@ def sync_dns():
         return False
     
     if not blocked_sites:
-        logger.warning("No blocked sites to sync")
-        return False
+        logger.warning("No blocked sites returned; writing empty DNS config")
     
     # Convert to dnsmasq format
     entries = convert_to_dnsmasq_format(blocked_sites, BLOCK_IP)
-    if not entries:
-        logger.warning("No DNS entries generated from blocked sites")
-        return False
     
     # Write configuration
     if not write_dns_config(entries, DNS_CONFIG_PATH):
@@ -238,6 +308,24 @@ def sync_dns():
     return True
 
 
+def sync_cycle() -> bool:
+    """Run one sync cycle for blocked domains and optional DHCP device sync."""
+    blocked_ok = sync_blocked_domains()
+
+    devices_ok = True
+    if DEVICE_SYNC_ENABLED:
+        devices_ok = sync_devices_from_dhcp(API_BASE_URL, DEVICE_SYNC_ENDPOINT, DHCP_LEASES_PATH)
+    else:
+        logger.info("Device sync is disabled (DEVICE_SYNC_ENABLED=0)")
+
+    if blocked_ok and devices_ok:
+        logger.info("Sync cycle completed successfully")
+        return True
+
+    logger.warning(f"Sync cycle completed with issues (blocked_ok={blocked_ok}, devices_ok={devices_ok})")
+    return False
+
+
 def main():
     """
     Main entry point.
@@ -251,19 +339,22 @@ def main():
     logger.info(f"  SYNC_INTERVAL: {SYNC_INTERVAL} seconds")
     logger.info(f"  PAGE_SIZE: {PAGE_SIZE}")
     logger.info(f"  DNSMASQ_RESTART_CMD: {DNSMASQ_RESTART_CMD}")
+    logger.info(f"  DEVICE_SYNC_ENABLED: {DEVICE_SYNC_ENABLED}")
+    logger.info(f"  DEVICE_SYNC_ENDPOINT: {DEVICE_SYNC_ENDPOINT}")
+    logger.info(f"  DHCP_LEASES_PATH: {DHCP_LEASES_PATH}")
     
     # Run once immediately
-    sync_dns()
+    sync_cycle()
     
     # Then run on interval
     if SYNC_INTERVAL > 0:
         logger.info(f"Starting periodic sync (every {SYNC_INTERVAL} seconds)")
         while True:
             time.sleep(SYNC_INTERVAL)
-            sync_dns()
+            sync_cycle()
     else:
         logger.info("SYNC_INTERVAL is 0, running once and exiting")
-        sys.exit(0 if sync_dns() else 1)
+        sys.exit(0 if sync_cycle() else 1)
 
 
 if __name__ == '__main__':
