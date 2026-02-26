@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.features.dns_queries.repositories.dns_query_repository import DnsQueryRepository
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryResponse
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
+from app.features.devices.repositories.device_repository import DeviceRepository
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -47,9 +48,16 @@ class DnsQueryService:
             start_date=start_date,
             end_date=end_date
         )
+        client_ips = list({item.client_ip for item in items})
+        device_map = DeviceRepository(db).get_hostname_map_by_client_ips(client_ips)
         logger.info("Fetched DNS queries", extra={"count": len(items), "total": total, "page": page})
         return {
-            "items": [DnsQueryResponse.model_validate(item) for item in items],
+            "items": [
+                DnsQueryResponse.model_validate(item).model_copy(
+                    update={"device_name": device_map.get(item.client_ip)}
+                )
+                for item in items
+            ],
             "total": total,
             "page": page,
             "page_size": page_size,
