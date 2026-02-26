@@ -2,6 +2,7 @@ export interface DnsQuery {
   id: number;
   timestamp: string;
   client_ip: string;
+  device_name?: string | null;
   domain: string;
   query_type: string | null;
   action: string | null;

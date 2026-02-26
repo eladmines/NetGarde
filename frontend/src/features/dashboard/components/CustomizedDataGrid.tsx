@@ -35,6 +35,22 @@ function formatTimestamp(params: GridRenderCellParams) {
   return formatDateTime(params.value as string);
 }
 
+function renderMachine(params: GridRenderCellParams) {
+  const deviceName = params.row.device_name as string | null | undefined;
+  const clientIp = params.row.client_ip as string;
+
+  return (
+    <Stack spacing={0} sx={{ py: 0.5 }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+        {deviceName || 'Unknown device'}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', lineHeight: 1.2 }}>
+        {clientIp}
+      </Typography>
+    </Stack>
+  );
+}
+
 const columns: GridColDef[] = [
   {
     field: 'timestamp',
@@ -50,10 +66,12 @@ const columns: GridColDef[] = [
     minWidth: 200,
   },
   {
-    field: 'client_ip',
-    headerName: 'Client IP',
-    flex: 1,
-    minWidth: 120,
+    field: 'device_name',
+    headerName: 'Machine',
+    flex: 1.1,
+    minWidth: 170,
+    sortable: false,
+    renderCell: renderMachine,
   },
   {
     field: 'query_type',
