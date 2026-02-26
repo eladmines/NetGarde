@@ -21,6 +21,7 @@ class DnsQueryResponse(BaseModel):
     timestamp: datetime
     client_ip: str
     device_name: Optional[str] = None
+    device_vendor: Optional[str] = None
     domain: str
     query_type: Optional[str] = None
     action: Optional[str] = None

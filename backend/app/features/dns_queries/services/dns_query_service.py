@@ -49,12 +49,15 @@ class DnsQueryService:
             end_date=end_date
         )
         client_ips = list({item.client_ip for item in items})
-        device_map = DeviceRepository(db).get_hostname_map_by_client_ips(client_ips)
+        identity_map = DeviceRepository(db).get_identity_map_by_client_ips(client_ips)
         logger.info("Fetched DNS queries", extra={"count": len(items), "total": total, "page": page})
         return {
             "items": [
                 DnsQueryResponse.model_validate(item).model_copy(
-                    update={"device_name": device_map.get(item.client_ip)}
+                    update=identity_map.get(
+                        item.client_ip,
+                        {"device_name": None, "device_vendor": None}
+                    )
                 )
                 for item in items
             ],
