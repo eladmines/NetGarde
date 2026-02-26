@@ -6,6 +6,7 @@ import CustomizedDataGrid from './CustomizedDataGrid';
 import DnsStatsCards from './DnsStatsCards';
 import DnsLiveFeed from './DnsLiveFeed';
 import DnsSitesView from './DnsSitesView';
+import BlockedAttemptsView from './BlockedAttemptsView';
 
 export default function MainGrid() {
   return (
@@ -26,6 +27,12 @@ export default function MainGrid() {
             Live DNS Feed
           </Typography>
           <DnsLiveFeed />
+        </Grid>
+        <Grid size={{ xs: 12 }}>
+          <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 2 }}>
+            Blocked Attempts
+          </Typography>
+          <BlockedAttemptsView />
         </Grid>
       </Grid>
       <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 4 }}>
