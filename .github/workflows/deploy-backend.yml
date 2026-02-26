@@ -305,6 +305,14 @@ jobs:
             # Export DB_URL for docker compose
             export DB_URL="$DB_URL"
             
+            # Compute local server IP to use as blocked-domain redirect target
+            BLOCK_PAGE_IP=$(hostname -I | awk '{print $1}')
+            if [ -z "$BLOCK_PAGE_IP" ]; then
+              BLOCK_PAGE_IP="0.0.0.0"
+            fi
+            export BLOCK_PAGE_IP="$BLOCK_PAGE_IP"
+            echo "Using BLOCK_PAGE_IP=$BLOCK_PAGE_IP for blocked-domain redirect"
+            
             # Handle image source based on branch
             if [ "${{ github.ref_name }}" == "main" ]; then
               # Production: Pull from ECR (image was just pushed)
@@ -320,6 +328,10 @@ jobs:
             # Build dns-sync (since it's not in ECR, it needs to be built locally)
             echo "Building dns-sync container..."
             docker compose -f docker-compose.yml build dns-sync || echo "Warning: dns-sync build failed, but continuing..."
+            
+            # Build block-page container
+            echo "Building block-page container..."
+            docker compose -f docker-compose.yml build block-page || echo "Warning: block-page build failed, but continuing..."
             
             # Run migrations with DB_URL explicitly passed to the container
             # Note: alembic/env.py will handle escaping % characters for ConfigParser
