@@ -15,6 +15,12 @@ from app.features.devices.routes.device_route import router as device_router
 # Initialize logging early
 setup_logging()
 
+ALLOWED_ORIGINS = [
+    "https://d2qp7beltc09b8.cloudfront.net",  # production frontend
+    "http://localhost:3000",                  # local dev
+    "http://localhost:3001",                  # local dev
+]
+
 # Middleware to ensure redirects use HTTPS when behind CloudFront
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -34,6 +40,35 @@ class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
                 response.headers["location"] = url
         return response
 
+
+class StableCORSHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Add stable CORS headers even behind proxies/CDNs.
+    This protects against cases where Origin is not forwarded by CloudFront.
+    """
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            response = Response(status_code=204)
+        else:
+            response = await call_next(request)
+
+        origin = request.headers.get("Origin")
+        allow_origin = None
+        if origin in ALLOWED_ORIGINS:
+            allow_origin = origin
+        elif origin is None:
+            # Fallback for CDN paths that may not forward Origin to backend.
+            allow_origin = "https://d2qp7beltc09b8.cloudfront.net"
+
+        if allow_origin:
+            response.headers["Access-Control-Allow-Origin"] = allow_origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Vary"] = "Origin"
+
+        return response
+
 app = FastAPI(
     title="NetGarde API",
     redirect_slashes=False,  # allow redirects for trailing slash handling
@@ -51,15 +86,14 @@ app.add_middleware(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://d2qp7beltc09b8.cloudfront.net",  # production frontend
-        "http://localhost:3000",                  # local dev
-        "http://localhost:3001",                  # local dev
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add a stable CORS header layer to handle CDN forwarding edge-cases.
+app.add_middleware(StableCORSHeadersMiddleware)
 
 @app.get("/health")
 def health(db: Session = Depends(get_db)):
