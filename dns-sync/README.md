@@ -94,3 +94,19 @@ crontab -e
 - Domains are normalized (removes http://, https://, www., paths, query strings)
 - Deleted sites (`is_deleted=true`) are automatically excluded
 - The configuration file is written to `/etc/dnsmasq.d/blocked-domains.conf` by default
+
+## Event-Driven Sync (PostgreSQL LISTEN/NOTIFY)
+
+NetGarde also supports instant sync when `blocked_sites` changes:
+
+1. Backend migration creates trigger `tr_blocked_sites_changed_notify`.
+2. PostgreSQL sends `NOTIFY blocked_sites_changed`.
+3. `blocked_sites_listener.py` receives event and runs `run-sync.sh`.
+
+The listener is intended to run on the EC2 host as a systemd service:
+
+```bash
+sudo cp dns-sync/netgarde-blocked-sites-listener.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now netgarde-blocked-sites-listener
+```

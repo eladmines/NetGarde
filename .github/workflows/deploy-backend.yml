@@ -341,9 +341,26 @@ jobs:
             # Start all services and remove orphaned containers (like old postgres containers)
             echo "Starting services..."
             docker compose -f docker-compose.yml up -d --remove-orphans
+
+            # Ensure host dependency for DB LISTEN/NOTIFY listener
+            if ! python3 -c "import psycopg2" >/dev/null 2>&1; then
+              echo "Installing python3-psycopg2 for blocked-sites listener..."
+              sudo apt-get update
+              sudo apt-get install -y python3-psycopg2
+            fi
+
+            # Install and start blocked-sites DB listener service (LISTEN/NOTIFY -> run-sync.sh)
+            echo "Installing blocked-sites listener systemd service..."
+            sudo chmod +x /home/ubuntu/netgarde/dns-sync/run-sync.sh
+            sudo cp /home/ubuntu/netgarde/dns-sync/netgarde-blocked-sites-listener.service /etc/systemd/system/netgarde-blocked-sites-listener.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable netgarde-blocked-sites-listener
+            sudo systemctl restart netgarde-blocked-sites-listener
             
             # Show status
             echo "Service status:"
             docker compose -f docker-compose.yml ps 
+            echo "Listener service status:"
+            sudo systemctl --no-pager --full status netgarde-blocked-sites-listener || true
 
             

@@ -1,0 +1,17 @@
+[Unit]
+Description=NetGarde Blocked Sites DB Listener
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ubuntu/netgarde
+EnvironmentFile=/home/ubuntu/netgarde/backend/.env.production
+Environment=SYNC_COMMAND=/home/ubuntu/netgarde/dns-sync/run-sync.sh
+ExecStart=/usr/bin/python3 /home/ubuntu/netgarde/dns-sync/blocked_sites_listener.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
