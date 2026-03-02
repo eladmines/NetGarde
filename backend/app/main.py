@@ -11,6 +11,7 @@ from app.features.blocked_sites.routes.blocked_site_route import router as block
 from app.features.categories.routes.category_route import router as category_router
 from app.features.dns_queries.routes.dns_query_route import router as dns_query_router
 from app.features.devices.routes.device_route import router as device_router
+from app.features.domain_categories.routes.domain_category_route import router as domain_category_router
 
 # Initialize logging early
 setup_logging()
@@ -104,3 +105,4 @@ app.include_router(blocked_site_router)
 app.include_router(category_router)
 app.include_router(dns_query_router)
 app.include_router(device_router)
+app.include_router(domain_category_router)
