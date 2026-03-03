@@ -83,6 +83,10 @@ class DeviceService:
 
         logger.info(
             "DHCP device sync completed",
-            extra={"processed": len(payload.leases), "created": created, "updated": updated},
+            extra={
+                "processed_count": len(payload.leases),
+                "created_count": created,
+                "updated_count": updated,
+            },
         )
         return DhcpSyncResult(processed=len(payload.leases), created=created, updated=updated)
