@@ -1,9 +1,10 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone
 from typing import List, Optional, Dict
 
 from app.features.devices.models.device import Device
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpLeaseRecord
+from app.features.users.models.user import User
 from app.shared.mac_vendor import infer_vendor_from_mac
 
 
@@ -21,7 +22,7 @@ class DeviceRepository:
         return device
 
     def get_all(self, active_only: bool = False) -> List[Device]:
-        query = self.db.query(Device)
+        query = self.db.query(Device).options(joinedload(Device.user))
         if active_only:
             query = query.filter(Device.is_active == True)
         return query.order_by(Device.hostname.asc().nulls_last(), Device.client_ip.asc()).all()
@@ -120,11 +121,45 @@ class DeviceRepository:
             return {}
 
         rows = (
-            self.db.query(Device.client_ip, Device.hostname, Device.vendor)
+            self.db.query(Device.client_ip, Device.hostname, Device.vendor, User.name)
+            .outerjoin(User, Device.user_id == User.id)
             .filter(Device.client_ip.in_(client_ips))
             .all()
         )
         return {
-            ip: {"device_name": hostname, "device_vendor": vendor}
-            for ip, hostname, vendor in rows
+            ip: {"device_name": hostname, "device_vendor": vendor, "user_name": user_name}
+            for ip, hostname, vendor, user_name in rows
         }
+
+    def ensure_devices_for_client_ips(self, client_ips: List[str], source: str = "dns_observed") -> int:
+        """Best-effort upsert by client IP only. Returns number of created rows."""
+        unique_ips = sorted({ip.strip() for ip in client_ips if ip and ip.strip()})
+        if not unique_ips:
+            return 0
+
+        existing_rows = (
+            self.db.query(Device.client_ip)
+            .filter(Device.client_ip.in_(unique_ips))
+            .all()
+        )
+        existing = {row[0] for row in existing_rows}
+        now = datetime.now(timezone.utc)
+        created = 0
+
+        for ip in unique_ips:
+            if ip in existing:
+                continue
+            self.db.add(
+                Device(
+                    client_ip=ip,
+                    source=source,
+                    is_active=True,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            created += 1
+
+        if created:
+            self.db.commit()
+        return created

@@ -36,14 +36,16 @@ function formatTimestamp(params: GridRenderCellParams) {
 }
 
 function renderMachine(params: GridRenderCellParams) {
+  const userName = params.row.user_name as string | null | undefined;
   const deviceName = params.row.device_name as string | null | undefined;
   const deviceVendor = params.row.device_vendor as string | null | undefined;
   const clientIp = params.row.client_ip as string;
+  const title = userName ? `${userName} (${deviceName || 'Unknown device'})` : (deviceName || 'Unknown device');
 
   return (
     <Stack spacing={0} sx={{ py: 0.5 }}>
       <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
-        {deviceName || 'Unknown device'}
+        {title}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', lineHeight: 1.2 }}>
         {deviceVendor ? `${deviceVendor} - ${clientIp}` : clientIp}
