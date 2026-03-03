@@ -15,15 +15,19 @@ class DnsQueryService:
 
     def create_query(self, dns_query_data: DnsQueryCreate, db: Session) -> DnsQueryResponse:
         repository = DnsQueryRepository(db)
+        device_repository = DeviceRepository(db)
         logger.info("Creating DNS query", extra={"domain": dns_query_data.domain})
         dns_query = repository.create(dns_query_data)
+        device_repository.ensure_devices_for_client_ips([dns_query_data.client_ip])
         logger.info("DNS query created", extra={"id": getattr(dns_query, "id", None)})
         return DnsQueryResponse.model_validate(dns_query)
 
     def bulk_create_queries(self, queries: List[DnsQueryCreate], db: Session) -> dict:
         repository = DnsQueryRepository(db)
+        device_repository = DeviceRepository(db)
         logger.info("Bulk creating DNS queries", extra={"count": len(queries)})
         count = repository.bulk_create(queries)
+        device_repository.ensure_devices_for_client_ips([q.client_ip for q in queries])
         logger.info("Bulk DNS queries created", extra={"inserted": count})
         return {"inserted": count}
 
@@ -56,7 +60,7 @@ class DnsQueryService:
                 DnsQueryResponse.model_validate(item).model_copy(
                     update=identity_map.get(
                         item.client_ip,
-                        {"device_name": None, "device_vendor": None}
+                        {"device_name": None, "device_vendor": None, "user_name": None}
                     )
                 )
                 for item in items
