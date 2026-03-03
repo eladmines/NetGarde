@@ -13,8 +13,6 @@ from app.features.blocked_sites.models.blocked_site import BlockedSite
 from app.features.categories.models.category import Category 
 from app.features.dns_queries.models.dns_query import DnsQuery
 from app.features.devices.models.device import Device
-from app.features.domain_categories.models.domain_category import DomainCategory
-from app.features.domain_classification_jobs.models.domain_classification_job import DomainClassificationJob
 
 
 config = context.config
