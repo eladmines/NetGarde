@@ -4,6 +4,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
+import os
 
 from app.shared.utils.logging import setup_logging
 from app.shared.dependencies import get_db
@@ -16,11 +17,18 @@ from app.features.users.routes.user_route import router as user_router
 # Initialize logging early
 setup_logging()
 
-ALLOWED_ORIGINS = [
-    "https://d2qp7beltc09b8.cloudfront.net",  # production frontend
-    "http://localhost:3000",                  # local dev
-    "http://localhost:3001",                  # local dev
-]
+_allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
+ALLOWED_ORIGINS = (
+    [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+    if _allowed_origins_env
+    else [
+        # Production frontend (S3 website endpoint)
+        "http://netgarde-frontend.s3-website-us-east-1.amazonaws.com",
+        # Local dev
+        "http://localhost:3000",
+        "http://localhost:3001",
+    ]
+)
 
 # Middleware to ensure redirects use HTTPS when behind CloudFront
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
@@ -57,9 +65,6 @@ class StableCORSHeadersMiddleware(BaseHTTPMiddleware):
         allow_origin = None
         if origin in ALLOWED_ORIGINS:
             allow_origin = origin
-        elif origin is None:
-            # Fallback for CDN paths that may not forward Origin to backend.
-            allow_origin = "https://d2qp7beltc09b8.cloudfront.net"
 
         if allow_origin:
             response.headers["Access-Control-Allow-Origin"] = allow_origin
