@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
-import os
 
 class Settings(BaseSettings):
     DB_URL: str
@@ -17,6 +16,10 @@ class Settings(BaseSettings):
     VPN_ENDPOINT: str = ""
     VPN_SERVER_PUBLIC_KEY: str = ""
     VPN_PERSISTENT_KEEPALIVE: int = 25
+
+    # Host WireGuard agent (runs on EC2 host, reachable from docker bridge)
+    WG_AGENT_URL: str = "http://172.17.0.1:9109"
+    WG_AGENT_TOKEN: str = ""
     
     @property
     def cors_origins_list(self) -> List[str]:

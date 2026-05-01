@@ -58,12 +58,13 @@ class IpAllocationService:
             if candidate in used:
                 continue
             try:
-                lease = IpLease(pool_id=pool.id, peer_id=peer.id, ip=candidate)
-                self.leases.create(lease)
+                # Use a savepoint so a failed insert doesn't roll back unrelated ORM work
+                # (e.g., newly created IpPool / VpnPeer rows in the same transaction).
+                with self.db.begin_nested():
+                    lease = IpLease(pool_id=pool.id, peer_id=peer.id, ip=candidate)
+                    self.leases.create(lease)
                 return AllocatedLease(ip=candidate)
             except IntegrityError:
-                # Another concurrent request won this IP; retry.
-                self.db.rollback()
                 continue
 
         raise RuntimeError("No available IPs in pool")
