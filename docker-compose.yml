@@ -26,7 +26,8 @@ services:
       VPN_SERVER_PUBLIC_KEY: ${VPN_SERVER_PUBLIC_KEY:-ooeDpLVJvX8OaNz13CPNAuZXFMMzMx3nV7Kvg0LPy1c=}
       # Host WireGuard agent (must match systemd service on EC2)
       WG_AGENT_URL: ${WG_AGENT_URL:-http://172.17.0.1:9109}
-      WG_AGENT_TOKEN: ${WG_AGENT_TOKEN}
+      # Required: set WG_AGENT_TOKEN in repo-root `.env` (see `.env.production.example`) or export it in your shell.
+      WG_AGENT_TOKEN: ${WG_AGENT_TOKEN:?WG_AGENT_TOKEN is required (set in .env or environment)}
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
