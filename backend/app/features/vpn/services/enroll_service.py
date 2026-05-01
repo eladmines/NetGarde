@@ -7,6 +7,7 @@ from app.features.vpn.models.vpn_peer import VpnPeer
 from app.features.vpn.repositories.ip_pool_repository import IpPoolRepository
 from app.features.vpn.repositories.vpn_peer_repository import VpnPeerRepository
 from app.features.vpn.services.ip_allocation_service import IpAllocationService
+from app.features.vpn.services.wireguard_agent_client import apply_peer_on_host
 from app.shared.config import settings
 
 
@@ -51,6 +52,12 @@ class EnrollService:
             peer = self.peers.create(VpnPeer(device_id=device_id, public_key=public_key, pool_id=pool.id))
 
         lease = self.alloc.ensure_peer_lease(peer, pool)
+
+        # Persist allocation before touching host WireGuard state.
+        self.db.commit()
+
+        # Apply (or refresh) the live WireGuard peer on the EC2 host.
+        apply_peer_on_host(public_key=peer.public_key, allowed_ip=lease.ip)
 
         allowed_ips = [s.strip() for s in (pool.allowed_ips or "").split(",") if s.strip()]
         if not allowed_ips:

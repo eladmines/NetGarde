@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+import json
+import urllib.error
+import urllib.request
+
+from app.shared.config import settings
+
+
+def apply_peer_on_host(*, public_key: str, allowed_ip: str) -> None:
+    """
+    Notify the host WireGuard agent to apply:
+      wg set <iface> peer <pubkey> allowed-ips <ip>/32
+    """
+    base = (settings.WG_AGENT_URL or "").strip().rstrip("/")
+    token = (settings.WG_AGENT_TOKEN or "").strip()
+    if not base or not token:
+        raise RuntimeError("WG_AGENT_URL and WG_AGENT_TOKEN must be set")
+
+    url = f"{base}/v1/apply-peer"
+    payload = json.dumps({"public_key": public_key, "allowed_ip": allowed_ip}).encode("utf-8")
+
+    req = urllib.request.Request(url, data=payload, method="POST")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Authorization", f"Bearer {token}")
+
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            if resp.status not in (200, 201):
+                raise RuntimeError(f"wg agent returned {resp.status}: {body}")
+    except urllib.error.HTTPError as e:
+        err = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"wg agent HTTP {e.code}: {err}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"wg agent URL error: {e.reason}") from e
