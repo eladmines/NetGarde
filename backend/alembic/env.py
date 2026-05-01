@@ -14,6 +14,9 @@ from app.features.categories.models.category import Category
 from app.features.dns_queries.models.dns_query import DnsQuery
 from app.features.devices.models.device import Device
 from app.features.users.models.user import User
+from app.features.vpn.models.ip_pool import IpPool
+from app.features.vpn.models.vpn_peer import VpnPeer
+from app.features.vpn.models.ip_lease import IpLease
 
 
 config = context.config
