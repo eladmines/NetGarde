@@ -19,6 +19,7 @@ class IpLease(Base):
 
     pool = relationship("IpPool")
     peer = relationship("VpnPeer", back_populates="leases")
+    device = relationship("Device", back_populates="ip_lease", uselist=False)
 
     __table_args__ = (
         UniqueConstraint("pool_id", "ip", name="uq_ip_leases_pool_ip"),

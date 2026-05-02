@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpSyncRequest
@@ -27,11 +27,10 @@ def create_device_endpoint(
 
 @router.get("")
 def get_devices_endpoint(
-    active_only: bool = Query(default=False, description="Return active devices only"),
     db: Session = Depends(get_db),
     service: IDeviceService = Depends(get_device_service),
 ):
-    return get_devices_controller(db, service, active_only=active_only)
+    return get_devices_controller(db, service)
 
 
 @router.put("/{device_id}")

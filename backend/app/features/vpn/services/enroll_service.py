@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from app.features.devices.models.device import Device
 from app.features.vpn.models.ip_pool import IpPool
 from app.features.vpn.models.vpn_peer import VpnPeer
 from app.features.vpn.repositories.ip_pool_repository import IpPoolRepository
@@ -52,6 +53,17 @@ class EnrollService:
             peer = self.peers.create(VpnPeer(device_id=device_id, public_key=public_key, pool_id=pool.id))
 
         lease = self.alloc.ensure_peer_lease(peer, pool)
+
+        lease_row = self.alloc.leases.get_active_by_peer_id(peer.id)
+        if lease_row is None:
+            raise RuntimeError("Lease row missing after allocation")
+        if (
+            self.db.query(Device)
+            .filter(Device.ip_lease_id == lease_row.id)
+            .first()
+            is None
+        ):
+            self.db.add(Device(ip_lease_id=lease_row.id, source="vpn_enroll"))
 
         # Persist allocation before touching host WireGuard state.
         self.db.commit()
