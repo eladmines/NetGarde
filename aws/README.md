@@ -11,7 +11,7 @@ cd aws
 cp .env.example .env
 ```
 
-Edit `.env` with your region, S3 bucket name, EC2/CloudFront values, and GitHub Actions role names. Never put AWS access keys or `.pem` files in `.env`.
+Edit `.env` with your real values. **`.env.example` only shows placeholders** (no real IPs, bucket names, or distribution IDs). Never put AWS access keys or `.pem` files in `.env`.
 
 ## Setup Steps
 
