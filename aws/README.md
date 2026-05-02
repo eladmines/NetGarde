@@ -9,8 +9,7 @@ Configuration values are read from `aws/.env`; see `.env.example` for the variab
 ```text
 aws/
 ├── README.md
-├── .env.example          # committed; placeholder variable names and values
-├── .env                  # local only (gitignored); real values for your account
+├── .env.example
 ├── s3-setup.sh
 ├── cloudfront-backend-setup.sh
 └── update-github-actions-role.sh
