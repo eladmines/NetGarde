@@ -16,6 +16,7 @@ from app.features.devices.models.device import Device
 from app.features.vpn.models.ip_pool import IpPool
 from app.features.vpn.models.vpn_peer import VpnPeer
 from app.features.vpn.models.ip_lease import IpLease
+from app.features.vpn.models.vpn_enroll_event import VpnEnrollEvent
 
 
 config = context.config

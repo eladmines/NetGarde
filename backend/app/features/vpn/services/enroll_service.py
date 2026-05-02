@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from app.features.devices.models.device import Device
+from app.features.vpn.models.vpn_enroll_event import VpnEnrollEvent
 from app.features.vpn.models.ip_pool import IpPool
 from app.features.vpn.models.vpn_peer import VpnPeer
 from app.features.vpn.repositories.ip_pool_repository import IpPoolRepository
@@ -81,6 +82,18 @@ class EnrollService:
         if lease_row is None:
             raise RuntimeError("Lease row missing after allocation")
         self._sync_device_for_lease(lease_row, payload.hostname, payload.mac_address)
+
+        dev = self.db.query(Device).filter(Device.ip_lease_id == lease_row.id).first()
+        self.db.add(
+            VpnEnrollEvent(
+                peer_id=peer.id,
+                device_id=dev.id if dev else None,
+                event_type="enroll",
+                lease_ip=lease.ip,
+                hostname=payload.hostname,
+                mac_address=payload.mac_address,
+            )
+        )
 
         # Persist allocation before touching host WireGuard state.
         self.db.commit()
