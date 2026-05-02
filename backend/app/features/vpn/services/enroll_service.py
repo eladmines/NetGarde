@@ -7,6 +7,7 @@ from app.features.vpn.models.ip_pool import IpPool
 from app.features.vpn.models.vpn_peer import VpnPeer
 from app.features.vpn.repositories.ip_pool_repository import IpPoolRepository
 from app.features.vpn.repositories.vpn_peer_repository import VpnPeerRepository
+from app.features.vpn.schemas.enroll import EnrollRequest
 from app.features.vpn.services.ip_allocation_service import IpAllocationService
 from app.features.vpn.services.wireguard_agent_client import apply_peer_on_host
 from app.shared.config import settings
@@ -42,9 +43,31 @@ class EnrollService:
         )
         return self.pools.create(pool)
 
-    def enroll(self, device_id: str, public_key: str) -> dict:
-        device_id = device_id.strip()
-        public_key = public_key.strip()
+    def _sync_device_for_lease(
+        self,
+        lease_row,
+        hostname: str | None,
+        mac_address: str | None,
+    ) -> None:
+        dev = self.db.query(Device).filter(Device.ip_lease_id == lease_row.id).first()
+        if dev is None:
+            self.db.add(
+                Device(
+                    ip_lease_id=lease_row.id,
+                    source="vpn_enroll",
+                    hostname=hostname,
+                    mac_address=mac_address,
+                )
+            )
+            return
+        if hostname is not None:
+            dev.hostname = hostname
+        if mac_address is not None:
+            dev.mac_address = mac_address
+
+    def enroll(self, payload: EnrollRequest) -> dict:
+        device_id = payload.device_id.strip()
+        public_key = payload.public_key.strip()
 
         pool = self._get_or_create_default_pool()
 
@@ -57,13 +80,7 @@ class EnrollService:
         lease_row = self.alloc.leases.get_active_by_peer_id(peer.id)
         if lease_row is None:
             raise RuntimeError("Lease row missing after allocation")
-        if (
-            self.db.query(Device)
-            .filter(Device.ip_lease_id == lease_row.id)
-            .first()
-            is None
-        ):
-            self.db.add(Device(ip_lease_id=lease_row.id, source="vpn_enroll"))
+        self._sync_device_for_lease(lease_row, payload.hostname, payload.mac_address)
 
         # Persist allocation before touching host WireGuard state.
         self.db.commit()

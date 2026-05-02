@@ -16,7 +16,7 @@ router = APIRouter(prefix="/v1", tags=["VPN"])
 def enroll_endpoint(payload: EnrollRequest, db: Session = Depends(get_db)):
     service = EnrollService(db)
     try:
-        return service.enroll(payload.device_id, payload.public_key)
+        return service.enroll(payload)
     except RuntimeError as e:
         # Common misconfig: VPN_ENDPOINT / VPN_SERVER_PUBLIC_KEY not set.
         logger.exception("Enroll failed due to server configuration")
