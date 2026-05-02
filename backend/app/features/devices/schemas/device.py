@@ -4,10 +4,9 @@ from typing import Optional, List
 
 
 class DeviceCreate(BaseModel):
-    client_ip: str
+    ip_lease_id: int
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
-    user_id: Optional[int] = None
     source: str = "manual"
 
     @field_validator("mac_address")
@@ -21,8 +20,6 @@ class DeviceCreate(BaseModel):
 class DeviceUpdate(BaseModel):
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
-    user_id: Optional[int] = None
-    is_active: Optional[bool] = None
 
     @field_validator("mac_address")
     @classmethod
@@ -34,14 +31,11 @@ class DeviceUpdate(BaseModel):
 
 class DeviceRead(BaseModel):
     id: int
+    ip_lease_id: int
     client_ip: str
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
-    user_id: Optional[int] = None
-    user_name: Optional[str] = None
-    vendor: Optional[str] = None
     source: str
-    is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
@@ -68,3 +62,4 @@ class DhcpSyncResult(BaseModel):
     processed: int
     created: int
     updated: int
+    skipped: int

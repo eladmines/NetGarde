@@ -4,8 +4,7 @@ from typing import List, Optional, Dict
 
 from app.features.devices.models.device import Device
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpLeaseRecord
-from app.features.users.models.user import User
-from app.shared.mac_vendor import infer_vendor_from_mac
+from app.features.vpn.models.ip_lease import IpLease
 
 
 class DeviceRepository:
@@ -13,28 +12,45 @@ class DeviceRepository:
         self.db = db
 
     def create(self, data: DeviceCreate) -> Device:
-        payload = data.model_dump()
-        payload["vendor"] = infer_vendor_from_mac(payload.get("mac_address"))
-        device = Device(**payload)
+        device = Device(**data.model_dump())
         self.db.add(device)
         self.db.commit()
         self.db.refresh(device)
         return device
 
-    def get_all(self, active_only: bool = False) -> List[Device]:
-        query = self.db.query(Device).options(joinedload(Device.user))
-        if active_only:
-            query = query.filter(Device.is_active == True)
-        return query.order_by(Device.hostname.asc().nulls_last(), Device.client_ip.asc()).all()
+    def get_all(self) -> List[Device]:
+        return (
+            self.db.query(Device)
+            .options(joinedload(Device.ip_lease))
+            .join(IpLease, Device.ip_lease_id == IpLease.id)
+            .order_by(IpLease.ip.asc())
+            .all()
+        )
 
     def get_by_id(self, device_id: int) -> Optional[Device]:
-        return self.db.query(Device).filter(Device.id == device_id).first()
+        return (
+            self.db.query(Device)
+            .options(joinedload(Device.ip_lease))
+            .filter(Device.id == device_id)
+            .first()
+        )
 
     def get_by_client_ip(self, client_ip: str) -> Optional[Device]:
-        return self.db.query(Device).filter(Device.client_ip == client_ip).first()
+        return (
+            self.db.query(Device)
+            .options(joinedload(Device.ip_lease))
+            .join(IpLease, Device.ip_lease_id == IpLease.id)
+            .filter(IpLease.ip == client_ip, IpLease.released_at.is_(None))
+            .first()
+        )
 
     def get_by_mac_address(self, mac_address: str) -> Optional[Device]:
-        return self.db.query(Device).filter(Device.mac_address == mac_address.lower()).first()
+        return (
+            self.db.query(Device)
+            .options(joinedload(Device.ip_lease))
+            .filter(Device.mac_address == mac_address.lower())
+            .first()
+        )
 
     def update(self, device_id: int, data: DeviceUpdate) -> Optional[Device]:
         device = self.get_by_id(device_id)
@@ -42,8 +58,6 @@ class DeviceRepository:
             return None
 
         updates = data.model_dump(exclude_unset=True)
-        if "mac_address" in updates:
-            updates["vendor"] = infer_vendor_from_mac(updates.get("mac_address"))
         for key, value in updates.items():
             setattr(device, key, value)
 
@@ -62,36 +76,42 @@ class DeviceRepository:
         return True
 
     def upsert_from_dhcp_lease(self, lease: DhcpLeaseRecord) -> str:
-        """Upsert device based on MAC address first, then client IP. Returns 'created' or 'updated'."""
-        device = None
+        """
+        Upsert when client_ip matches an active VPN lease IP.
+        Returns 'created', 'updated', or 'skipped' if no matching lease.
+        """
+        il = (
+            self.db.query(IpLease)
+            .filter(IpLease.ip == lease.client_ip, IpLease.released_at.is_(None))
+            .first()
+        )
+        if not il:
+            return "skipped"
 
+        device = None
         if lease.mac_address:
             device = self.get_by_mac_address(lease.mac_address)
 
         if not device:
-            device = self.get_by_client_ip(lease.client_ip)
+            device = self.db.query(Device).filter(Device.ip_lease_id == il.id).first()
 
         now = datetime.now(timezone.utc)
         if device:
-            device.client_ip = lease.client_ip
+            device.ip_lease_id = il.id
             if lease.hostname:
                 device.hostname = lease.hostname
             if lease.mac_address:
                 device.mac_address = lease.mac_address
-                device.vendor = infer_vendor_from_mac(lease.mac_address)
             device.source = "dhcp_lease"
-            device.is_active = True
             device.updated_at = now
             self.db.commit()
             return "updated"
 
         new_device = Device(
-            client_ip=lease.client_ip,
+            ip_lease_id=il.id,
             hostname=lease.hostname,
             mac_address=lease.mac_address,
-            vendor=infer_vendor_from_mac(lease.mac_address),
             source="dhcp_lease",
-            is_active=True,
             created_at=now,
             updated_at=now,
         )
@@ -104,56 +124,55 @@ class DeviceRepository:
             return {}
 
         rows = (
-            self.db.query(Device.client_ip, Device.hostname)
-            .filter(Device.client_ip.in_(client_ips))
+            self.db.query(IpLease.ip, Device.hostname)
+            .join(Device, Device.ip_lease_id == IpLease.id)
+            .filter(IpLease.ip.in_(client_ips), IpLease.released_at.is_(None))
             .all()
         )
         return {ip: hostname for ip, hostname in rows}
 
     def get_identity_map_by_client_ips(self, client_ips: List[str]) -> Dict[str, Dict[str, Optional[str]]]:
         """
-        Return a mapping of client IP to device identity fields:
-        {
-            "10.0.0.2": {"device_name": "Mines-Laptop", "device_vendor": "Dell"}
-        }
+        Map client IP (VPN inner IP when queries exit through the tunnel) to device identity.
         """
         if not client_ips:
             return {}
 
         rows = (
-            self.db.query(Device.client_ip, Device.hostname, Device.vendor, User.name)
-            .outerjoin(User, Device.user_id == User.id)
-            .filter(Device.client_ip.in_(client_ips))
+            self.db.query(IpLease.ip, Device.hostname)
+            .join(Device, Device.ip_lease_id == IpLease.id)
+            .filter(IpLease.ip.in_(client_ips), IpLease.released_at.is_(None))
             .all()
         )
         return {
-            ip: {"device_name": hostname, "device_vendor": vendor, "user_name": user_name}
-            for ip, hostname, vendor, user_name in rows
+            ip: {"device_name": hostname, "device_vendor": None, "user_name": None}
+            for ip, hostname in rows
         }
 
     def ensure_devices_for_client_ips(self, client_ips: List[str], source: str = "dns_observed") -> int:
-        """Best-effort upsert by client IP only. Returns number of created rows."""
+        """Create device rows for client IPs that match an active lease and have no device yet."""
         unique_ips = sorted({ip.strip() for ip in client_ips if ip and ip.strip()})
         if not unique_ips:
             return 0
 
-        existing_rows = (
-            self.db.query(Device.client_ip)
-            .filter(Device.client_ip.in_(unique_ips))
-            .all()
-        )
-        existing = {row[0] for row in existing_rows}
         now = datetime.now(timezone.utc)
         created = 0
 
         for ip in unique_ips:
-            if ip in existing:
+            lease = (
+                self.db.query(IpLease)
+                .filter(IpLease.ip == ip, IpLease.released_at.is_(None))
+                .first()
+            )
+            if not lease:
+                continue
+            exists = self.db.query(Device.id).filter(Device.ip_lease_id == lease.id).first()
+            if exists:
                 continue
             self.db.add(
                 Device(
-                    client_ip=ip,
+                    ip_lease_id=lease.id,
                     source=source,
-                    is_active=True,
                     created_at=now,
                     updated_at=now,
                 )
