@@ -4,6 +4,18 @@ Bash helpers in this folder provision or update a small set of AWS resources use
 
 Configuration values are read from `aws/.env`; see `.env.example` for the variable names.
 
+## Structure
+
+```text
+aws/
+├── README.md
+├── .env.example          # committed; placeholder variable names and values
+├── .env                  # local only (gitignored); real values for your account
+├── s3-setup.sh
+├── cloudfront-backend-setup.sh
+└── update-github-actions-role.sh
+```
+
 ## `s3-setup.sh`
 
 Creates the frontend S3 bucket if it does not already exist, then turns on static website hosting (`index.html` for both index and error document), applies a public read bucket policy, relaxes the bucket public-access block so that policy can take effect, and sets a permissive CORS rule for GET/HEAD. Prints the S3 website endpoint when finished.
