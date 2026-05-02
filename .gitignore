@@ -8,6 +8,7 @@ __pycache__/
 !.env.example
 !.env.development.example
 !.env.production.example
+!aws/.env.example
 
 # Node
 node_modules/
