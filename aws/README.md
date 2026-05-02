@@ -2,6 +2,17 @@
 
 This directory contains scripts and configurations for deploying NetGarde to AWS.
 
+## Configuration
+
+Scripts read **`aws/.env`** (not committed). Copy the example file once:
+
+```bash
+cd aws
+cp .env.example .env
+```
+
+Edit `.env` with your region, S3 bucket name, EC2/CloudFront values, and GitHub Actions role names. Never put AWS access keys or `.pem` files in `.env`.
+
 ## Setup Steps
 
 ### Step 1: Create S3 Bucket
@@ -13,7 +24,7 @@ chmod +x s3-setup.sh
 ./s3-setup.sh
 ```
 
-**Important**: If the bucket name `netgarde-frontend` is already taken, edit `s3-setup.sh` and change `BUCKET_NAME` to something unique (e.g., `netgarde-frontend-yourname`).
+**Important**: If the bucket name is already taken globally, set `FRONTEND_S3_BUCKET` in `.env` to something unique (e.g., `netgarde-frontend-yourname`).
 
 ### Step 2: Create CloudFront Distribution
 (Coming next)

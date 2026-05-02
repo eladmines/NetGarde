@@ -1,12 +1,22 @@
 #!/bin/bash
 # Bash script to update GitHub Actions IAM role with S3 and CloudFront permissions
 
-# Configuration
-AWS_REGION="us-east-1"
-ROLE_NAME="GitHubActionsDeployRole"
-S3_BUCKET_NAME="netgarde-frontend"
-CLOUDFRONT_DISTRIBUTION_ID="E26UGOT5YUPFRY"
-POLICY_NAME="GitHubActionsDeployPolicy"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ ! -f "$SCRIPT_DIR/.env" ]; then
+    echo "ERROR: $SCRIPT_DIR/.env not found. Copy aws/.env.example to aws/.env and edit values."
+    exit 1
+fi
+set -a
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/.env"
+set +a
+
+# Configuration (from .env)
+AWS_REGION="${AWS_REGION:?Set AWS_REGION in aws/.env}"
+ROLE_NAME="${GITHUB_ACTIONS_ROLE_NAME:?Set GITHUB_ACTIONS_ROLE_NAME in aws/.env}"
+S3_BUCKET_NAME="${FRONTEND_S3_BUCKET:?Set FRONTEND_S3_BUCKET in aws/.env}"
+CLOUDFRONT_DISTRIBUTION_ID="${FRONTEND_CLOUDFRONT_DISTRIBUTION_ID:?Set FRONTEND_CLOUDFRONT_DISTRIBUTION_ID in aws/.env}"
+POLICY_NAME="${GITHUB_ACTIONS_POLICY_NAME:?Set GITHUB_ACTIONS_POLICY_NAME in aws/.env}"
 
 echo "Updating IAM role permissions for GitHub Actions..."
 echo "Role: $ROLE_NAME"

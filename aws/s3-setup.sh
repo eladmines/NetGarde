@@ -1,8 +1,18 @@
 #!/bin/bash
 
-# Configuration
-AWS_REGION="us-east-1"
-BUCKET_NAME="netgarde-frontend"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ ! -f "$SCRIPT_DIR/.env" ]; then
+    echo "ERROR: $SCRIPT_DIR/.env not found. Copy aws/.env.example to aws/.env and edit values."
+    exit 1
+fi
+set -a
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/.env"
+set +a
+
+# Configuration (from .env)
+BUCKET_NAME="${FRONTEND_S3_BUCKET:?Set FRONTEND_S3_BUCKET in aws/.env}"
+AWS_REGION="${AWS_REGION:?Set AWS_REGION in aws/.env}"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
 echo "Setting up S3 bucket for NetGarde frontend..."
