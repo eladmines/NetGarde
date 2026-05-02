@@ -1,10 +1,28 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 
 
 class EnrollRequest(BaseModel):
     device_id: str = Field(min_length=1, max_length=64)
     public_key: str = Field(min_length=1, max_length=255)
+    hostname: Optional[str] = Field(None, max_length=255)
+    mac_address: Optional[str] = Field(None, max_length=17)
+
+    @field_validator("hostname")
+    @classmethod
+    def strip_hostname(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        s = v.strip()
+        return s or None
+
+    @field_validator("mac_address")
+    @classmethod
+    def normalize_mac(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        s = v.strip().lower()
+        return s or None
 
 
 class EnrollResponse(BaseModel):
