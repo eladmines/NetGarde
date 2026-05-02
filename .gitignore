@@ -14,3 +14,6 @@ node_modules/
 
 # GitHub
 .github/secrets
+
+# Private keys (never commit; use Secrets Manager / ~/.ssh)
+*.pem
