@@ -2,13 +2,28 @@ from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.features.dns_queries.repositories.dns_query_repository import DnsQueryRepository
+from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryResponse
+from app.features.dns_queries.schemas.dns_alert import DnsAlertResponse
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
 from app.features.dns_queries.dns_persist import filter_queries_to_persist, should_persist_query
+from app.features.dns_queries.dns_ingest_stats import ingest_stats
+from app.features.dns_queries.services.dns_anomaly_service import DnsAnomalyService
 from app.features.devices.repositories.device_repository import DeviceRepository
+from app.shared.config import settings
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _use_live_aggregates(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+) -> bool:
+    """Use in-memory counters when selective persistence is on and no date filter."""
+    if settings.PERSIST_ALL_DNS:
+        return False
+    return start_date is None and end_date is None
 
 
 class DnsQueryService:
@@ -17,6 +32,8 @@ class DnsQueryService:
     def create_query(self, dns_query_data: DnsQueryCreate, db: Session) -> DnsQueryResponse:
         device_repository = DeviceRepository(db)
         device_repository.ensure_devices_for_client_ips([dns_query_data.client_ip])
+        ingest_stats.record([dns_query_data])
+        DnsAnomalyService(db).process_queries([dns_query_data])
 
         if not should_persist_query(dns_query_data):
             logger.debug(
@@ -43,6 +60,8 @@ class DnsQueryService:
     def bulk_create_queries(self, queries: List[DnsQueryCreate], db: Session) -> dict:
         device_repository = DeviceRepository(db)
         device_repository.ensure_devices_for_client_ips([q.client_ip for q in queries])
+        ingest_stats.record(queries)
+        alerts_created = DnsAnomalyService(db).process_queries(queries)
 
         to_persist = filter_queries_to_persist(queries)
         inserted = 0
@@ -63,6 +82,7 @@ class DnsQueryService:
             "received": len(queries),
             "inserted": inserted,
             "skipped": len(queries) - inserted,
+            "alerts_created": alerts_created,
         }
 
     def get_queries(
@@ -111,14 +131,48 @@ class DnsQueryService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
     ) -> dict:
+        if _use_live_aggregates(start_date, end_date):
+            logger.info("Fetching live DNS stats")
+            return ingest_stats.get_stats()
+
         repository = DnsQueryRepository(db)
-        logger.info("Fetching DNS stats")
-        return repository.get_stats(start_date=start_date, end_date=end_date)
+        logger.info("Fetching DNS stats from database")
+        stats = repository.get_stats(start_date=start_date, end_date=end_date)
+        stats["source"] = "database"
+        return stats
 
     def get_unique_clients(self, db: Session) -> List[str]:
+        if not settings.PERSIST_ALL_DNS:
+            live_clients = set(ingest_stats.get_unique_clients())
+            db_clients = set(DnsQueryRepository(db).get_unique_clients())
+            return sorted(live_clients | db_clients)
+
         repository = DnsQueryRepository(db)
         logger.info("Fetching unique clients")
         return repository.get_unique_clients()
+
+    def get_alerts(
+        self,
+        db: Session,
+        page: int = 1,
+        page_size: int = 50,
+        alert_type: Optional[str] = None,
+        client_ip: Optional[str] = None,
+    ) -> dict:
+        repository = DnsAlertRepository(db)
+        items, total = repository.get_recent(
+            page=page,
+            page_size=page_size,
+            alert_type=alert_type,
+            client_ip=client_ip,
+        )
+        return {
+            "items": [DnsAlertResponse.model_validate(item) for item in items],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "pages": (total + page_size - 1) // page_size if page_size else 0,
+        }
 
     def cleanup_old_records(self, db: Session, days: int = 30) -> dict:
         repository = DnsQueryRepository(db)
@@ -137,13 +191,23 @@ class DnsQueryService:
         filter_noise: bool = True,
         limit: int = 50
     ) -> dict:
+        if _use_live_aggregates(start_date, end_date) and client_ip is None:
+            logger.info("Fetching live grouped sites")
+            return ingest_stats.get_grouped_sites(
+                blocked_only=blocked_only,
+                filter_noise=filter_noise,
+                limit=limit,
+            )
+
         repository = DnsQueryRepository(db)
-        logger.info("Fetching grouped sites")
-        return repository.get_grouped_by_site(
+        logger.info("Fetching grouped sites from database")
+        result = repository.get_grouped_by_site(
             start_date=start_date,
             end_date=end_date,
             client_ip=client_ip,
             blocked_only=blocked_only,
             filter_noise=filter_noise,
-            limit=limit
+            limit=limit,
         )
+        result["source"] = "database"
+        return result

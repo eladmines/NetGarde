@@ -50,4 +50,19 @@ export const DNS_QUERY_ENDPOINTS = {
     }
     return url.toString();
   },
+  dnsAlerts: (params?: {
+    page?: number;
+    page_size?: number;
+    alert_type?: string;
+    client_ip?: string;
+  }) => {
+    const url = new URL(`${API_BASE_URL}/dns-queries/alerts`);
+    if (params) {
+      if (params.page !== undefined) url.searchParams.append('page', params.page.toString());
+      if (params.page_size !== undefined) url.searchParams.append('page_size', params.page_size.toString());
+      if (params.alert_type) url.searchParams.append('alert_type', params.alert_type);
+      if (params.client_ip) url.searchParams.append('client_ip', params.client_ip.trim());
+    }
+    return url.toString();
+  },
 };

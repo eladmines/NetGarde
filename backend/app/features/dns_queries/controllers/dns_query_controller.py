@@ -112,3 +112,20 @@ def get_grouped_sites_controller(
         filter_noise=filter_noise,
         limit=limit
     )
+
+
+def get_dns_alerts_controller(
+    db: Session,
+    service: IDnsQueryService,
+    page: int = 1,
+    page_size: int = 50,
+    alert_type: Optional[str] = None,
+    client_ip: Optional[str] = None,
+):
+    return service.get_alerts(
+        db=db,
+        page=page,
+        page_size=page_size,
+        alert_type=alert_type,
+        client_ip=client_ip,
+    )

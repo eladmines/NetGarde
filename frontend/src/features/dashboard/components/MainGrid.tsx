@@ -7,6 +7,7 @@ import DnsStatsCards from './DnsStatsCards';
 import DnsLiveFeed from './DnsLiveFeed';
 import DnsSitesView from './DnsSitesView';
 import BlockedAttemptsView from './BlockedAttemptsView';
+import DnsAlertsView from './DnsAlertsView';
 
 export default function MainGrid() {
   return (
@@ -15,10 +16,15 @@ export default function MainGrid() {
         Overview
       </Typography>
       <DnsStatsCards />
+      <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
+        <Grid size={{ xs: 12 }}>
+          <DnsAlertsView />
+        </Grid>
+      </Grid>
       <Grid container spacing={2} columns={12} sx={{ mt: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-            Visited Sites
+            Recent Sites
           </Typography>
           <DnsSitesView />
         </Grid>
@@ -36,7 +42,7 @@ export default function MainGrid() {
         </Grid>
       </Grid>
       <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 4 }}>
-        DNS Query Log
+        Blocked & Persisted Queries
       </Typography>
       <Grid container spacing={2} columns={12}>
         <Grid size={{ xs: 12 }}>
