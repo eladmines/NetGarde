@@ -182,7 +182,6 @@ function AlertRow({
   const label = TYPE_LABEL[alert.alert_type] || alert.alert_type;
   const severity = SEVERITY_COLOR[alert.severity] || 'default';
   const inspectDomain = lookupDomainForAlert(alert);
-  const showReason = Boolean(alert.message);
 
   return (
     <ListItem
@@ -218,13 +217,8 @@ function AlertRow({
                 </Typography>
               )}
             </Stack>
-            {showReason && (
-              <Typography
-                variant="caption"
-                color={alert.alert_type === 'suspicious_domain' ? 'warning.main' : 'text.secondary'}
-                sx={{ display: 'block', fontWeight: alert.alert_type === 'suspicious_domain' ? 600 : 400 }}
-              >
-                {alert.alert_type === 'suspicious_domain' ? 'Why suspicious: ' : ''}
+            {alert.message && alert.alert_type !== 'suspicious_domain' && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 {alert.message}
               </Typography>
             )}
