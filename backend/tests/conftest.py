@@ -7,7 +7,19 @@ from sqlalchemy.pool import StaticPool
 os.environ.setdefault('DB_URL', 'sqlite:///:memory:')
 
 from app.shared.database import Base
-from app.features.blocked_sites.models.blocked_site import BlockedSite
+
+# Register all models on Base.metadata (required for create_all FK resolution)
+from app.features.blocked_sites.models.blocked_site import BlockedSite  # noqa: F401
+from app.features.categories.models.category import Category  # noqa: F401
+from app.features.dns_queries.models.dns_query import DnsQuery  # noqa: F401
+from app.features.dns_queries.models.dns_alert import DnsAlert  # noqa: F401
+from app.features.dns_queries.models.domain_first_seen import DomainFirstSeen  # noqa: F401
+from app.features.devices.models.device import Device  # noqa: F401
+from app.features.vpn.models.ip_pool import IpPool  # noqa: F401
+from app.features.vpn.models.vpn_peer import VpnPeer  # noqa: F401
+from app.features.vpn.models.ip_lease import IpLease  # noqa: F401
+from app.features.vpn.models.vpn_enroll_event import VpnEnrollEvent  # noqa: F401
+from app.features.vpn.models.device_usage_sample import DeviceUsageSample  # noqa: F401
 
 
 @pytest.fixture(scope="function")
