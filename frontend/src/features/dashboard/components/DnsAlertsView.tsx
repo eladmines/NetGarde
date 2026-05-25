@@ -52,6 +52,7 @@ function AlertRow({
   const label = TYPE_LABEL[alert.alert_type] || alert.alert_type;
   const severity = SEVERITY_COLOR[alert.severity] || 'default';
   const whoisDomain = lookupDomainForAlert(alert);
+  const showReason = Boolean(alert.message);
 
   return (
     <ListItem
@@ -71,22 +72,29 @@ function AlertRow({
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ pr: whoisDomain ? 4 : 0 }}>
             <Chip label={label} size="small" color={severity} variant="outlined" />
             <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
-              {alert.domain || alert.message || 'Alert'}
+              {alert.domain || alert.root_domain || alert.message || 'Alert'}
             </Typography>
           </Stack>
         }
         secondary={
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.25, flexWrap: 'wrap' }}>
-            <Typography variant="caption" color="text.secondary">
-              {formatShortDateTime(alert.timestamp)}
-            </Typography>
-            {alert.client_ip && (
-              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                {alert.client_ip}
-              </Typography>
-            )}
-            {alert.message && alert.domain && (
+          <Stack spacing={0.75} sx={{ mt: 0.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
               <Typography variant="caption" color="text.secondary">
+                {formatShortDateTime(alert.timestamp)}
+              </Typography>
+              {alert.client_ip && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  {alert.client_ip}
+                </Typography>
+              )}
+            </Stack>
+            {showReason && (
+              <Typography
+                variant="caption"
+                color={alert.alert_type === 'suspicious_domain' ? 'warning.main' : 'text.secondary'}
+                sx={{ display: 'block', fontWeight: alert.alert_type === 'suspicious_domain' ? 600 : 400 }}
+              >
+                {alert.alert_type === 'suspicious_domain' ? 'Why suspicious: ' : ''}
                 {alert.message}
               </Typography>
             )}
