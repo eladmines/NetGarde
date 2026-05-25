@@ -2,7 +2,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from app.features.dns_queries.dns_anomaly import is_suspicious_domain
+from app.features.dns_queries.dns_anomaly import get_suspicious_domain_reasons
 from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
 from app.features.dns_queries.repositories.domain_first_seen_repository import DomainFirstSeenRepository
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
@@ -65,7 +65,8 @@ class DnsAnomalyService:
                 )
                 alerts += 1
 
-        if is_suspicious_domain(query.domain):
+        suspicious_reasons = get_suspicious_domain_reasons(query.domain)
+        if suspicious_reasons:
             self.alert_repo.create(
                 timestamp=query.timestamp,
                 client_ip=query.client_ip,
@@ -73,7 +74,7 @@ class DnsAnomalyService:
                 severity="high",
                 domain=query.domain,
                 root_domain=root,
-                message=f"Suspicious domain pattern: {query.domain}",
+                message="; ".join(suspicious_reasons),
             )
             alerts += 1
 
