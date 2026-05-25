@@ -43,13 +43,16 @@ def high_entropy_subdomain_reasons(domain: str) -> List[str]:
     first = labels[0]
     reasons: List[str] = []
 
-    if len(first) >= 20:
-        digit_ratio = sum(ch.isdigit() for ch in first) / len(first)
-        if digit_ratio >= 0.25:
+    for segment in first.split("-"):
+        if len(segment) < 16:
+            continue
+        digit_ratio = sum(ch.isdigit() for ch in segment) / len(segment)
+        if digit_ratio >= 0.75:
             pct = int(digit_ratio * 100)
             reasons.append(
-                f"Subdomain looks random: long label with many digits ({pct}% digits in '{first}')"
+                f"Subdomain looks random: long label with many digits ({pct}% digits in '{segment}')"
             )
+            break
 
     if len(first) >= 16 and _ENTROPY_LABEL.match(first):
         reasons.append(

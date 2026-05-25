@@ -39,3 +39,10 @@ def test_high_entropy_subdomain_reasons_describes_label():
     reasons = high_entropy_subdomain_reasons("xk8f2a9m3n7p1q4r5.example.com")
     assert len(reasons) == 1
     assert "xk8f2a9m3n7p1q4r5" in reasons[0]
+
+
+def test_hyphenated_service_subdomain_not_flagged():
+    domain = "cursor-lb-3-1690831134.example.com"
+    assert is_high_entropy_subdomain(domain) is False
+    assert is_suspicious_domain(domain) is False
+    assert high_entropy_subdomain_reasons(domain) == []
