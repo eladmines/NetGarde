@@ -39,7 +39,11 @@ def bulk_create_dns_queries_endpoint(
     db: Session = Depends(get_db),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
-    """Create multiple DNS query log entries at once."""
+    """Create multiple DNS query log entries at once.
+
+    All queries are broadcast on the WebSocket live feed. By default only blocked
+    queries are persisted to RDS (see PERSIST_ALL_DNS).
+    """
     return bulk_create_dns_queries_controller(bulk_data, db, service)
 
 

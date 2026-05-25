@@ -57,7 +57,7 @@ NetGarde intercepts all DNS traffic through a WireGuard VPN tunnel, blocks unwan
 1. **Client devices** connect to the home router, which tunnels DNS traffic via **WireGuard** to the EC2 instance
 2. **dnsmasq** on the EC2 resolves DNS queries, blocking domains listed in `blocked-domains.conf`
 3. **dns_log_watcher** (systemd service) tails `dnsmasq.log` in real-time, parses new queries, and sends batches to the backend API every 2–3 seconds
-4. **FastAPI backend** stores queries in PostgreSQL (RDS) and broadcasts them via **WebSocket** to connected dashboard clients
+4. **FastAPI backend** broadcasts all queries via **WebSocket** to the live dashboard; by default only **blocked** queries are stored in PostgreSQL (RDS). Set `PERSIST_ALL_DNS=true` for legacy full logging.
 5. **dns-sync container** periodically pulls the blocked sites list from the API and regenerates `blocked-domains.conf` for dnsmasq
 6. **React dashboard** displays live feed, statistics, and management interfaces via CloudFront
 

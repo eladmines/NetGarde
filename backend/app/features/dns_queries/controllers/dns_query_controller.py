@@ -11,17 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_dns_query_controller(dns_query_data: DnsQueryCreate, db: Session, service: IDnsQueryService):
-    result = service.create_query(dns_query_data, db)
-    # Broadcast to WebSocket clients
     _broadcast_queries([dns_query_data])
-    return result
+    return service.create_query(dns_query_data, db)
 
 
 def bulk_create_dns_queries_controller(bulk_data: DnsQueryBulkCreate, db: Session, service: IDnsQueryService):
-    result = service.bulk_create_queries(bulk_data.queries, db)
-    # Broadcast to WebSocket clients
     _broadcast_queries(bulk_data.queries)
-    return result
+    return service.bulk_create_queries(bulk_data.queries, db)
 
 
 def _broadcast_queries(queries: List[DnsQueryCreate]):

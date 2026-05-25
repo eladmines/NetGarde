@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.features.dns_queries.repositories.dns_query_repository import DnsQueryRepository
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryResponse
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
+from app.features.dns_queries.dns_persist import filter_queries_to_persist, should_persist_query
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.shared.utils.logging import get_logger
 
@@ -14,22 +15,55 @@ class DnsQueryService:
     """Implementation of IDnsQueryService."""
 
     def create_query(self, dns_query_data: DnsQueryCreate, db: Session) -> DnsQueryResponse:
-        repository = DnsQueryRepository(db)
         device_repository = DeviceRepository(db)
+        device_repository.ensure_devices_for_client_ips([dns_query_data.client_ip])
+
+        if not should_persist_query(dns_query_data):
+            logger.debug(
+                "DNS query not persisted (allowed traffic)",
+                extra={"domain": dns_query_data.domain},
+            )
+            return DnsQueryResponse(
+                id=0,
+                timestamp=dns_query_data.timestamp,
+                client_ip=dns_query_data.client_ip,
+                domain=dns_query_data.domain,
+                query_type=dns_query_data.query_type,
+                action=dns_query_data.action,
+                blocked=dns_query_data.blocked,
+                created_at=None,
+            )
+
+        repository = DnsQueryRepository(db)
         logger.info("Creating DNS query", extra={"domain": dns_query_data.domain})
         dns_query = repository.create(dns_query_data)
-        device_repository.ensure_devices_for_client_ips([dns_query_data.client_ip])
         logger.info("DNS query created", extra={"id": getattr(dns_query, "id", None)})
         return DnsQueryResponse.model_validate(dns_query)
 
     def bulk_create_queries(self, queries: List[DnsQueryCreate], db: Session) -> dict:
-        repository = DnsQueryRepository(db)
         device_repository = DeviceRepository(db)
-        logger.info("Bulk creating DNS queries", extra={"count": len(queries)})
-        count = repository.bulk_create(queries)
         device_repository.ensure_devices_for_client_ips([q.client_ip for q in queries])
-        logger.info("Bulk DNS queries created", extra={"inserted": count})
-        return {"inserted": count}
+
+        to_persist = filter_queries_to_persist(queries)
+        inserted = 0
+        if to_persist:
+            repository = DnsQueryRepository(db)
+            logger.info(
+                "Bulk creating DNS queries",
+                extra={"received": len(queries), "persisting": len(to_persist)},
+            )
+            inserted = repository.bulk_create(to_persist)
+        else:
+            logger.debug(
+                "Bulk DNS ingest: no queries persisted",
+                extra={"received": len(queries)},
+            )
+
+        return {
+            "received": len(queries),
+            "inserted": inserted,
+            "skipped": len(queries) - inserted,
+        }
 
     def get_queries(
         self,
