@@ -13,6 +13,7 @@ from app.features.dns_queries.controllers.dns_query_controller import (
     cleanup_old_records_controller,
     get_grouped_sites_controller,
     get_dns_alerts_controller,
+    get_domain_whois_controller,
 )
 from app.features.dns_queries.dependencies import get_dns_query_service
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
@@ -146,6 +147,14 @@ def get_dns_alerts_endpoint(
         alert_type=alert_type,
         client_ip=client_ip,
     )
+
+
+@router.get("/whois")
+def get_domain_whois_endpoint(
+    domain: str = Query(..., min_length=1, max_length=255, description="Domain or hostname to look up"),
+):
+    """Look up WHOIS / RDAP registration info for a domain (used from anomaly alerts)."""
+    return get_domain_whois_controller(domain=domain)
 
 
 @router.websocket("/ws")

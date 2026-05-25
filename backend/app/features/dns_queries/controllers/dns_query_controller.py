@@ -1,10 +1,12 @@
 import asyncio
 import logging
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryBulkCreate
+from app.features.dns_queries.services.whois_service import WhoisLookupError, lookup_domain_whois
 from app.shared.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
@@ -129,3 +131,13 @@ def get_dns_alerts_controller(
         alert_type=alert_type,
         client_ip=client_ip,
     )
+
+
+def get_domain_whois_controller(domain: str):
+    try:
+        return lookup_domain_whois(domain)
+    except WhoisLookupError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        logger.exception("WHOIS lookup failed", extra={"domain": domain})
+        raise HTTPException(status_code=502, detail="WHOIS lookup failed") from e

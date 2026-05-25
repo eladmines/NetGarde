@@ -73,3 +73,9 @@ export interface DnsAlertListResponse {
   page_size: number;
   pages: number;
 }
+
+export interface WhoisLookupResponse {
+  domain: string;
+  source: string;
+  text: string;
+}
