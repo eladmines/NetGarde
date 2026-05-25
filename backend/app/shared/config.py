@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # Host WireGuard agent (runs on EC2 host, reachable from docker bridge)
     WG_AGENT_URL: str = "http://172.17.0.1:9109"
     WG_AGENT_TOKEN: str = ""
+
+    # DNS ingest: when false, only blocked queries are stored in RDS (live feed uses WebSocket)
+    PERSIST_ALL_DNS: bool = False
     
     @property
     def cors_origins_list(self) -> List[str]:
