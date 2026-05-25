@@ -65,4 +65,9 @@ export const DNS_QUERY_ENDPOINTS = {
     }
     return url.toString();
   },
+  dnsWhois: (domain: string) => {
+    const url = new URL(`${API_BASE_URL}/dns-queries/whois`);
+    url.searchParams.append('domain', domain.trim());
+    return url.toString();
+  },
 };

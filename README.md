@@ -195,6 +195,7 @@ npm start
 | `POST` | `/dns-queries/bulk` | Log multiple DNS queries |
 | `GET` | `/dns-queries/stats` | Query statistics (total, blocked, top domains) |
 | `GET` | `/dns-queries/alerts` | Anomaly alerts (blocked, new domain, suspicious, bandwidth) |
+| `GET` | `/dns-queries/whois?domain=` | WHOIS/RDAP lookup for a domain (from alerts UI) |
 | `GET` | `/dns-queries/sites` | Queries grouped by root domain |
 | `GET` | `/dns-queries/clients` | List unique client IPs |
 | `DELETE` | `/dns-queries/cleanup` | Delete records older than N days |
