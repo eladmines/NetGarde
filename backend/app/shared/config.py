@@ -23,6 +23,10 @@ class Settings(BaseSettings):
 
     # DNS ingest: when false, only blocked queries are stored in RDS (live feed uses WebSocket)
     PERSIST_ALL_DNS: bool = False
+
+    # Anomaly detection
+    NEW_DOMAIN_ALERTS: bool = True
+    BANDWIDTH_ALERT_MIB_PER_SEC: float = 50.0
     
     @property
     def cors_origins_list(self) -> List[str]:

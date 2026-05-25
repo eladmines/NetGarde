@@ -11,7 +11,8 @@ from app.features.dns_queries.controllers.dns_query_controller import (
     get_dns_stats_controller,
     get_unique_clients_controller,
     cleanup_old_records_controller,
-    get_grouped_sites_controller
+    get_grouped_sites_controller,
+    get_dns_alerts_controller,
 )
 from app.features.dns_queries.dependencies import get_dns_query_service
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
@@ -124,6 +125,26 @@ def get_grouped_sites_endpoint(
         blocked_only=blocked_only,
         filter_noise=filter_noise,
         limit=limit
+    )
+
+
+@router.get("/alerts")
+def get_dns_alerts_endpoint(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    alert_type: Optional[str] = Query(default=None, description="Filter by alert type"),
+    client_ip: Optional[str] = Query(default=None, description="Filter by client IP"),
+    db: Session = Depends(get_db),
+    service: IDnsQueryService = Depends(get_dns_query_service),
+):
+    """List DNS and bandwidth anomaly alerts."""
+    return get_dns_alerts_controller(
+        db=db,
+        service=service,
+        page=page,
+        page_size=page_size,
+        alert_type=alert_type,
+        client_ip=client_ip,
     )
 
 

@@ -69,6 +69,11 @@ export default function DnsStatsCards() {
 
   return (
     <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
+      {stats.source === 'live' && (
+        <Grid size={{ xs: 12 }}>
+          <Chip label="Stats since server start (live counters)" size="small" variant="outlined" />
+        </Grid>
+      )}
       {statCards.map((card, index) => (
         <Grid key={index} size={{ xs: 6, sm: 3 }}>
           <Card variant="outlined" sx={{ height: '100%' }}>

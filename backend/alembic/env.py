@@ -12,11 +12,14 @@ from app.shared.database import Base
 from app.features.blocked_sites.models.blocked_site import BlockedSite
 from app.features.categories.models.category import Category 
 from app.features.dns_queries.models.dns_query import DnsQuery
+from app.features.dns_queries.models.dns_alert import DnsAlert
+from app.features.dns_queries.models.domain_first_seen import DomainFirstSeen
 from app.features.devices.models.device import Device
 from app.features.vpn.models.ip_pool import IpPool
 from app.features.vpn.models.vpn_peer import VpnPeer
 from app.features.vpn.models.ip_lease import IpLease
 from app.features.vpn.models.vpn_enroll_event import VpnEnrollEvent
+from app.features.vpn.models.device_usage_sample import DeviceUsageSample
 
 
 config = context.config
