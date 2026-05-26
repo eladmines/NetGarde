@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DnsSiteGroup, DnsSitesResponse } from '../types/dnsQuery';
 import { DNS_QUERY_ENDPOINTS } from '../config/api';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useDnsSites() {
   const [sites, setSites] = useState<DnsSiteGroup[]>([]);
@@ -19,7 +20,7 @@ export function useDnsSites() {
         limit: 100,
       });
 
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAdminAuthHeaders() });
       if (response.ok) {
         const data: DnsSitesResponse = await response.json();
         setSites(data.sites);
