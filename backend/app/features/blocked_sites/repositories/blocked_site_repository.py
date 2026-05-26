@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime
+from datetime import datetime, timezone
 from app.features.blocked_sites.models.blocked_site import BlockedSite
 from app.features.blocked_sites.schemas.blocked_site import BlockedSiteCreate
 
@@ -75,7 +75,7 @@ class BlockedSiteRepository:
         blocked_site.category = data.category
         # Set mock user_id if not provided
         blocked_site.updated_by = data.updated_by if data.updated_by is not None else 1  # Mock user_id
-        blocked_site.updated_at = datetime.now()
+        blocked_site.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(blocked_site)
         return blocked_site
@@ -85,7 +85,7 @@ class BlockedSiteRepository:
         if not blocked_site:
             return False
         blocked_site.is_deleted = True
-        blocked_site.updated_at = datetime.now()
+        blocked_site.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         return True
 

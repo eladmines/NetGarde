@@ -17,7 +17,6 @@ import CategoryIcon from '@mui/icons-material/Category';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import HistoryIcon from '@mui/icons-material/History';
 import SecurityIcon from '@mui/icons-material/Security';
-import PeopleIcon from '@mui/icons-material/People';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
@@ -40,7 +39,6 @@ const analyticsItems = [
 
 const secondaryListItems = [
   { text: 'Security', icon: <SecurityIcon />, path: '/security', iconClass: 'securityIcon' },
-  { text: 'Users', icon: <PeopleIcon />, path: '/users', iconClass: 'usersIcon' },
   { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications', iconClass: 'notificationsIcon' },
   { text: 'Settings', icon: <SettingsRoundedIcon />, path: '/settings', iconClass: 'settingsIcon' },
   { text: 'About', icon: <InfoRoundedIcon />, path: '/about', iconClass: 'aboutIcon' },

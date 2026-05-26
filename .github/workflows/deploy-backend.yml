@@ -242,7 +242,6 @@ jobs:
             
             # Parse JSON to extract connection details using Python
             echo "Parsing secret JSON..."
-            echo "Secret JSON preview (first 100 chars): $(echo "$SECRET_JSON" | head -c 100)..."
             
             # Parse JSON with better error handling - try to get each field with fallbacks
             DB_USER=$(echo "$SECRET_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('username') or d.get('user') or '')" 2>&1)
@@ -288,8 +287,8 @@ jobs:
             echo "  Database: $DB_NAME"
             
             # Build DB_URL connection string (URL encode password to handle special characters)
-            DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD'))")
-            DB_URL="postgresql+psycopg2://${DB_USER}:${DB_PASSWORD_ENCODED}@${DB_HOST}:${DB_PORT}/${DB_NAME:-postgres}"
+            DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$DB_PASSWORD")
+            DB_URL="postgresql+psycopg2://${DB_USER}:${DB_PASSWORD_ENCODED}@${DB_HOST}:${DB_PORT}/${DB_NAME:-postgres}?sslmode=require"
             
             echo "Successfully retrieved RDS credentials from Secrets Manager"
             echo "Database host: $DB_HOST"
@@ -301,9 +300,95 @@ jobs:
             echo "DB_URL=$DB_URL" > backend/.env.production
             echo "PYTHONUNBUFFERED=1" >> backend/.env.production
             echo "Created backend/.env.production with credentials from Secrets Manager"
+
+            # WireGuard enroll + host agent token (required by docker-compose.yml interpolation)
+            # Keep token on the host so it is stable across deploys.
+            sudo mkdir -p /etc/netgarde
+            if [ -f /etc/netgarde/wg-agent.token ]; then
+              WG_AGENT_TOKEN="$(sudo cat /etc/netgarde/wg-agent.token | tr -d '\r\n')"
+              echo "Loaded existing WG_AGENT_TOKEN from /etc/netgarde/wg-agent.token"
+            else
+              WG_AGENT_TOKEN="$(openssl rand -hex 32)"
+              echo "$WG_AGENT_TOKEN" | sudo tee /etc/netgarde/wg-agent.token >/dev/null
+              sudo chmod 600 /etc/netgarde/wg-agent.token
+              echo "Generated new WG_AGENT_TOKEN (stored in /etc/netgarde/wg-agent.token)"
+            fi
+
+            WG_AGENT_URL="${WG_AGENT_URL:-http://172.17.0.1:9109}"
+
+            # Try to discover WireGuard server public key + public endpoint from the host (best effort)
+            VPN_SERVER_PUBLIC_KEY=""
+            if command -v wg >/dev/null 2>&1; then
+              VPN_SERVER_PUBLIC_KEY="$(sudo wg show wg0 public-key 2>/dev/null | tr -d '\r\n' || true)"
+            fi
+            if [ -z "$VPN_SERVER_PUBLIC_KEY" ]; then
+              echo "WARNING: Could not read wg0 public key (wg missing or wg0 not up). VPN enroll may fail until VPN_SERVER_PUBLIC_KEY is set."
+            fi
+
+            VPN_ENDPOINT="${VPN_ENDPOINT:-}"
+            if [ -z "$VPN_ENDPOINT" ]; then
+              # Prefer IMDS public IPv4 if available; fall back to the SSH host from GitHub secrets is not accessible here.
+              META_IP="$(curl -fsS --max-time 1 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null | tr -d '\r\n' || true)"
+              if [ -n "$META_IP" ]; then
+                VPN_ENDPOINT="${META_IP}:51820"
+              fi
+            fi
+            if [ -z "$VPN_ENDPOINT" ]; then
+              echo "WARNING: VPN_ENDPOINT could not be auto-detected. Set VPN_ENDPOINT explicitly on the host or in CI."
+            fi
+
+            # Persist for app runtime (env_file) and export for docker compose interpolation
+            {
+              echo "WG_AGENT_URL=$WG_AGENT_URL"
+              echo "WG_AGENT_TOKEN=$WG_AGENT_TOKEN"
+              if [ -n "$VPN_SERVER_PUBLIC_KEY" ]; then
+                echo "VPN_SERVER_PUBLIC_KEY=$VPN_SERVER_PUBLIC_KEY"
+              fi
+              if [ -n "$VPN_ENDPOINT" ]; then
+                echo "VPN_ENDPOINT=$VPN_ENDPOINT"
+              fi
+            } >> backend/.env.production
+
+            # docker compose reads repo-root `.env` for ${VAR} substitution; keep it in sync for required keys
+            {
+              echo "WG_AGENT_URL=$WG_AGENT_URL"
+              echo "WG_AGENT_TOKEN=$WG_AGENT_TOKEN"
+            } > .env
+
+            export WG_AGENT_URL="$WG_AGENT_URL"
+            export WG_AGENT_TOKEN="$WG_AGENT_TOKEN"
+            if [ -n "$VPN_SERVER_PUBLIC_KEY" ]; then
+              export VPN_SERVER_PUBLIC_KEY="$VPN_SERVER_PUBLIC_KEY"
+            fi
+            if [ -n "$VPN_ENDPOINT" ]; then
+              export VPN_ENDPOINT="$VPN_ENDPOINT"
+            fi
             
             # Export DB_URL for docker compose
             export DB_URL="$DB_URL"
+            
+            # Compute local server IP to use as blocked-domain redirect target
+            BLOCK_PAGE_IP=$(hostname -I | awk '{print $1}')
+            if [ -z "$BLOCK_PAGE_IP" ]; then
+              BLOCK_PAGE_IP="0.0.0.0"
+            fi
+            export BLOCK_PAGE_IP="$BLOCK_PAGE_IP"
+            echo "Using BLOCK_PAGE_IP=$BLOCK_PAGE_IP for blocked-domain redirect"
+
+            # Install WireGuard host agent (applies wg set for /v1/enroll)
+            if command -v wg >/dev/null 2>&1; then
+              echo "Installing netgarde-wg-agent systemd service..."
+              sudo mkdir -p /opt/netgarde
+              sudo cp /home/ubuntu/netgarde/host-agent/netgarde-wg-agent.py /opt/netgarde/netgarde-wg-agent.py
+              sudo chmod 755 /opt/netgarde/netgarde-wg-agent.py
+              sudo cp /home/ubuntu/netgarde/host-agent/netgarde-wg-agent.service /etc/systemd/system/netgarde-wg-agent.service
+              # Inject token into unit file (avoid sed delimiter/special-char footguns)
+              sudo perl -pi -e 'BEGIN { $t = shift @ARGV } s/^Environment=NETGARDE_WG_AGENT_TOKEN=.*/Environment=NETGARDE_WG_AGENT_TOKEN=$t/m' "$WG_AGENT_TOKEN" /etc/systemd/system/netgarde-wg-agent.service || true
+              sudo systemctl daemon-reload
+              sudo systemctl enable --now netgarde-wg-agent
+            else
+              echo "WARNING: wg not found; skipping netgarde-wg-agent install"
+            fi
             
             # Handle image source based on branch
             if [ "${{ github.ref_name }}" == "main" ]; then
@@ -321,6 +406,10 @@ jobs:
             echo "Building dns-sync container..."
             docker compose -f docker-compose.yml build dns-sync || echo "Warning: dns-sync build failed, but continuing..."
             
+            # Build block-page container
+            echo "Building block-page container..."
+            docker compose -f docker-compose.yml build block-page || echo "Warning: block-page build failed, but continuing..."
+            
             # Run migrations with DB_URL explicitly passed to the container
             # Note: alembic/env.py will handle escaping % characters for ConfigParser
             echo "Running database migrations..."
@@ -329,9 +418,26 @@ jobs:
             # Start all services and remove orphaned containers (like old postgres containers)
             echo "Starting services..."
             docker compose -f docker-compose.yml up -d --remove-orphans
-            
+
+            # Ensure host dependency for DB LISTEN/NOTIFY listener
+            if ! python3 -c "import psycopg2" >/dev/null 2>&1; then
+              echo "Installing python3-psycopg2 for blocked-sites listener..."
+              sudo apt-get update
+              sudo apt-get install -y python3-psycopg2
+            fi
+
+            # Install and start blocked-sites DB listener service (LISTEN/NOTIFY -> run-sync.sh)
+            echo "Installing blocked-sites listener systemd service..."
+            sudo chmod +x /home/ubuntu/netgarde/dns-sync/run-sync.sh
+            sudo cp /home/ubuntu/netgarde/dns-sync/netgarde-blocked-sites-listener.service /etc/systemd/system/netgarde-blocked-sites-listener.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable netgarde-blocked-sites-listener
+            sudo systemctl restart netgarde-blocked-sites-listener
+
             # Show status
             echo "Service status:"
             docker compose -f docker-compose.yml ps 
+            echo "Listener service status:"
+            sudo systemctl --no-pager --full status netgarde-blocked-sites-listener || true
 
             

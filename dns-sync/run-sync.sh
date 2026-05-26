@@ -18,11 +18,13 @@ fi
 
 # Get DNSMASQ_RESTART_CMD from environment or use default
 DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
+# Redirect blocked domains to this server by default (for block page)
+BLOCK_PAGE_IP=${BLOCK_PAGE_IP:-$(hostname -I | awk '{print $1}')}
 
 # Run the DNS sync container once (SYNC_INTERVAL=0 means run once and exit)
 # Note: We disable the internal reload since it can't access host dnsmasq
 # Use --no-deps to skip starting dependencies (backend should already be running)
-docker compose run --rm --no-deps -e SYNC_INTERVAL=0 -e DNSMASQ_RESTART_CMD="" dns-sync
+docker compose run --rm --no-deps -e SYNC_INTERVAL=0 -e DNSMASQ_RESTART_CMD="" -e BLOCK_PAGE_IP="$BLOCK_PAGE_IP" dns-sync
 
 # Reload dnsmasq on the host after container completes
 if [ $? -eq 0 ]; then

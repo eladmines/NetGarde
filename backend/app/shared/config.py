@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     # Service identity: dns_log_watcher / automation posting DNS queries
     DNS_INGEST_TOKEN: str = ""
+
     # Admin identity: dashboard and policy APIs
     ADMIN_API_TOKEN: str = ""
 
@@ -47,7 +48,6 @@ class Settings(BaseSettings):
     def DEVICE_TOKEN_TTL_SECONDS(self) -> int:
         days = max(1, int(self.DEVICE_TOKEN_TTL_DAYS))
         return days * 24 * 60 * 60
-
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS_ORIGINS string into a list."""

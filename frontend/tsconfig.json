@@ -10,7 +10,7 @@
     "moduleResolution": "Node",
     "target": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "types": [],
+    "baseUrl": ".",
 
     /* === Outputs === */
     "sourceMap": true,
