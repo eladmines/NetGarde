@@ -12,6 +12,7 @@ from app.features.dns_queries.controllers.dns_query_controller import (
     cleanup_old_records_controller
 )
 from app.shared.dependencies import get_db
+from app.shared.service_auth import verify_dns_ingest_service
 
 router = APIRouter(prefix="/dns-queries", tags=["DNS Queries"])
 
@@ -19,7 +20,8 @@ router = APIRouter(prefix="/dns-queries", tags=["DNS Queries"])
 @router.post("")
 def create_dns_query_endpoint(
     dns_query_data: DnsQueryCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_dns_ingest_service),
 ):
     """Create a single DNS query log entry."""
     return create_dns_query_controller(dns_query_data, db)
@@ -28,7 +30,8 @@ def create_dns_query_endpoint(
 @router.post("/bulk")
 def bulk_create_dns_queries_endpoint(
     bulk_data: DnsQueryBulkCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_dns_ingest_service),
 ):
     """Create multiple DNS query log entries at once."""
     return bulk_create_dns_queries_controller(bulk_data, db)

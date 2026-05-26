@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Optional: require Bearer token on POST /v1/enroll (NetGardeClient --api-token)
     ENROLL_BOOTSTRAP_TOKEN: str = ""
 
+    # Service identity: dns_log_watcher / automation posting DNS queries
+    DNS_INGEST_TOKEN: str = ""
+
     @property
     def device_token_secret(self) -> str:
         return self.DEVICE_TOKEN_SECRET.strip()
