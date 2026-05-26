@@ -2,6 +2,16 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Setup
+
+Install dependencies before starting the dev server (required for MUI and other packages):
+
+```bash
+npm install
+```
+
+From the repository root you can instead run `npm run install:frontend`.
+
 ## Available Scripts
 
 In the project directory, you can run:
