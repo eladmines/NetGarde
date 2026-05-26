@@ -1,4 +1,22 @@
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+function resolveApiBaseUrl(): string {
+  const raw = (process.env.REACT_APP_API_BASE_URL || '').trim();
+  if (raw) {
+    // Safety: avoid deploying with a public site like google.com by mistake.
+    const host = (() => {
+      try {
+        return new URL(raw).host.toLowerCase();
+      } catch {
+        return '';
+      }
+    })();
+    if (host && host !== 'google.com' && host !== 'www.google.com') {
+      return raw.replace(/\/+$/, '');
+    }
+  }
+  return 'http://localhost:8000';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export const DNS_QUERY_ENDPOINTS = {
   dnsQueries: (params?: {
