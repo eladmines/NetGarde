@@ -1,4 +1,5 @@
 import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
+import { DnsAlertListResponse } from '../../dns-queries/types/dnsQuery';
 import { Device, BehaviorProfile, DeviceSecurityPolicy, ClientBlockedDomain } from '../types/device';
 
 const API_BASE_URL =
@@ -38,4 +39,8 @@ export const devicesApi = {
     apiFetch<{ revoked: boolean }>(`/devices/${deviceId}/client-blocks/${blockId}`, {
       method: 'DELETE',
     }),
+  getBehaviorEvents: (deviceId: number, page = 1, pageSize = 20) =>
+    apiFetch<DnsAlertListResponse>(
+      `/devices/${deviceId}/behavior-events?page=${page}&page_size=${pageSize}`,
+    ),
 };

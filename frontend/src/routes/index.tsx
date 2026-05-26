@@ -3,6 +3,7 @@ import Layout from '../shared/components/Layout';
 import DashboardPage from '../pages/DashboardPage';
 import BlockedSitesPage from '../pages/BlockedSitesPage';
 import CategoriesPage from '../pages/CategoriesPage';
+import ClientProfilesPage from '../pages/ClientProfilesPage';
 
 export const routes: RouteObject[] = [
   {
@@ -26,6 +27,14 @@ export const routes: RouteObject[] = [
     element: (
       <Layout>
         <CategoriesPage />
+      </Layout>
+    ),
+  },
+  {
+    path: '/client-profiles',
+    element: (
+      <Layout>
+        <ClientProfilesPage />
       </Layout>
     ),
   },
