@@ -19,10 +19,12 @@ class DnsAlertRepository:
         domain: Optional[str] = None,
         root_domain: Optional[str] = None,
         message: Optional[str] = None,
+        device_id: Optional[int] = None,
     ) -> DnsAlert:
         alert = DnsAlert(
             timestamp=timestamp,
             client_ip=client_ip,
+            device_id=device_id,
             alert_type=alert_type,
             severity=severity,
             domain=domain,

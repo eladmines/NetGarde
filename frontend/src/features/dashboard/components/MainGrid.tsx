@@ -8,6 +8,7 @@ import DnsLiveFeed from './DnsLiveFeed';
 import DnsSitesView from './DnsSitesView';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
+import DevicesBehaviorPanel from '../../devices/components/DevicesBehaviorPanel';
 
 export default function MainGrid() {
   return (
@@ -16,6 +17,11 @@ export default function MainGrid() {
         Overview
       </Typography>
       <DnsStatsCards />
+      <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
+        <Grid size={{ xs: 12 }}>
+          <DevicesBehaviorPanel />
+        </Grid>
+      </Grid>
       <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
         <Grid size={{ xs: 12 }}>
           <DnsAlertsView />

@@ -17,6 +17,12 @@ This container periodically fetches blocked sites from the NetGarde backend API 
 - `SYNC_INTERVAL` (default: `3600`): Sync interval in seconds (0 = run once and exit)
 - `PAGE_SIZE` (default: `100`): Number of items per page when fetching from API
 - `DNSMASQ_RESTART_CMD` (default: `killall -HUP dnsmasq`): Command to reload dnsmasq
+- `DNS_INGEST_TOKEN`: Bearer token for DHCP sync and per-device block sync (`/devices/client-blocks/sync`)
+- `ADMIN_API_TOKEN`: Bearer token for fetching global blocked sites when admin auth is enabled
+- `CLIENT_BLOCKS_SYNC_ENDPOINT` (default: `/devices/client-blocks/sync`): Per-device behavioral blocks API
+- `CLIENT_BLOCKS_CONFIG_DIR` (default: `/etc/dnsmasq.d/netgarde-devices`): Per-device tagged dnsmasq snippets (`ng-device-{id}.conf`)
+
+Per-device blocks use dnsmasq DHCP tags (`dhcp-host=MAC,set:ng_device_{id}` + `tag:ng_device_{id}` + `address=/domain/0.0.0.0`).
 
 ### Docker Run
 

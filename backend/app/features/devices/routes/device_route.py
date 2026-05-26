@@ -1,7 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpSyncRequest
+from app.features.client_behavior.schemas.behavior import (
+    BehaviorProfileRead,
+    BehaviorRecomputeResult,
+    ClientBlockSyncResponse,
+    ClientBlockedDomainRead,
+    DeviceSecurityPolicyRead,
+    DeviceSecurityPolicyUpdate,
+)
+from app.features.client_behavior.services.client_behavior_api_service import ClientBehaviorApiService
 from app.features.devices.controllers.device_controller import (
     create_device_controller,
     get_devices_controller,
@@ -16,6 +25,10 @@ from app.shared.admin_auth import verify_admin_api_token
 from app.shared.service_auth import verify_dns_ingest_service
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
+
+
+def get_client_behavior_service(db: Session = Depends(get_db)) -> ClientBehaviorApiService:
+    return ClientBehaviorApiService(db)
 
 
 @router.post("")
@@ -67,3 +80,79 @@ def sync_dhcp_endpoint(
 ):
     """Bulk upsert devices from router DHCP lease records."""
     return sync_dhcp_leases_controller(payload, db, service)
+
+
+@router.get("/client-blocks/sync", response_model=ClientBlockSyncResponse)
+def client_blocks_sync_endpoint(
+    _: None = Depends(verify_dns_ingest_service),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    """Per-device blocks for dnsmasq sync (service token)."""
+    return behavior.get_client_blocks_for_sync()
+
+
+@router.post("/recompute-behavior-baselines", response_model=BehaviorRecomputeResult)
+def recompute_behavior_baselines_endpoint(
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    updated = behavior.recompute_baselines()
+    return BehaviorRecomputeResult(devices_updated=updated)
+
+
+@router.get("/{device_id}/behavior-profile", response_model=BehaviorProfileRead)
+def get_behavior_profile_endpoint(
+    device_id: int,
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.get_behavior_profile(device_id)
+
+
+@router.get("/{device_id}/behavior-events")
+def get_behavior_events_endpoint(
+    device_id: int,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.get_behavior_events(device_id, page=page, page_size=page_size)
+
+
+@router.get("/{device_id}/security-policy", response_model=DeviceSecurityPolicyRead)
+def get_security_policy_endpoint(
+    device_id: int,
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.get_security_policy(device_id)
+
+
+@router.put("/{device_id}/security-policy", response_model=DeviceSecurityPolicyRead)
+def update_security_policy_endpoint(
+    device_id: int,
+    data: DeviceSecurityPolicyUpdate,
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.update_security_policy(device_id, data)
+
+
+@router.get("/{device_id}/client-blocks", response_model=list[ClientBlockedDomainRead])
+def list_client_blocks_endpoint(
+    device_id: int,
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.list_client_blocks(device_id)
+
+
+@router.delete("/{device_id}/client-blocks/{block_id}")
+def revoke_client_block_endpoint(
+    device_id: int,
+    block_id: int,
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.revoke_client_block(device_id, block_id)
