@@ -5,6 +5,7 @@ from app.features.client_behavior.services.behavior_baseline_service import Beha
 from app.features.devices.models.device import Device
 from app.features.vpn.models.ip_lease import IpLease
 from app.features.vpn.models.ip_pool import IpPool
+from app.features.vpn.models.vpn_peer import VpnPeer
 
 
 def _seed_rollups(db_session, device_id: int, hours: int, queries_per_hour: int = 10):
@@ -24,23 +25,40 @@ def _seed_rollups(db_session, device_id: int, hours: int, queries_per_hour: int 
     db_session.commit()
 
 
-def test_baseline_not_ready_with_few_rollups(db_session):
+def _create_device(db_session, *, pool_name: str, ip: str, mac: str) -> Device:
     pool = IpPool(
-        name="default",
+        name=pool_name,
         cidr="10.0.0.0/24",
         gateway_ip="10.0.0.1",
         dns_ip="10.0.0.1",
         endpoint="vpn.example:51820",
-        server_public_key="testkey",
+        server_public_key=f"key-{pool_name}",
     )
     db_session.add(pool)
     db_session.flush()
-    lease = IpLease(pool_id=pool.id, ip="10.0.0.5")
+    peer = VpnPeer(
+        device_id=f"dev-{pool_name}",
+        public_key=f"pubkey-{pool_name}",
+        pool_id=pool.id,
+    )
+    db_session.add(peer)
+    db_session.flush()
+    lease = IpLease(pool_id=pool.id, peer_id=peer.id, ip=ip)
     db_session.add(lease)
     db_session.flush()
-    device = Device(ip_lease_id=lease.id, mac_address="aa:bb:cc:dd:ee:01", source="manual")
+    device = Device(ip_lease_id=lease.id, mac_address=mac, source="manual")
     db_session.add(device)
     db_session.commit()
+    return device
+
+
+def test_baseline_not_ready_with_few_rollups(db_session):
+    device = _create_device(
+        db_session,
+        pool_name="default",
+        ip="10.0.0.5",
+        mac="aa:bb:cc:dd:ee:01",
+    )
 
     _seed_rollups(db_session, device.id, hours=10, queries_per_hour=5)
     ready = BehaviorBaselineService(db_session).recompute_device(device.id)
@@ -48,22 +66,12 @@ def test_baseline_not_ready_with_few_rollups(db_session):
 
 
 def test_baseline_ready_with_enough_data(db_session):
-    pool = IpPool(
-        name="default2",
-        cidr="10.0.1.0/24",
-        gateway_ip="10.0.1.1",
-        dns_ip="10.0.1.1",
-        endpoint="vpn.example:51820",
-        server_public_key="testkey2",
+    device = _create_device(
+        db_session,
+        pool_name="default2",
+        ip="10.0.1.5",
+        mac="aa:bb:cc:dd:ee:02",
     )
-    db_session.add(pool)
-    db_session.flush()
-    lease = IpLease(pool_id=pool.id, ip="10.0.1.5")
-    db_session.add(lease)
-    db_session.flush()
-    device = Device(ip_lease_id=lease.id, mac_address="aa:bb:cc:dd:ee:02", source="manual")
-    db_session.add(device)
-    db_session.commit()
 
     _seed_rollups(db_session, device.id, hours=80, queries_per_hour=10)
     ready = BehaviorBaselineService(db_session).recompute_device(device.id)
