@@ -40,6 +40,18 @@ class Settings(BaseSettings):
     # Admin identity: dashboard and policy APIs
     ADMIN_API_TOKEN: str = ""
 
+    # Client behavior profiles
+    BEHAVIOR_BASELINE_LOOKBACK_DAYS: int = 7
+    BEHAVIOR_MIN_PROFILE_DAYS: int = 3
+    BEHAVIOR_MIN_PROFILE_QUERIES: int = 500
+    BEHAVIOR_BASELINE_RECOMPUTE_HOURS: int = 1
+    BEHAVIOR_SCORE_WINDOW_MINUTES: int = 15
+    BEHAVIOR_ALERT_THRESHOLD: int = 70
+    BEHAVIOR_AUTO_BLOCK_THRESHOLD: int = 85
+    BEHAVIOR_AUTO_BLOCK_DEFAULT: bool = False
+    BEHAVIOR_AUTO_BLOCK_TTL_HOURS: int = 24
+    BEHAVIOR_MAX_BLOCKS_PER_DAY: int = 10
+
     @property
     def device_token_secret(self) -> str:
         return self.DEVICE_TOKEN_SECRET.strip()

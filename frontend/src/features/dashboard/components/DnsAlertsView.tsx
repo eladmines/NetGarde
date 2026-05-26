@@ -38,6 +38,7 @@ const TYPE_LABEL: Record<string, string> = {
   new_domain: 'New site',
   suspicious_domain: 'Suspicious',
   bandwidth_spike: 'Bandwidth',
+  behavior_anomaly: 'Behavior',
 };
 
 function lookupDomainForAlert(alert: DnsAlert): string | null {

@@ -18,3 +18,4 @@ node_modules/
 
 # Private keys (never commit; use Secrets Manager / ~/.ssh)
 *.pem
+.DS_Store

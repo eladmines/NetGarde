@@ -7,6 +7,7 @@ class DnsAlertResponse(BaseModel):
     id: int
     timestamp: datetime
     client_ip: str
+    device_id: Optional[int] = None
     alert_type: str
     severity: str
     domain: Optional[str] = None

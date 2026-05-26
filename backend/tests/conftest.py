@@ -20,6 +20,10 @@ from app.features.vpn.models.vpn_peer import VpnPeer  # noqa: F401
 from app.features.vpn.models.ip_lease import IpLease  # noqa: F401
 from app.features.vpn.models.vpn_enroll_event import VpnEnrollEvent  # noqa: F401
 from app.features.vpn.models.device_usage_sample import DeviceUsageSample  # noqa: F401
+from app.features.client_behavior.models.client_behavior_rollup import ClientBehaviorRollup  # noqa: F401
+from app.features.client_behavior.models.client_behavior_profile import ClientBehaviorProfile  # noqa: F401
+from app.features.client_behavior.models.client_blocked_domain import ClientBlockedDomain  # noqa: F401
+from app.features.client_behavior.models.device_security_policy import DeviceSecurityPolicy  # noqa: F401
 
 
 @pytest.fixture(scope="function")

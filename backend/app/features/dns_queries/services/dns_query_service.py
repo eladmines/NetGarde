@@ -9,6 +9,8 @@ from app.features.dns_queries.services.dns_query_service_interface import IDnsQu
 from app.features.dns_queries.dns_persist import filter_queries_to_persist, should_persist_query
 from app.features.dns_queries.dns_ingest_stats import ingest_stats
 from app.features.dns_queries.services.dns_anomaly_service import DnsAnomalyService
+from app.features.client_behavior.services.client_behavior_aggregator import ClientBehaviorAggregator
+from app.features.client_behavior.services.behavior_scoring_service import BehaviorScoringService
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.shared.config import settings
 from app.shared.utils.logging import get_logger
@@ -34,6 +36,10 @@ class DnsQueryService:
         device_repository.ensure_devices_for_client_ips([dns_query_data.client_ip])
         ingest_stats.record([dns_query_data])
         DnsAnomalyService(db).process_queries([dns_query_data])
+        ClientBehaviorAggregator(db).process_queries([dns_query_data])
+        behavior_alerts = BehaviorScoringService(db).process_queries([dns_query_data])
+        if behavior_alerts:
+            db.commit()
 
         if not should_persist_query(dns_query_data):
             logger.debug(
@@ -62,6 +68,9 @@ class DnsQueryService:
         device_repository.ensure_devices_for_client_ips([q.client_ip for q in queries])
         ingest_stats.record(queries)
         alerts_created = DnsAnomalyService(db).process_queries(queries)
+        ClientBehaviorAggregator(db).process_queries(queries)
+        alerts_created += BehaviorScoringService(db).process_queries(queries)
+        db.commit()
 
         to_persist = filter_queries_to_persist(queries)
         inserted = 0

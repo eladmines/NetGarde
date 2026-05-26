@@ -58,6 +58,7 @@ export interface DnsAlert {
   id: number;
   timestamp: string;
   client_ip: string;
+  device_id?: number | null;
   alert_type: string;
   severity: string;
   domain: string | null;
