@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DNS_QUERY_ENDPOINTS } from '../config/api';
 import { DnsAlert, DnsAlertListResponse } from '../types/dnsQuery';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useDnsAlerts(pageSize = 20) {
   const [items, setItems] = useState<DnsAlert[]>([]);
@@ -11,7 +12,7 @@ export function useDnsAlerts(pageSize = 20) {
     setLoading(true);
     try {
       const url = DNS_QUERY_ENDPOINTS.dnsAlerts({ page: 1, page_size: pageSize });
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAdminAuthHeaders() });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }

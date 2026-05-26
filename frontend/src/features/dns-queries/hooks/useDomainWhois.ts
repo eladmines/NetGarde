@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { DNS_QUERY_ENDPOINTS } from '../config/api';
 import { WhoisLookupResponse } from '../types/dnsQuery';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useDomainWhois() {
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,9 @@ export function useDomainWhois() {
     setResult(null);
 
     try {
-      const response = await fetch(DNS_QUERY_ENDPOINTS.dnsWhois(trimmed));
+      const response = await fetch(DNS_QUERY_ENDPOINTS.dnsWhois(trimmed), {
+        headers: getAdminAuthHeaders(),
+      });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         const detail = typeof body.detail === 'string' ? body.detail : `HTTP ${response.status}`;

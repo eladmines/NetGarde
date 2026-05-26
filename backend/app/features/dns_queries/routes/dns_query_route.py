@@ -19,6 +19,7 @@ from app.features.dns_queries.dependencies import get_dns_query_service
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
 from app.shared.dependencies import get_db
 from app.shared.websocket_manager import ws_manager
+from app.shared.config import settings
 from app.shared.service_auth import verify_dns_ingest_service
 from app.shared.admin_auth import verify_admin_api_token
 
@@ -122,6 +123,7 @@ def get_grouped_sites_endpoint(
     filter_noise: bool = Query(default=True, description="Filter out system noise domains"),
     limit: int = Query(default=50, ge=1, le=200, description="Max number of sites to return"),
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Get DNS queries grouped by root domain (site). Filters noise and shows only real websites."""
@@ -144,6 +146,7 @@ def get_dns_alerts_endpoint(
     alert_type: Optional[str] = Query(default=None, description="Filter by alert type"),
     client_ip: Optional[str] = Query(default=None, description="Filter by client IP"),
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IDnsQueryService = Depends(get_dns_query_service),
 ):
     """List DNS and bandwidth anomaly alerts."""
@@ -160,6 +163,7 @@ def get_dns_alerts_endpoint(
 @router.get("/whois")
 def get_domain_whois_endpoint(
     domain: str = Query(..., min_length=1, max_length=255, description="Domain or hostname to look up"),
+    _: None = Depends(verify_admin_api_token),
 ):
     """Look up WHOIS / RDAP registration info for a domain (used from anomaly alerts)."""
     return get_domain_whois_controller(domain=domain)
@@ -172,6 +176,19 @@ async def dns_queries_websocket(websocket: WebSocket):
     Clients connect here to receive live DNS queries as they are logged.
     Supports ping/pong keepalive to prevent proxy idle timeout.
     """
+    # Zero Trust: require admin token for subscribing to live DNS feed when configured.
+    expected = settings.ADMIN_API_TOKEN.strip()
+    if expected:
+        token = websocket.query_params.get("token", "").strip()
+        if not token:
+            await websocket.close(code=4401)
+            return
+        import hmac
+
+        if not hmac.compare_digest(token, expected):
+            await websocket.close(code=4403)
+            return
+
     await ws_manager.connect(websocket)
     try:
         while True:
