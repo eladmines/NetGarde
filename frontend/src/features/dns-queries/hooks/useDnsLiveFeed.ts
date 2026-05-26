@@ -15,11 +15,16 @@ interface WebSocketMessage {
 }
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+const ADMIN_TOKEN = (process.env.REACT_APP_ADMIN_API_TOKEN || '').trim();
 
 function getWebSocketUrl(): string {
   const url = new URL(API_BASE_URL);
   const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${url.host}/dns-queries/ws`;
+  const wsUrl = new URL(`${protocol}//${url.host}/dns-queries/ws`);
+  if (ADMIN_TOKEN) {
+    wsUrl.searchParams.set('token', ADMIN_TOKEN);
+  }
+  return wsUrl.toString();
 }
 
 const MAX_FEED_SIZE = 200;

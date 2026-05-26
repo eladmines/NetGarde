@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DnsQueryStats } from '../types/dnsQuery';
 import { DNS_QUERY_ENDPOINTS } from '../config/api';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useDnsStats() {
   const [stats, setStats] = useState<DnsQueryStats | null>(null);
@@ -10,7 +11,7 @@ export function useDnsStats() {
     try {
       setLoading(true);
       const url = DNS_QUERY_ENDPOINTS.dnsStats();
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAdminAuthHeaders() });
       if (response.ok) {
         const data: DnsQueryStats = await response.json();
         setStats(data);
