@@ -13,6 +13,7 @@ from app.features.dns_queries.controllers.dns_query_controller import (
 )
 from app.shared.dependencies import get_db
 from app.shared.service_auth import verify_dns_ingest_service
+from app.shared.admin_auth import verify_admin_api_token
 
 router = APIRouter(prefix="/dns-queries", tags=["DNS Queries"])
 
@@ -46,7 +47,8 @@ def get_dns_queries_endpoint(
     blocked_only: bool = Query(default=False, description="Show only blocked queries"),
     start_date: Optional[datetime] = Query(default=None, description="Filter from date (ISO format)"),
     end_date: Optional[datetime] = Query(default=None, description="Filter to date (ISO format)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
 ):
     """Get paginated DNS query logs with optional filters."""
     return get_dns_queries_controller(
@@ -65,14 +67,18 @@ def get_dns_queries_endpoint(
 def get_dns_stats_endpoint(
     start_date: Optional[datetime] = Query(default=None, description="Stats from date (ISO format)"),
     end_date: Optional[datetime] = Query(default=None, description="Stats to date (ISO format)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
 ):
     """Get DNS query statistics (total, blocked, top domains, top clients)."""
     return get_dns_stats_controller(db=db, start_date=start_date, end_date=end_date)
 
 
 @router.get("/clients")
-def get_unique_clients_endpoint(db: Session = Depends(get_db)):
+def get_unique_clients_endpoint(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
     """Get list of unique client IPs that have made DNS queries."""
     return get_unique_clients_controller(db)
 
@@ -80,7 +86,8 @@ def get_unique_clients_endpoint(db: Session = Depends(get_db)):
 @router.delete("/cleanup")
 def cleanup_old_records_endpoint(
     days: int = Query(default=30, ge=1, description="Delete records older than this many days"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
 ):
     """Delete DNS query records older than specified days."""
     return cleanup_old_records_controller(db, days=days)

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Category, CategoryCreate } from '../types/category';
 import { API_ENDPOINTS } from '../config/api';
 import { FORM_MODE, FormMode } from '../constants/formMode';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useCategoryForm(onSuccess?: () => void) {
   const [openDialog, setOpenDialog] = useState(false);
@@ -49,6 +50,7 @@ export function useCategoryForm(onSuccess?: () => void) {
           method: isEdit ? 'PUT' : 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...getAdminAuthHeaders(),
           },
           body: JSON.stringify(formData),
         }

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Category } from '../types/category';
 import { API_ENDPOINTS } from '../config/api';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -9,7 +10,7 @@ export function useCategories() {
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_ENDPOINTS.categories);
+      const response = await fetch(API_ENDPOINTS.categories, { headers: getAdminAuthHeaders() });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {

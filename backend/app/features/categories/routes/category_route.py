@@ -9,31 +9,52 @@ from app.features.categories.controllers.category_controller import (
     delete_category_controller,
 )
 from app.shared.dependencies import get_db
+from app.shared.admin_auth import verify_admin_api_token
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
 @router.post("")
-def create_category_endpoint(category_data: CategoryCreate, db: Session = Depends(get_db)):
+def create_category_endpoint(
+    category_data: CategoryCreate,
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
     return create_category_controller(category_data, db)
 
 
 @router.get("")
-def get_categories_endpoint(db: Session = Depends(get_db)):
+def get_categories_endpoint(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
     return get_categories_controller(db)
 
 
 @router.get("/{category_id}")
-def get_category_by_id_endpoint(category_id: int, db: Session = Depends(get_db)):
+def get_category_by_id_endpoint(
+    category_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
     return get_category_by_id_controller(category_id, db)
 
 
 @router.put("/{category_id}")
-def update_category_endpoint(category_id: int, category_data: CategoryCreate, db: Session = Depends(get_db)):
+def update_category_endpoint(
+    category_id: int,
+    category_data: CategoryCreate,
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
     return update_category_controller(category_id, category_data, db)
 
 
 @router.delete("/{category_id}")
-def delete_category_endpoint(category_id: int, db: Session = Depends(get_db)):
+def delete_category_endpoint(
+    category_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
     return delete_category_controller(category_id, db)
 

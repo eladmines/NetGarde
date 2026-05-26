@@ -36,6 +36,8 @@ class Settings(BaseSettings):
 
     # Service identity: dns_log_watcher / automation posting DNS queries
     DNS_INGEST_TOKEN: str = ""
+    # Admin identity: dashboard and policy APIs
+    ADMIN_API_TOKEN: str = ""
 
     @property
     def device_token_secret(self) -> str:
