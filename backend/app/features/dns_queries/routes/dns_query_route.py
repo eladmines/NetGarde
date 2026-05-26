@@ -19,6 +19,8 @@ from app.features.dns_queries.dependencies import get_dns_query_service
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
 from app.shared.dependencies import get_db
 from app.shared.websocket_manager import ws_manager
+from app.shared.service_auth import verify_dns_ingest_service
+from app.shared.admin_auth import verify_admin_api_token
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,7 @@ router = APIRouter(prefix="/dns-queries", tags=["DNS Queries"])
 def create_dns_query_endpoint(
     dns_query_data: DnsQueryCreate,
     db: Session = Depends(get_db),
+    _: None = Depends(verify_dns_ingest_service),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Create a single DNS query log entry."""
@@ -39,6 +42,7 @@ def create_dns_query_endpoint(
 def bulk_create_dns_queries_endpoint(
     bulk_data: DnsQueryBulkCreate,
     db: Session = Depends(get_db),
+    _: None = Depends(verify_dns_ingest_service),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Create multiple DNS query log entries at once.
@@ -59,6 +63,7 @@ def get_dns_queries_endpoint(
     start_date: Optional[datetime] = Query(default=None, description="Filter from date (ISO format)"),
     end_date: Optional[datetime] = Query(default=None, description="Filter to date (ISO format)"),
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Get paginated DNS query logs with optional filters."""
@@ -80,6 +85,7 @@ def get_dns_stats_endpoint(
     start_date: Optional[datetime] = Query(default=None, description="Stats from date (ISO format)"),
     end_date: Optional[datetime] = Query(default=None, description="Stats to date (ISO format)"),
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Get DNS query statistics (total, blocked, top domains, top clients)."""
@@ -89,6 +95,7 @@ def get_dns_stats_endpoint(
 @router.get("/clients")
 def get_unique_clients_endpoint(
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Get list of unique client IPs that have made DNS queries."""
@@ -99,6 +106,7 @@ def get_unique_clients_endpoint(
 def cleanup_old_records_endpoint(
     days: int = Query(default=30, ge=1, description="Delete records older than this many days"),
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IDnsQueryService = Depends(get_dns_query_service)
 ):
     """Delete DNS query records older than specified days."""

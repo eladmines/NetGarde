@@ -27,7 +27,27 @@ class Settings(BaseSettings):
     # Anomaly detection
     NEW_DOMAIN_ALERTS: bool = True
     BANDWIDTH_ALERT_MIB_PER_SEC: float = 50.0
-    
+
+    # Device identity (issued at VPN enroll, used for /v1/usage and future device APIs)
+    DEVICE_TOKEN_SECRET: str = ""
+    DEVICE_TOKEN_TTL_DAYS: int = 365
+    # Optional: require Bearer token on POST /v1/enroll (NetGardeClient --api-token)
+    ENROLL_BOOTSTRAP_TOKEN: str = ""
+
+    # Service identity: dns_log_watcher / automation posting DNS queries
+    DNS_INGEST_TOKEN: str = ""
+
+    # Admin identity: dashboard and policy APIs
+    ADMIN_API_TOKEN: str = ""
+
+    @property
+    def device_token_secret(self) -> str:
+        return self.DEVICE_TOKEN_SECRET.strip()
+
+    @property
+    def DEVICE_TOKEN_TTL_SECONDS(self) -> int:
+        days = max(1, int(self.DEVICE_TOKEN_TTL_DAYS))
+        return days * 24 * 60 * 60
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS_ORIGINS string into a list."""

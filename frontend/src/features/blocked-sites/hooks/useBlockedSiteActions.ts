@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { BlockedSite } from '../types/blockedSite';
 import { API_ENDPOINTS } from '../config/api';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useBlockedSiteActions(onDeleteSuccess?: () => void) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -26,6 +27,7 @@ export function useBlockedSiteActions(onDeleteSuccess?: () => void) {
       setDeleting(true);
       const response = await fetch(API_ENDPOINTS.blockedSite(blockedSiteToDelete.id), {
         method: 'DELETE',
+        headers: getAdminAuthHeaders(),
       });
 
       if (response.ok) {

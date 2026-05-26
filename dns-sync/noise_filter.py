@@ -132,13 +132,6 @@ def is_noise_domain(domain: str) -> bool:
 def extract_root_domain(domain: str) -> str:
     """
     Extract the root/registrable domain from a full domain.
-    
-    Examples:
-        www.ynet.co.il   → ynet.co.il
-        cdn.taboola.com  → taboola.com
-        api2.cursor.sh   → cursor.sh
-        google.com       → google.com
-        sub.domain.co.uk → domain.co.uk
     """
     domain = domain.lower().rstrip('.')
 
@@ -151,10 +144,9 @@ def extract_root_domain(domain: str) -> str:
     if len(parts) >= 3:
         potential_tld = '.'.join(parts[-2:])
         if potential_tld in MULTI_PART_TLDS:
-            # root domain is the part before the multi-part TLD
             if len(parts) >= 3:
                 return '.'.join(parts[-3:])
             return domain
 
-    # Standard TLD: take last 2 parts
     return '.'.join(parts[-2:])
+

@@ -12,6 +12,7 @@ from app.features.blocked_sites.controllers.blocked_site_controller import (
 from app.features.blocked_sites.dependencies import get_blocked_site_service
 from app.features.blocked_sites.services.blocked_site_service_interface import IBlockedSiteService
 from app.shared.dependencies import get_db
+from app.shared.admin_auth import verify_admin_api_token
 
 router = APIRouter(prefix="/blocked-sites", tags=["Blocked Sites"])
 
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/blocked-sites", tags=["Blocked Sites"])
 def create_blocked_site_endpoint(
     blocked_site_data: BlockedSiteCreate, 
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IBlockedSiteService = Depends(get_blocked_site_service)
 ):
     return create_blocked_site_controller(blocked_site_data, db, service)
@@ -29,6 +31,7 @@ def get_blocked_sites_endpoint(
     page_size: int = Query(default=10, ge=1, le=100, description="Number of items per page"),
     domain_search: str = Query(default=None, description="Domain search query (case-insensitive partial match)"),
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IBlockedSiteService = Depends(get_blocked_site_service)
 ):
     return get_blocked_sites_controller(db, service, page=page, page_size=page_size, domain_search=domain_search)
@@ -36,6 +39,7 @@ def get_blocked_sites_endpoint(
 @router.get("/counts-by-category")
 def get_blocked_sites_counts_by_category_endpoint(
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IBlockedSiteService = Depends(get_blocked_site_service)
 ):
     return get_blocked_sites_counts_by_category_controller(db, service)
@@ -44,6 +48,7 @@ def get_blocked_sites_counts_by_category_endpoint(
 def get_blocked_site_by_id_endpoint(
     blocked_site_id: int, 
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IBlockedSiteService = Depends(get_blocked_site_service)
 ):
     return get_blocked_site_by_id_controller(blocked_site_id, db, service)
@@ -53,6 +58,7 @@ def update_blocked_site_endpoint(
     blocked_site_id: int, 
     blocked_site_data: BlockedSiteCreate, 
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IBlockedSiteService = Depends(get_blocked_site_service)
 ):
     return update_blocked_site_controller(blocked_site_id, blocked_site_data, db, service)
@@ -61,6 +67,7 @@ def update_blocked_site_endpoint(
 def delete_blocked_site_endpoint(
     blocked_site_id: int, 
     db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
     service: IBlockedSiteService = Depends(get_blocked_site_service)
 ):
     return delete_blocked_site_controller(blocked_site_id, db, service)

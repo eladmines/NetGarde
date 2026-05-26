@@ -34,4 +34,8 @@ class EnrollResponse(BaseModel):
     endpoint: str
     allowed_ips: List[str]
     persistent_keepalive: Optional[int] = None
+    device_token: str = Field(
+        ...,
+        description="Device credential for authenticated API calls (e.g. usage reporting)",
+    )
 

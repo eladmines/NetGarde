@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { BlockedSite, BlockedSiteCreate } from '../types/blockedSite';
 import { API_ENDPOINTS } from '../config/api';
 import { FORM_MODE, FormMode } from '../constants/formMode';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useBlockedSiteForm(onSuccess?: () => void) {
   const [openDialog, setOpenDialog] = useState(false);
@@ -56,6 +57,7 @@ export function useBlockedSiteForm(onSuccess?: () => void) {
           method: isEdit ? 'PUT' : 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...getAdminAuthHeaders(),
           },
           body: JSON.stringify(cleanedFormData),
         }

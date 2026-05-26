@@ -5,6 +5,7 @@ import { DataGrid, GridRowsProp } from '@mui/x-data-grid';
 import { Category } from '../../types/category';
 import { useCategoriesColumns } from './useCategoriesColumns';
 import { API_ENDPOINTS } from '../../../blocked-sites/config/api';
+import { getAdminAuthHeaders } from '../../../../shared/utils/authHeaders';
 import './CategoriesTable.css';
 
 interface CategoriesTableProps {
@@ -32,7 +33,9 @@ export default function CategoriesTable({
     const fetchBlockedSitesCounts = async () => {
       try {
         setLoadingCounts(true);
-        const response = await fetch(API_ENDPOINTS.blockedSitesCountsByCategory());
+        const response = await fetch(API_ENDPOINTS.blockedSitesCountsByCategory(), {
+          headers: getAdminAuthHeaders(),
+        });
         if (response.ok) {
           const data: CategoryCountsResponse = await response.json();
           if (data.counts) {

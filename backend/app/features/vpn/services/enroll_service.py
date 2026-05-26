@@ -12,6 +12,7 @@ from app.features.vpn.schemas.enroll import EnrollRequest
 from app.features.vpn.services.ip_allocation_service import IpAllocationService
 from app.features.vpn.services.wireguard_agent_client import apply_peer_on_host
 from app.shared.config import settings
+from app.shared.device_identity import DeviceTokenError, create_device_token
 
 
 class EnrollService:
@@ -66,9 +67,20 @@ class EnrollService:
         if mac_address is not None:
             dev.mac_address = mac_address
 
+    def _validate_peer_identity(self, device_id: str, public_key: str) -> None:
+        by_device = self.peers.get_by_device_id(device_id)
+        if by_device is not None and by_device.public_key != public_key:
+            raise ValueError("device_id already registered with a different public key")
+
+        by_key = self.peers.get_by_public_key(public_key)
+        if by_key is not None and by_key.device_id != device_id:
+            raise ValueError("public_key already registered to another device")
+
     def enroll(self, payload: EnrollRequest) -> dict:
         device_id = payload.device_id.strip()
         public_key = payload.public_key.strip()
+
+        self._validate_peer_identity(device_id, public_key)
 
         pool = self._get_or_create_default_pool()
 
@@ -105,6 +117,11 @@ class EnrollService:
         if not allowed_ips:
             allowed_ips = ["0.0.0.0/0", "::/0"]
 
+        try:
+            device_token = create_device_token(device_id=device_id, public_key=public_key)
+        except DeviceTokenError as exc:
+            raise RuntimeError(str(exc)) from exc
+
         return {
             "address": f"{lease.ip}/32",
             "dns": [pool.dns_ip],
@@ -113,5 +130,6 @@ class EnrollService:
             "endpoint": pool.endpoint,
             "allowed_ips": allowed_ips,
             "persistent_keepalive": pool.persistent_keepalive,
+            "device_token": device_token,
         }
 
