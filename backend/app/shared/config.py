@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     ADMIN_API_TOKEN: str = ""
 
     # Client behavior profiles
+    # Fast-start mode: allow baseline/profile readiness with minimal data (dev/demo).
+    BEHAVIOR_FAST_START: bool = False
     BEHAVIOR_BASELINE_LOOKBACK_DAYS: int = 7
     BEHAVIOR_MIN_PROFILE_DAYS: int = 3
     BEHAVIOR_MIN_PROFILE_QUERIES: int = 500
