@@ -10,6 +10,9 @@ __pycache__/
 !.env.production.example
 !aws/.env.example
 
+# Production secrets (keep server-local; do not track in git)
+backend/.env.production
+
 # Node
 node_modules/
 
