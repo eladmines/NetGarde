@@ -134,8 +134,8 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
                 <BaselineSummary baseline={profile.baseline} />
               ) : (
                 <Alert severity="info" variant="outlined">
-                  Profile is still learning. NetGarde needs roughly 3 days of DNS activity and 500+
-                  queries before a baseline is computed.
+                  Profile is still learning. NetGarde needs more DNS history before a baseline is
+                  computed. (This threshold is configurable by the server.)
                 </Alert>
               )}
               {profile.last_scored_at && (

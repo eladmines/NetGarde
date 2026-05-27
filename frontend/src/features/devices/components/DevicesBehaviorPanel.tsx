@@ -123,7 +123,8 @@ function DeviceBehaviorCard({ device }: { device: Device }) {
 
         {!loading && profile && !profile.profile_ready && (
           <Typography variant="body2" color="text.secondary">
-            Baseline needs more DNS history (typically 3+ days and 500+ queries).
+            Baseline is still learning and needs more DNS history. (This threshold is configurable
+            by the server.)
           </Typography>
         )}
 
