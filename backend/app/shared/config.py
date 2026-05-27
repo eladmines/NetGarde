@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # Fast-start mode: allow baseline/profile readiness with minimal data (dev/demo).
     BEHAVIOR_FAST_START: bool = False
     BEHAVIOR_BASELINE_LOOKBACK_DAYS: int = 7
+    # Minimum number of hourly rollup buckets required to mark profile_ready.
+    # If set > 0, this overrides BEHAVIOR_MIN_PROFILE_DAYS.
+    BEHAVIOR_MIN_PROFILE_HOURS: int = 0
     BEHAVIOR_MIN_PROFILE_DAYS: int = 3
     BEHAVIOR_MIN_PROFILE_QUERIES: int = 500
     BEHAVIOR_BASELINE_RECOMPUTE_HOURS: int = 1

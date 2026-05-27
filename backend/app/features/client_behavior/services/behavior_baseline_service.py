@@ -49,8 +49,10 @@ class BehaviorBaselineService:
         else:
             min_queries = settings.BEHAVIOR_MIN_PROFILE_QUERIES
             min_days = settings.BEHAVIOR_MIN_PROFILE_DAYS
+        min_hours = int(getattr(settings, "BEHAVIOR_MIN_PROFILE_HOURS", 0) or 0)
+        required_hours = min_hours if min_hours > 0 else 24 * max(0, int(min_days))
 
-        if len(rollups) < 24 * min_days or total_queries < min_queries:
+        if len(rollups) < required_hours or total_queries < min_queries:
             self.profile_repo.update_baseline(device_id, {}, profile_ready=False)
             return False
 
