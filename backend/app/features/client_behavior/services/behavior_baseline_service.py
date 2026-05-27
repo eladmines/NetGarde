@@ -37,9 +37,18 @@ class BehaviorBaselineService:
         since = datetime.now(timezone.utc) - timedelta(days=days)
         rollups = self.rollup_repo.get_rollups_for_device(device_id, since)
 
+        if not rollups:
+            self.profile_repo.update_baseline(device_id, {}, profile_ready=False)
+            return False
+
         total_queries = sum(r.query_count for r in rollups)
-        min_queries = settings.BEHAVIOR_MIN_PROFILE_QUERIES
-        min_days = settings.BEHAVIOR_MIN_PROFILE_DAYS
+        if settings.BEHAVIOR_FAST_START:
+            # Demo/dev mode: allow baselines quickly with minimal signal.
+            min_queries = 1
+            min_days = 0
+        else:
+            min_queries = settings.BEHAVIOR_MIN_PROFILE_QUERIES
+            min_days = settings.BEHAVIOR_MIN_PROFILE_DAYS
 
         if len(rollups) < 24 * min_days or total_queries < min_queries:
             self.profile_repo.update_baseline(device_id, {}, profile_ready=False)
