@@ -26,10 +26,23 @@ export interface TopologyEdge {
   dashed?: boolean;
 }
 
+export interface TopologyLayoutMetrics {
+  clientX: number;
+  busX: number;
+  serverX: number;
+  internetX: number;
+  busY1: number;
+  busY2: number;
+  midY: number;
+}
+
 export interface VpnTopologyGraph {
   nodes: TopologyNode[];
   edges: TopologyEdge[];
   serverEndpoint: string;
   vpnCidr: string;
   gatewayIp: string;
+  viewWidth: number;
+  viewHeight: number;
+  layout: TopologyLayoutMetrics;
 }

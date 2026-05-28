@@ -2,25 +2,34 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useNavigate } from 'react-router-dom';
 import type { CSSProperties } from 'react';
-import { edgeEndpoints, VIEWBOX_H, VIEWBOX_W, vpnSubnetBounds } from '../topology/buildVpnTopology';
+import { hubDotCenter, peerDotCenter } from '../topology/buildVpnTopology';
 import { TopologyNode, VpnTopologyGraph } from '../topology/types';
-import TopologyNodeIcon from './TopologyNodeIcon';
+import TopologyDotNode from './TopologyDotNode';
 
-function toPercentX(x: number): string {
-  return `${(x / VIEWBOX_W) * 100}%`;
+function toPercentX(x: number, viewW: number): string {
+  return `${(x / viewW) * 100}%`;
 }
 
-function toPercentY(y: number): string {
-  return `${(y / VIEWBOX_H) * 100}%`;
+function toPercentY(y: number, viewH: number): string {
+  return `${(y / viewH) * 100}%`;
 }
 
-function nodePositionStyle(node: TopologyNode): CSSProperties {
+function nodePositionStyle(node: TopologyNode, viewW: number, viewH: number): CSSProperties {
+  if (node.kind === 'vpn_peer') {
+    return {
+      position: 'absolute',
+      left: toPercentX(node.x, viewW),
+      top: toPercentY(node.y, viewH),
+      transform: 'translate(0, -50%)',
+      zIndex: 2,
+    };
+  }
   const cx = node.x + node.width / 2;
   const cy = node.y + node.height / 2;
   return {
     position: 'absolute',
-    left: toPercentX(cx),
-    top: toPercentY(cy),
+    left: toPercentX(cx, viewW),
+    top: toPercentY(cy, viewH),
     transform: 'translate(-50%, -50%)',
     zIndex: 2,
   };
@@ -33,11 +42,18 @@ interface NetworkTopologyGraphProps {
 export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphProps) {
   const navigate = useNavigate();
   const nodeById = new Map(topology.nodes.map((n) => [n.id, n]));
-  const subnet = vpnSubnetBounds(topology.nodes);
+  const { layout, viewWidth, viewHeight } = topology;
+
+  const server = nodeById.get('vpn_server');
+  const internet = nodeById.get('internet');
+  const peers = topology.nodes.filter((n) => n.kind === 'vpn_peer');
 
   const handleSelect = (node: TopologyNode) => {
     if (node.href) navigate(node.href);
   };
+
+  const serverCenter = server ? hubDotCenter(server) : { x: layout.serverX, y: layout.midY };
+  const internetCenter = internet ? hubDotCenter(internet) : { x: layout.internetX, y: layout.midY };
 
   return (
     <Box
@@ -48,14 +64,14 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
         bgcolor: 'grey.50',
         border: 1,
         borderColor: 'divider',
-        minHeight: 380,
-        aspectRatio: `${VIEWBOX_W} / ${VIEWBOX_H}`,
-        maxHeight: 520,
+        minHeight: 220,
+        aspectRatio: `${viewWidth} / ${viewHeight}`,
+        maxHeight: 480,
       }}
     >
       <Box
         component="svg"
-        viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
+        viewBox={`0 0 ${viewWidth} ${viewHeight}`}
         preserveAspectRatio="xMidYMid meet"
         sx={{
           position: 'absolute',
@@ -66,7 +82,7 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
           zIndex: 1,
         }}
         role="img"
-        aria-hidden
+        aria-label="VPN topology: clients on the left, network on the right"
       >
         <defs>
           <marker
@@ -82,74 +98,66 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
           </marker>
         </defs>
 
-        {subnet && (
-          <g>
-            <rect
-              x={subnet.x}
-              y={subnet.y}
-              width={subnet.width}
-              height={subnet.height}
-              rx={14}
-              fill="rgba(92, 107, 192, 0.04)"
-              stroke="#9fa8da"
-              strokeWidth={1.5}
-              strokeDasharray="8 5"
-            />
-            <text x={subnet.x + 14} y={subnet.y + 20} fontSize={11} fill="#5c6bc0" fontWeight={600}>
-              {topology.vpnCidr} · WireGuard VPN
-            </text>
-          </g>
+        <text x={24} y={28} fontSize={11} fill="#757575" fontWeight={600}>
+          Clients
+        </text>
+        <text x={layout.serverX - 36} y={28} fontSize={11} fill="#757575" fontWeight={600}>
+          Network
+        </text>
+
+        {peers.length > 0 && (
+          <line
+            x1={layout.busX}
+            y1={layout.busY1}
+            x2={layout.busX}
+            y2={layout.busY2}
+            stroke="#bdbdbd"
+            strokeWidth={2}
+          />
         )}
 
-        {topology.edges.map((edge) => {
-          const from = nodeById.get(edge.from);
-          const to = nodeById.get(edge.to);
-          if (!from || !to) return null;
-          const { x1, y1, x2, y2 } = edgeEndpoints(from, to);
-          const mx = (x1 + x2) / 2;
-          const my = (y1 + y2) / 2;
-          const connected = to.handshakeStatus === 'connected';
-          const isWan = edge.from === 'internet';
+        {peers.map((peer) => {
+          const { x: px, y: py } = peerDotCenter(peer);
+          const connected = peer.handshakeStatus === 'connected';
+          const stroke = connected ? '#43a047' : '#bdbdbd';
+          const width = connected ? 2.5 : 1.5;
+          const dash = connected ? undefined : '6 4';
           return (
-            <g key={edge.id}>
-              <line
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                stroke={connected ? '#43a047' : isWan ? '#78909c' : '#90a4ae'}
-                strokeWidth={connected ? 2.5 : isWan ? 2 : 1.5}
-                strokeDasharray={connected || isWan ? undefined : '6 4'}
-                markerEnd="url(#vpn-arrow)"
+            <g key={`link-${peer.id}`}>
+              <path
+                d={`M ${px + 9} ${py} H ${layout.busX} V ${serverCenter.y} H ${serverCenter.x - 14}`}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={width}
+                strokeDasharray={dash}
               />
-              {edge.label && (
-                <text x={mx} y={my - 8} fontSize={10} fill="#607d8b" textAnchor="middle">
-                  {edge.label}
-                </text>
-              )}
             </g>
           );
         })}
+
+        <line
+          x1={serverCenter.x + 14}
+          y1={serverCenter.y}
+          x2={internetCenter.x - 12}
+          y2={internetCenter.y}
+          stroke="#78909c"
+          strokeWidth={2}
+          markerEnd="url(#vpn-arrow)"
+        />
       </Box>
 
       {topology.nodes.map((node) => (
-        <Box key={node.id} sx={nodePositionStyle(node)}>
-          <TopologyNodeIcon node={node} onSelect={handleSelect} />
+        <Box key={node.id} sx={nodePositionStyle(node, viewWidth, viewHeight)}>
+          <TopologyDotNode node={node} onSelect={handleSelect} />
         </Box>
       ))}
 
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{
-          position: 'absolute',
-          left: 12,
-          bottom: 8,
-          zIndex: 2,
-          fontSize: '0.7rem',
-        }}
+        sx={{ position: 'absolute', left: 12, bottom: 8, zIndex: 2, fontSize: '0.7rem' }}
       >
-        Gateway {topology.gatewayIp} · Endpoint {topology.serverEndpoint}
+        {topology.vpnCidr} · Gateway {topology.gatewayIp}
       </Typography>
     </Box>
   );
