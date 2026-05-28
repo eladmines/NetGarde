@@ -3,7 +3,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Copyright from '../internals/components/Copyright';
 import CustomizedDataGrid from './CustomizedDataGrid';
-import DnsStatsCards from './DnsStatsCards';
 import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
 import BlockedAttemptsView from './BlockedAttemptsView';
@@ -15,8 +14,7 @@ export default function MainGrid() {
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Overview
       </Typography>
-      <DnsStatsCards />
-      <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
+      <Grid container spacing={2} columns={12}>
         <Grid size={{ xs: 12 }}>
           <DnsAlertsView />
         </Grid>
