@@ -4,7 +4,6 @@ import DashboardPage from '../pages/DashboardPage';
 import BlockedSitesPage from '../pages/BlockedSitesPage';
 import CategoriesPage from '../pages/CategoriesPage';
 import ClientProfilesPage from '../pages/ClientProfilesPage';
-import NetworkTopologyPage from '../pages/NetworkTopologyPage';
 
 export const routes: RouteObject[] = [
   {
@@ -36,14 +35,6 @@ export const routes: RouteObject[] = [
     element: (
       <Layout>
         <ClientProfilesPage />
-      </Layout>
-    ),
-  },
-  {
-    path: '/network',
-    element: (
-      <Layout>
-        <NetworkTopologyPage />
       </Layout>
     ),
   },
