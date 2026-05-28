@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Category } from '../types/category';
 import { API_ENDPOINTS } from '../config/api';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useCategoryActions(onDeleteSuccess?: () => void) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -26,6 +27,7 @@ export function useCategoryActions(onDeleteSuccess?: () => void) {
       setDeleting(true);
       const response = await fetch(API_ENDPOINTS.category(categoryToDelete.id), {
         method: 'DELETE',
+        headers: getAdminAuthHeaders(),
       });
 
       if (response.ok) {

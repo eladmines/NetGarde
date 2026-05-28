@@ -1,12 +1,22 @@
 #!/bin/bash
 # Bash script to create a CloudFront distribution for the backend API
 
-# Configuration
-AWS_REGION="us-east-1"
-EC2_IP="44.218.45.174"
-EC2_PUBLIC_DNS="ec2-44-218-45-174.compute-1.amazonaws.com"
-BACKEND_PORT="8000"
-DISTRIBUTION_COMMENT="NetGarde Backend API CDN"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ ! -f "$SCRIPT_DIR/.env" ]; then
+    echo "ERROR: $SCRIPT_DIR/.env not found. Copy aws/.env.example to aws/.env and edit values."
+    exit 1
+fi
+set -a
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/.env"
+set +a
+
+# Configuration (from .env)
+AWS_REGION="${AWS_REGION:?Set AWS_REGION in aws/.env}"
+EC2_IP="${BACKEND_EC2_IP:?Set BACKEND_EC2_IP in aws/.env}"
+EC2_PUBLIC_DNS="${BACKEND_EC2_PUBLIC_DNS:?Set BACKEND_EC2_PUBLIC_DNS in aws/.env}"
+BACKEND_PORT="${BACKEND_PORT:?Set BACKEND_PORT in aws/.env}"
+DISTRIBUTION_COMMENT="${BACKEND_CLOUDFRONT_COMMENT:?Set BACKEND_CLOUDFRONT_COMMENT in aws/.env}"
 
 echo "Setting up CloudFront distribution for NetGarde backend..."
 echo "EC2 IP: $EC2_IP"

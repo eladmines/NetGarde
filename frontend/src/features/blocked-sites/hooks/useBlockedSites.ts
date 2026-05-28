@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { BlockedSite, PaginatedResponse } from '../types/blockedSite';
 import { API_ENDPOINTS } from '../config/api';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 export function useBlockedSites() {
   const [blockedSites, setBlockedSites] = useState<BlockedSite[]>([]);
@@ -13,7 +14,9 @@ export function useBlockedSites() {
   const fetchBlockedSites = useCallback(async (currentPage: number, currentPageSize: number, currentDomainSearch?: string) => {
     try {
       setLoading(true);
-      const response = await fetch(API_ENDPOINTS.blockedSites(currentPage, currentPageSize, currentDomainSearch));
+      const response = await fetch(API_ENDPOINTS.blockedSites(currentPage, currentPageSize, currentDomainSearch), {
+        headers: getAdminAuthHeaders(),
+      });
       if (response.ok) {
         const data: PaginatedResponse<BlockedSite> = await response.json();
         console.log('Fetched blocked sites data:', data);

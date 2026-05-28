@@ -1,0 +1,19 @@
+[Unit]
+Description=NetGarde WireGuard host agent (apply peer AllowedIPs)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=NETGARDE_WG_AGENT_BIND=172.17.0.1
+Environment=NETGARDE_WG_AGENT_PORT=9109
+Environment=NETGARDE_WG_INTERFACE=wg0
+Environment=NETGARDE_WG_POOL_CIDR=10.0.0.0/24
+# Set a strong random token and mirror it in backend env WG_AGENT_TOKEN
+Environment=NETGARDE_WG_AGENT_TOKEN=CHANGE_ME
+ExecStart=/usr/bin/python3 /opt/netgarde/netgarde-wg-agent.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -8,9 +8,17 @@ __pycache__/
 !.env.example
 !.env.development.example
 !.env.production.example
+!aws/.env.example
+
+# Production secrets (keep server-local; do not track in git)
+backend/.env.production
 
 # Node
 node_modules/
 
 # GitHub
 .github/secrets
+
+# Private keys (never commit; use Secrets Manager / ~/.ssh)
+*.pem
+.DS_Store

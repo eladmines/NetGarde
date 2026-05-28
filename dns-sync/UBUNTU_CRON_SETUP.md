@@ -216,3 +216,21 @@ tail -f /var/log/dns-sync.log
 ```bash
 ./dns-sync/run-sync.sh
 ```
+
+## Alternative: Instant DB-Event Sync (No Cron)
+
+If you want immediate sync when `blocked_sites` changes, use PostgreSQL `LISTEN/NOTIFY`:
+
+```bash
+cd ~/netgarde
+sudo chmod +x dns-sync/run-sync.sh
+sudo cp dns-sync/netgarde-blocked-sites-listener.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now netgarde-blocked-sites-listener
+sudo systemctl status netgarde-blocked-sites-listener --no-pager
+```
+
+Logs:
+```bash
+sudo journalctl -u netgarde-blocked-sites-listener -f
+```

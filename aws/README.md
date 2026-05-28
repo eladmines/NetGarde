@@ -1,38 +1,17 @@
-# AWS Deployment Setup
+# AWS scripts
 
-This directory contains scripts and configurations for deploying NetGarde to AWS.
+Bash helpers in this folder provision or update a small set of AWS resources used around NetGarde (S3, CloudFront, IAM for GitHub Actions). They are optional, local tooling—not the main application runtime.
 
-## Setup Steps
+Configuration values are read from `aws/.env`; see `.env.example` for the variable names.
 
-### Step 1: Create S3 Bucket
-Run the S3 setup script to create and configure the bucket for static website hosting.
+## `s3-setup.sh`
 
-```bash
-cd aws
-chmod +x s3-setup.sh
-./s3-setup.sh
-```
+Creates the frontend S3 bucket if it does not already exist, then turns on static website hosting (`index.html` for both index and error document), applies a public read bucket policy, relaxes the bucket public-access block so that policy can take effect, and sets a permissive CORS rule for GET/HEAD. Prints the S3 website endpoint when finished.
 
-**Important**: If the bucket name `netgarde-frontend` is already taken, edit `s3-setup.sh` and change `BUCKET_NAME` to something unique (e.g., `netgarde-frontend-yourname`).
+## `cloudfront-backend-setup.sh`
 
-### Step 2: Create CloudFront Distribution
-(Coming next)
+Builds a CloudFront distribution config with an HTTP custom origin to the EC2 public DNS name and backend port from the environment file, HTTPS for viewers, query strings and cookies forwarded, cache TTLs set to zero for the default behavior, and all common HTTP methods allowed. Creates the distribution via the AWS CLI and prints the new distribution id and domain.
 
-### Step 3: Set up ECS for Backend
-(Coming next)
+## `update-github-actions-role.sh`
 
-### Step 4: Configure GitHub Actions
-(Coming next)
-
-## Prerequisites
-
-- AWS CLI installed and configured (`aws configure`)
-- AWS account with appropriate permissions
-- RDS database endpoint: `database-1.cg5q8smoiupc.us-east-1.rds.amazonaws.com`
-
-## Architecture
-
-- **S3 + CloudFront**: Frontend (React static files)
-- **ECS Fargate**: Backend (FastAPI)
-- **RDS**: PostgreSQL database
-- **GitHub Actions**: CI/CD pipeline
+Replaces or creates an inline IAM policy on the configured GitHub Actions role: ECR image push/pull actions, list/read/write/delete objects for the frontend S3 bucket, and CloudFront invalidation APIs. Intended for an OIDC-based deploy role used by CI.

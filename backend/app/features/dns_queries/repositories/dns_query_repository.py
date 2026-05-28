@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
-from typing import List, Optional
-from datetime import datetime, timedelta
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 from app.features.dns_queries.models.dns_query import DnsQuery
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
+from app.shared.domain_utils import extract_root_domain, is_noise_domain
 
 
 class DnsQueryRepository:
@@ -82,9 +84,9 @@ class DnsQueryRepository:
     ) -> dict:
         """Get statistics about DNS queries."""
         if not start_date:
-            start_date = datetime.now() - timedelta(days=1)
+            start_date = datetime.now(timezone.utc) - timedelta(days=1)
         if not end_date:
-            end_date = datetime.now()
+            end_date = datetime.now(timezone.utc)
 
         query = self.db.query(DnsQuery).filter(
             DnsQuery.timestamp >= start_date,
@@ -133,7 +135,97 @@ class DnsQueryRepository:
 
     def delete_old_records(self, days: int = 30) -> int:
         """Delete records older than specified days. Returns count of deleted records."""
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         count = self.db.query(DnsQuery).filter(DnsQuery.timestamp < cutoff_date).delete()
         self.db.commit()
         return count
+
+    def get_grouped_by_site(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        client_ip: Optional[str] = None,
+        blocked_only: bool = False,
+        filter_noise: bool = True,
+        limit: int = 50
+    ) -> Dict[str, Any]:
+        """
+        Get DNS queries grouped by root domain (site).
+        Returns aggregated view: root domain, total queries, subdomains, last seen, etc.
+        """
+        if not start_date:
+            start_date = datetime.now(timezone.utc) - timedelta(days=1)
+        if not end_date:
+            end_date = datetime.now(timezone.utc)
+
+        # Query: group by domain, get counts
+        query = self.db.query(
+            DnsQuery.domain,
+            func.count(DnsQuery.id).label('count'),
+            func.max(DnsQuery.timestamp).label('last_seen'),
+            func.min(DnsQuery.timestamp).label('first_seen'),
+            func.bool_or(DnsQuery.blocked).label('has_blocked'),
+        ).filter(
+            DnsQuery.timestamp >= start_date,
+            DnsQuery.timestamp <= end_date,
+        )
+
+        if client_ip:
+            query = query.filter(DnsQuery.client_ip == client_ip)
+        if blocked_only:
+            query = query.filter(DnsQuery.blocked == True)
+
+        domain_rows = query.group_by(DnsQuery.domain).all()
+
+        # Group by root domain in Python
+        groups: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
+            "root_domain": "",
+            "total_queries": 0,
+            "subdomains": set(),
+            "last_seen": None,
+            "first_seen": None,
+            "blocked": False,
+        })
+
+        noise_count = 0
+
+        for domain, count, last_seen, first_seen, has_blocked in domain_rows:
+            # Filter noise domains
+            if filter_noise and is_noise_domain(domain):
+                noise_count += count
+                continue
+
+            root = extract_root_domain(domain)
+            g = groups[root]
+            g["root_domain"] = root
+            g["total_queries"] += count
+            g["subdomains"].add(domain.lower())
+            g["blocked"] = g["blocked"] or (has_blocked if has_blocked else False)
+
+            if g["last_seen"] is None or last_seen > g["last_seen"]:
+                g["last_seen"] = last_seen
+            if g["first_seen"] is None or first_seen < g["first_seen"]:
+                g["first_seen"] = first_seen
+
+        # Sort by most recent activity and apply limit
+        sorted_groups = sorted(
+            groups.values(),
+            key=lambda x: x["last_seen"] or datetime.min.replace(tzinfo=timezone.utc),
+            reverse=True
+        )[:limit]
+
+        # Convert sets to lists for JSON serialization
+        for g in sorted_groups:
+            g["subdomains"] = sorted(g["subdomains"])
+            g["last_seen"] = g["last_seen"].isoformat() if g["last_seen"] else None
+            g["first_seen"] = g["first_seen"].isoformat() if g["first_seen"] else None
+
+        return {
+            "sites": sorted_groups,
+            "total_sites": len(groups),
+            "noise_filtered": noise_count,
+            "period": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat()
+            }
+        }

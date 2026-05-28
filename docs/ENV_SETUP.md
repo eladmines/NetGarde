@@ -34,6 +34,9 @@ LOG_LEVEL=DEBUG
 # API Configuration
 API_HOST=0.0.0.0
 API_PORT=8000
+
+# DNS ingest (default: only blocked queries persisted to RDS; live feed always uses WebSocket)
+PERSIST_ALL_DNS=false
 ```
 
 ### Production (`.env.production`)
@@ -227,6 +230,9 @@ The docker-compose files are already configured to use the appropriate `.env` fi
 | `LOG_LEVEL` | Logging level | `DEBUG` | `INFO` |
 | `API_HOST` | API host address | `0.0.0.0` | `0.0.0.0` |
 | `API_PORT` | API port | `8000` | `8000` |
+| `PERSIST_ALL_DNS` | Persist every DNS query to RDS (`false` = blocked only) | `false` | `false` |
+| `NEW_DOMAIN_ALERTS` | Create low-severity alerts on first domain visit per device | `true` | `true` |
+| `BANDWIDTH_ALERT_MIB_PER_SEC` | Alert when tunnel throughput exceeds this rate (MiB/s) | `50` | `50` |
 
 ### Frontend Variables
 
