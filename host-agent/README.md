@@ -43,7 +43,7 @@ Set these on EC2:
 - **`/etc/netgarde/backend.env`** (loaded into the backend container via `env_file:`; survives CI/CD deploys)
 - **Repo root** `.env` (for docker compose `${WG_AGENT_TOKEN}` interpolation): synced by deploy from `/etc/netgarde/wg-agent.token`
 
-First-time: `sudo cp backend/.env.production.example /etc/netgarde/backend.env && sudo chmod 600 /etc/netgarde/backend.env`
+First-time: `sudo cp backend/.env.production.example /etc/netgarde/backend.env && sudo chown root:docker /etc/netgarde/backend.env && sudo chmod 640 /etc/netgarde/backend.env` (ubuntu must be in the `docker` group so compose can read the file)
 
 ## Security notes
 

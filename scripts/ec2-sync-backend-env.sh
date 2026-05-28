@@ -6,6 +6,18 @@ set -euo pipefail
 ENV_FILE="${NETGARDE_ENV_FILE:-/etc/netgarde/backend.env}"
 REPO_ROOT="${NETGARDE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 
+# docker compose (ubuntu user, docker group) must read env_file; root-only 600 breaks compose.
+fix_env_permissions() {
+  if getent group docker >/dev/null 2>&1; then
+    sudo chown root:docker "$ENV_FILE"
+    sudo chmod 640 "$ENV_FILE"
+  else
+    local owner="${SUDO_USER:-${USER:-ubuntu}}"
+    sudo chown "${owner}:${owner}" "$ENV_FILE"
+    sudo chmod 600 "$ENV_FILE"
+  fi
+}
+
 sudo mkdir -p /etc/netgarde
 
 # Bootstrap when the host env file does not exist yet.
@@ -17,7 +29,7 @@ if [ ! -f "$ENV_FILE" ]; then
     echo "Creating $ENV_FILE from backend/.env.production.example"
     sudo cp "$REPO_ROOT/backend/.env.production.example" "$ENV_FILE"
   fi
-  sudo chmod 600 "$ENV_FILE"
+  fix_env_permissions
 fi
 
 token_file_for_key() {
@@ -108,5 +120,5 @@ with open(env_file, "w", encoding="utf-8") as f:
     f.writelines(lines)
 PY
 
-sudo chmod 600 "$ENV_FILE"
+fix_env_permissions
 echo "Updated $ENV_FILE (${#UPDATES[@]} key(s))"
