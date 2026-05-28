@@ -38,10 +38,12 @@ The backend container should call:
 - `WG_AGENT_URL=http://172.17.0.1:9109` (default)
 - `WG_AGENT_TOKEN=<same token as NETGARDE_WG_AGENT_TOKEN>`
 
-Set these on EC2 in **one** of these places (pick one approach and stay consistent):
+Set these on EC2:
 
-- **Repo root** `.env` (recommended for docker compose `${VAR}` interpolation): copy `.env.production.example` → `.env`
-- **`backend/.env.production`** (loaded into the container via `env_file:`): copy `backend/.env.production.example` → `backend/.env.production`
+- **`/etc/netgarde/backend.env`** (loaded into the backend container via `env_file:`; survives CI/CD deploys)
+- **Repo root** `.env` (for docker compose `${WG_AGENT_TOKEN}` interpolation): synced by deploy from `/etc/netgarde/wg-agent.token`
+
+First-time: `sudo cp backend/.env.production.example /etc/netgarde/backend.env && sudo chmod 600 /etc/netgarde/backend.env`
 
 ## Security notes
 
