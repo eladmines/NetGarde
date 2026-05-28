@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 import { DnsQuery, DnsQueryPaginatedResponse } from '../types/dnsQuery';
 import { DNS_QUERY_ENDPOINTS } from '../config/api';
 
@@ -23,7 +24,7 @@ export function useDnsQueries() {
         blocked_only: blockedOnly || undefined,
       });
 
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAdminAuthHeaders() });
       if (response.ok) {
         const data: DnsQueryPaginatedResponse = await response.json();
         setQueries(data.items);

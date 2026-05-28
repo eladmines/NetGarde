@@ -16,6 +16,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { DNS_QUERY_ENDPOINTS } from '../../dns-queries/config/api';
 import { DnsQuery, DnsQueryPaginatedResponse } from '../../dns-queries/types/dnsQuery';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
+import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 
 function BlockedAttemptRow({ item }: { item: DnsQuery }) {
   const machineName = item.device_name || 'Unknown device';
@@ -67,7 +68,7 @@ export default function BlockedAttemptsView() {
         page_size: 20,
         blocked_only: true,
       });
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAdminAuthHeaders() });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }

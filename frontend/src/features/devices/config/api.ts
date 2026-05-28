@@ -2,8 +2,7 @@ import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 import { DnsAlertListResponse } from '../../dns-queries/types/dnsQuery';
 import { Device, BehaviorProfile, DeviceSecurityPolicy, ClientBlockedDomain } from '../types/device';
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:8000';
+import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
