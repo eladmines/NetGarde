@@ -5,7 +5,7 @@ import Copyright from '../internals/components/Copyright';
 import CustomizedDataGrid from './CustomizedDataGrid';
 import DnsStatsCards from './DnsStatsCards';
 import DnsLiveFeed from './DnsLiveFeed';
-import DnsSitesView from './DnsSitesView';
+import LiveClientsView from './LiveClientsView';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
 import { Link as RouterLink } from 'react-router-dom';
@@ -38,9 +38,9 @@ export default function MainGrid() {
       <Grid container spacing={2} columns={12} sx={{ mt: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-            Recent Sites
+            Live Clients
           </Typography>
-          <DnsSitesView />
+          <LiveClientsView />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
