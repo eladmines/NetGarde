@@ -14,12 +14,8 @@ env:
   RDS_INSTANCE_ID: ${{ secrets.RDS_INSTANCE_ID || 'netgarde' }}
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write   # Required for OIDC authentication
-      contents: read    # Required for checking out code
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,15 +34,26 @@ jobs:
           pip install -r requirements-dev.txt
           pytest --cov=app --cov-report=xml --cov-report=term
 
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
 
       - name: Build, tag, and push image to Amazon ECR
         if: github.ref == 'refs/heads/main'  # Only push to ECR for production (main branch)
