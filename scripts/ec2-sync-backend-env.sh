@@ -21,7 +21,7 @@ fix_env_permissions() {
 sudo mkdir -p /etc/netgarde
 
 # Bootstrap when the host env file does not exist yet.
-if [ ! -f "$ENV_FILE" ]; then
+if ! sudo test -f "$ENV_FILE"; then
   if [ -f "$REPO_ROOT/backend/.env.production" ]; then
     echo "Migrating existing $REPO_ROOT/backend/.env.production -> $ENV_FILE"
     sudo cp "$REPO_ROOT/backend/.env.production" "$ENV_FILE"
@@ -50,8 +50,9 @@ ensure_secret() {
     return 0
   fi
 
-  if [ -f "$token_file" ]; then
-    current="$(sudo tr -d '\r\n' <"$token_file")"
+  if sudo test -f "$token_file"; then
+    # Do not use `<file` with sudo — the shell opens the file as the current user.
+    current="$(sudo cat "$token_file" | tr -d '\r\n')"
   else
     current="$(openssl rand -hex 32)"
     echo "$current" | sudo tee "$token_file" >/dev/null
