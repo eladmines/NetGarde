@@ -25,6 +25,23 @@ export interface DeviceSecurityPolicy {
   max_blocks_per_day: number;
 }
 
+export interface BlockedClientSummary {
+  device_id: number;
+  client_ip: string | null;
+  hostname: string | null;
+  mac_address: string | null;
+  last_score: number | null;
+  last_scored_at: string | null;
+  active_block_count: number;
+  latest_blocked_domain: string | null;
+  latest_block_at: string | null;
+}
+
+export interface BlockedClientsListResponse {
+  items: BlockedClientSummary[];
+  total: number;
+}
+
 export interface ClientBlockedDomain {
   id: number;
   device_id: number;

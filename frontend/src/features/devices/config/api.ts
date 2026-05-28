@@ -1,6 +1,12 @@
 import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 import { DnsAlertListResponse } from '../../dns-queries/types/dnsQuery';
-import { Device, BehaviorProfile, DeviceSecurityPolicy, ClientBlockedDomain } from '../types/device';
+import {
+  Device,
+  BehaviorProfile,
+  DeviceSecurityPolicy,
+  ClientBlockedDomain,
+  BlockedClientsListResponse,
+} from '../types/device';
 
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 
@@ -22,6 +28,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const devicesApi = {
   list: () => apiFetch<Device[]>('/devices'),
+  listBlockedClients: () => apiFetch<BlockedClientsListResponse>('/devices/blocked-clients'),
   getBehaviorProfile: (deviceId: number) =>
     apiFetch<BehaviorProfile>(`/devices/${deviceId}/behavior-profile`),
   getSecurityPolicy: (deviceId: number) =>

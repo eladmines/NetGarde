@@ -5,6 +5,7 @@ import Copyright from '../internals/components/Copyright';
 import CustomizedDataGrid from './CustomizedDataGrid';
 import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
+import BlockedClientsView from './BlockedClientsView';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
 
@@ -32,8 +33,14 @@ export default function MainGrid() {
 
       <Grid container spacing={2} columns={12} sx={{ mt: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>
+          <BlockedClientsView />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
           <DnsAlertsView />
         </Grid>
+      </Grid>
+
+      <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <BlockedAttemptsView />
         </Grid>

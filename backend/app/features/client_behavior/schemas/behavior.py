@@ -53,3 +53,22 @@ class ClientBlockSyncResponse(BaseModel):
 
 class BehaviorRecomputeResult(BaseModel):
     devices_updated: int
+
+
+class BlockedClientSummary(BaseModel):
+    """Device with active behavior-driven DNS blocks after an abnormal score."""
+
+    device_id: int
+    client_ip: Optional[str] = None
+    hostname: Optional[str] = None
+    mac_address: Optional[str] = None
+    last_score: Optional[int] = None
+    last_scored_at: Optional[datetime] = None
+    active_block_count: int = 0
+    latest_blocked_domain: Optional[str] = None
+    latest_block_at: Optional[datetime] = None
+
+
+class BlockedClientsListResponse(BaseModel):
+    items: List[BlockedClientSummary]
+    total: int
