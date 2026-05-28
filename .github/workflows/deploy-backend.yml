@@ -294,12 +294,9 @@ jobs:
             echo "Database host: $DB_HOST"
             echo "Database name: ${DB_NAME:-postgres}"
             
-            # Create .env.production with the credentials
-            # Note: alembic/env.py will handle escaping % characters for ConfigParser
-            mkdir -p backend
-            echo "DB_URL=$DB_URL" > backend/.env.production
-            echo "PYTHONUNBUFFERED=1" >> backend/.env.production
-            echo "Created backend/.env.production with credentials from Secrets Manager"
+            # Merge deploy keys into host env file (never truncate backend/.env.production).
+            # docker-compose.yml loads /etc/netgarde/backend.env — see scripts/ec2-sync-backend-env.sh
+            chmod +x scripts/ec2-sync-backend-env.sh
 
             # WireGuard enroll + host agent token (required by docker-compose.yml interpolation)
             # Keep token on the host so it is stable across deploys.
@@ -337,17 +334,20 @@ jobs:
               echo "WARNING: VPN_ENDPOINT could not be auto-detected. Set VPN_ENDPOINT explicitly on the host or in CI."
             fi
 
-            # Persist for app runtime (env_file) and export for docker compose interpolation
-            {
-              echo "WG_AGENT_URL=$WG_AGENT_URL"
-              echo "WG_AGENT_TOKEN=$WG_AGENT_TOKEN"
-              if [ -n "$VPN_SERVER_PUBLIC_KEY" ]; then
-                echo "VPN_SERVER_PUBLIC_KEY=$VPN_SERVER_PUBLIC_KEY"
-              fi
-              if [ -n "$VPN_ENDPOINT" ]; then
-                echo "VPN_ENDPOINT=$VPN_ENDPOINT"
-              fi
-            } >> backend/.env.production
+            SYNC_ARGS=(
+              "DB_URL=$DB_URL"
+              "PYTHONUNBUFFERED=1"
+              "WG_AGENT_URL=$WG_AGENT_URL"
+              "WG_AGENT_TOKEN=$WG_AGENT_TOKEN"
+            )
+            if [ -n "$VPN_SERVER_PUBLIC_KEY" ]; then
+              SYNC_ARGS+=("VPN_SERVER_PUBLIC_KEY=$VPN_SERVER_PUBLIC_KEY")
+            fi
+            if [ -n "$VPN_ENDPOINT" ]; then
+              SYNC_ARGS+=("VPN_ENDPOINT=$VPN_ENDPOINT")
+            fi
+            bash scripts/ec2-sync-backend-env.sh "${SYNC_ARGS[@]}"
+            echo "Synced /etc/netgarde/backend.env (manual keys preserved)"
 
             # docker compose reads repo-root `.env` for ${VAR} substitution; keep it in sync for required keys
             {
