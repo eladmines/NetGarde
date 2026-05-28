@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { devicesApi } from '../../devices/config/api';
 import { Device } from '../../devices/types/device';
 import { DNS_QUERY_ENDPOINTS } from '../../dns-queries/config/api';
@@ -104,11 +104,21 @@ export function useLiveClients() {
   const [clientIps, setClientIps] = useState<Set<string>>(new Set());
   const [queryCounts, setQueryCounts] = useState<Map<string, number>>(new Map());
   const [statsSource, setStatsSource] = useState<string | null>(null);
+  const [clients, setClients] = useState<LiveClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activityTick, setActivityTick] = useState(0);
 
-  useEffect(() => subscribeDnsClientActivity(() => setActivityTick((n) => n + 1)), []);
+  const recomputeClients = useCallback(() => {
+    setClients(
+      sortClients(withLiveActivity(buildRows(devices, clientIps, queryCounts))),
+    );
+  }, [devices, clientIps, queryCounts]);
+
+  useEffect(() => {
+    recomputeClients();
+  }, [recomputeClients]);
+
+  useEffect(() => subscribeDnsClientActivity(recomputeClients), [recomputeClients]);
 
   const fetchAll = useCallback(async () => {
     setError(null);
@@ -150,11 +160,6 @@ export function useLiveClients() {
     const id = setInterval(fetchAll, POLL_MS);
     return () => clearInterval(id);
   }, [fetchAll]);
-
-  const clients = useMemo(
-    () => sortClients(withLiveActivity(buildRows(devices, clientIps, queryCounts))),
-    [devices, clientIps, queryCounts, activityTick],
-  );
 
   const activeCount = clients.filter((c) => c.is_active_now).length;
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
