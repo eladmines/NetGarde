@@ -7,6 +7,11 @@ class EnrollRequest(BaseModel):
     public_key: str = Field(min_length=1, max_length=255)
     hostname: Optional[str] = Field(None, max_length=255)
     mac_address: Optional[str] = Field(None, max_length=17)
+    policy_profile_slug: Optional[str] = Field(
+        None,
+        max_length=32,
+        description="Policy profile: kids, teen, or work",
+    )
 
     @field_validator("hostname")
     @classmethod

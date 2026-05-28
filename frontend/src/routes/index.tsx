@@ -1,8 +1,7 @@
 import { RouteObject } from 'react-router-dom';
 import Layout from '../shared/components/Layout';
 import DashboardPage from '../pages/DashboardPage';
-import BlockedSitesPage from '../pages/BlockedSitesPage';
-import CategoriesPage from '../pages/CategoriesPage';
+import PolicyPage from '../pages/PolicyPage';
 import ClientProfilesPage from '../pages/ClientProfilesPage';
 
 export const routes: RouteObject[] = [
@@ -15,18 +14,10 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: '/blocked-sites',
+    path: '/policy',
     element: (
       <Layout>
-        <BlockedSitesPage />
-      </Layout>
-    ),
-  },
-  {
-    path: '/categories',
-    element: (
-      <Layout>
-        <CategoriesPage />
+        <PolicyPage />
       </Layout>
     ),
   },

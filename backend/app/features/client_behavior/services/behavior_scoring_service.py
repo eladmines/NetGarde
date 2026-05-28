@@ -10,6 +10,8 @@ from app.features.client_behavior.repositories.client_blocked_domain_repository 
 from app.features.client_behavior.repositories.device_security_policy_repository import DeviceSecurityPolicyRepository
 from app.features.client_behavior.services.behavior_baseline_service import BehaviorBaselineService
 from app.features.devices.repositories.device_repository import DeviceRepository
+from app.features.policy.repositories.policy_repository import PolicyRepository
+from app.features.policy.sensitivity import alert_threshold_for_sensitivity
 from app.features.dns_queries.dns_anomaly import get_suspicious_domain_reasons
 from app.features.dns_queries.models.dns_alert import DnsAlert
 from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
@@ -28,11 +30,12 @@ class BehaviorScoringService:
         self.db = db
         self.rollup_repo = BehaviorRollupRepository(db)
         self.profile_repo = BehaviorProfileRepository(db)
-        self.policy_repo = DeviceSecurityPolicyRepository(db)
+        self.security_policy_repo = DeviceSecurityPolicyRepository(db)
         self.block_repo = ClientBlockedDomainRepository(db)
         self.alert_repo = DnsAlertRepository(db)
         self.device_repo = DeviceRepository(db)
         self.baseline_service = BehaviorBaselineService(db)
+        self.policy_repo = PolicyRepository(db)
 
     def process_queries(self, queries: List[DnsQueryCreate]) -> int:
         if not queries:
@@ -72,7 +75,10 @@ class BehaviorScoringService:
         )
         self.profile_repo.update_score(device_id, score)
 
-        alert_threshold = settings.BEHAVIOR_ALERT_THRESHOLD
+        policy_profile = self._get_device_policy_profile(device_id)
+        alert_threshold = alert_threshold_for_sensitivity(
+            policy_profile.behavior_sensitivity if policy_profile else "medium"
+        )
         if score < alert_threshold:
             return 0
 
@@ -109,10 +115,40 @@ class BehaviorScoringService:
             events = 1
 
         blocks_added = self._apply_auto_blocks_if_needed(device_id, score, entries)
-        if blocks_added > 0 and events == 0:
+        if self._maybe_start_quarantine(device_id, score, policy_profile):
+            if events == 0:
+                events = 1
+        elif blocks_added > 0 and events == 0:
             events = 1
 
         return events
+
+    def _get_device_policy_profile(self, device_id: int):
+        device = self.device_repo.get_by_id(device_id)
+        if not device:
+            return self.policy_repo.get_default_profile()
+        if device.policy_profile_id:
+            profile = self.policy_repo.get_profile_by_id(device.policy_profile_id)
+            if profile:
+                return profile
+        return self.policy_repo.get_default_profile()
+
+    def _maybe_start_quarantine(self, device_id: int, score: int, policy_profile) -> bool:
+        if policy_profile is None or not policy_profile.quarantine_on_abnormal:
+            return False
+        sec = self.security_policy_repo.get_or_create(device_id)
+        block_threshold = sec.auto_block_threshold or settings.BEHAVIOR_AUTO_BLOCK_THRESHOLD
+        if not sec.auto_block_enabled or score < block_threshold:
+            return False
+        if self.policy_repo.get_active_quarantine(device_id):
+            return False
+        hours = max(1, int(policy_profile.quarantine_hours or 4))
+        self.policy_repo.start_quarantine(device_id, score, hours)
+        logger.info(
+            "Device quarantine started (allowlist-only DNS)",
+            extra={"device_id": device_id, "score": score, "hours": hours},
+        )
+        return True
 
     def _should_recompute_baseline(self, profile) -> bool:
         if profile is None:
@@ -197,7 +233,7 @@ class BehaviorScoringService:
         score: int,
         entries: List[Tuple[str, str, str]],
     ) -> int:
-        policy = self.policy_repo.get_or_create(device_id)
+        policy = self.security_policy_repo.get_or_create(device_id)
         block_threshold = policy.auto_block_threshold or settings.BEHAVIOR_AUTO_BLOCK_THRESHOLD
         if not policy.auto_block_enabled or score < block_threshold:
             return 0

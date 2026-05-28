@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DNS Sync Script for dnsmasq
-Fetches blocked sites from NetGarde API and updates dnsmasq configuration.
+Fetches policy DNS rules from NetGarde API and updates dnsmasq configuration.
 """
 
 import os
@@ -13,27 +13,23 @@ import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Configuration from environment variables
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
-API_ENDPOINT = os.getenv('API_ENDPOINT', '/blocked-sites')
-BLOCK_IP = os.getenv('BLOCK_IP', '0.0.0.0')  # IP to redirect blocked domains to
+POLICY_DNS_SYNC_ENDPOINT = os.getenv('POLICY_DNS_SYNC_ENDPOINT', '/policy/dns-sync')
+BLOCK_IP = os.getenv('BLOCK_IP', '0.0.0.0')
 DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
-SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))  # Default: 1 hour
+SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))
 DNSMASQ_RESTART_CMD = os.getenv('DNSMASQ_RESTART_CMD', 'killall -HUP dnsmasq')
-PAGE_SIZE = int(os.getenv('PAGE_SIZE', '100'))  # Max items per page
 DEVICE_SYNC_ENDPOINT = os.getenv('DEVICE_SYNC_ENDPOINT', '/devices/sync-dhcp')
 DHCP_LEASES_PATH = os.getenv('DHCP_LEASES_PATH', '/var/lib/misc/dnsmasq.leases')
 DEVICE_SYNC_ENABLED = os.getenv('DEVICE_SYNC_ENABLED', '1').lower() not in ('0', 'false', 'no')
 DNS_INGEST_TOKEN = os.getenv('DNS_INGEST_TOKEN', '').strip()
 ADMIN_API_TOKEN = os.getenv('ADMIN_API_TOKEN', '').strip()
-CLIENT_BLOCKS_SYNC_ENDPOINT = os.getenv('CLIENT_BLOCKS_SYNC_ENDPOINT', '/devices/client-blocks/sync')
 CLIENT_BLOCKS_CONFIG_DIR = os.getenv('CLIENT_BLOCKS_CONFIG_DIR', '/etc/dnsmasq.d/netgarde-devices')
 
 
@@ -46,299 +42,87 @@ def _api_headers(admin: bool = False, ingest: bool = False) -> Dict[str, str]:
     return headers
 
 
-def fetch_blocked_sites_from_api(api_url: str, endpoint: str, page_size: int = 100) -> Optional[List[Dict[str, Any]]]:
-    """
-    Fetch all blocked sites from the NetGarde API.
-    Handles pagination to get all blocked sites.
-    Returns a list of blocked site dictionaries.
-    """
+def fetch_policy_dns_sync(api_url: str, endpoint: str) -> Optional[Dict[str, Any]]:
     if not api_url:
         logger.error("API_BASE_URL environment variable is not set")
         return None
-    
-    try:
-        import urllib.request
-        import urllib.parse
-        
-        all_blocked_sites = []
-        page = 1
-        
-        while True:
-            # Build URL with pagination
-            params = {'page': page, 'page_size': page_size}
-            url = f"{api_url.rstrip('/')}{endpoint}?{urllib.parse.urlencode(params)}"
-            
-            logger.info(f"Fetching blocked sites from {url} (page {page})")
-            
-            req = urllib.request.Request(url, headers=_api_headers(admin=True))
-            
-            with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status != 200:
-                    logger.error(f"API returned status {response.status}")
-                    return None
-                
-                data = json.loads(response.read().decode('utf-8'))
-                
-                # Handle paginated response
-                if 'items' in data:
-                    items = data['items']
-                    total = data.get('total', 0)
-                    logger.info(f"Fetched {len(items)} blocked sites (page {page}, total: {total})")
-                    
-                    if not items:
-                        break
-                    
-                    all_blocked_sites.extend(items)
-                    
-                    # Check if there are more pages
-                    if len(all_blocked_sites) >= total or len(items) < page_size:
-                        break
-                    
-                    page += 1
-                else:
-                    # Non-paginated response (array)
-                    if isinstance(data, list):
-                        all_blocked_sites = data
-                        break
-                    else:
-                        logger.error("Unexpected API response format")
-                        return None
-        
-        logger.info(f"Total blocked sites fetched: {len(all_blocked_sites)}")
-        return all_blocked_sites
-        
-    except urllib.error.HTTPError as e:
-        logger.error(f"HTTP error fetching blocked sites: {e.code} - {e.reason}")
-        return None
-    except urllib.error.URLError as e:
-        logger.error(f"URL error fetching blocked sites: {e.reason}")
-        return None
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Error fetching blocked sites: {e}", exc_info=True)
-        return None
-
-
-def convert_to_dnsmasq_format(blocked_sites: List[Dict[str, Any]], block_ip: str = '0.0.0.0') -> List[str]:
-    """
-    Convert blocked sites from API format to dnsmasq format.
-    Returns a list of dnsmasq configuration lines.
-    """
-    entries = []
-    
-    for site in blocked_sites:
-        domain = site.get('domain', '').strip()
-        if not domain:
-            continue
-        
-        # Skip deleted sites
-        if site.get('is_deleted', False):
-            continue
-        
-        # Normalize domain (remove protocol, www, etc.)
-        domain = domain.replace('http://', '').replace('https://', '').replace('www.', '')
-        domain = domain.split('/')[0]  # Remove paths
-        domain = domain.split('?')[0]  # Remove query strings
-        
-        if not domain:
-            continue
-        
-        # Create dnsmasq entry to block the domain
-        # Format: address=/domain.com/0.0.0.0
-        entry = f"address=/{domain}/{block_ip}"
-        entries.append(entry)
-    
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_entries = []
-    for entry in entries:
-        if entry not in seen:
-            seen.add(entry)
-            unique_entries.append(entry)
-    
-    logger.info(f"Converted {len(blocked_sites)} blocked sites to {len(unique_entries)} unique dnsmasq entries")
-    return unique_entries
-
-
-def write_dns_config(entries: List[str], config_path: str) -> bool:
-    """
-    Write DNS entries to dnsmasq configuration file.
-    """
-    try:
-        config_file = Path(config_path)
-        config_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Write header
-        content = f"# Auto-generated DNS configuration\n"
-        content += f"# Last updated: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
-        # Write entries
-        for entry in entries:
-            content += f"{entry}\n"
-        
-        # Write to file
-        config_file.write_text(content)
-        logger.info(f"Wrote {len(entries)} entries to {config_path}")
-        return True
-    except Exception as e:
-        logger.error(f"Error writing DNS config: {e}")
-        return False
-
-
-def reload_dnsmasq(restart_cmd: str) -> bool:
-    """
-    Reload dnsmasq configuration.
-    """
-    if not restart_cmd or not restart_cmd.strip():
-        logger.info("DNSMASQ_RESTART_CMD is empty, skipping reload (host script will handle it)")
-        return True
-    
-    try:
-        logger.info("Reloading dnsmasq...")
-        result = subprocess.run(
-            restart_cmd.split(),
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        if result.returncode == 0:
-            logger.info("dnsmasq reloaded successfully")
-            return True
-        else:
-            logger.warning(f"dnsmasq reload command returned non-zero: {result.stderr}")
-            return False
-    except Exception as e:
-        logger.error(f"Error reloading dnsmasq: {e}")
-        return False
-
-
-def parse_dhcp_leases(leases_path: str) -> List[Dict[str, Optional[str]]]:
-    """
-    Parse dnsmasq DHCP lease file.
-    Lease format: <expiry> <mac> <ip> <hostname> <client-id>
-    """
-    lease_file = Path(leases_path)
-    if not lease_file.exists():
-        logger.warning(f"DHCP lease file not found: {leases_path}")
-        return []
-
-    leases: List[Dict[str, Optional[str]]] = []
-    try:
-        for line in lease_file.read_text(encoding='utf-8', errors='ignore').splitlines():
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-
-            parts = line.split()
-            if len(parts) < 4:
-                continue
-
-            mac = parts[1].strip().lower()
-            client_ip = parts[2].strip()
-            hostname = parts[3].strip()
-            if hostname == '*':
-                hostname = None
-
-            leases.append({
-                'client_ip': client_ip,
-                'hostname': hostname,
-                'mac_address': mac,
-            })
-    except Exception as e:
-        logger.error(f"Error parsing DHCP leases from {leases_path}: {e}", exc_info=True)
-        return []
-
-    logger.info(f"Parsed {len(leases)} DHCP lease records from {leases_path}")
-    return leases
-
-
-def sync_devices_from_dhcp(api_url: str, endpoint: str, leases_path: str) -> bool:
-    """Sync device IP/hostname/MAC mappings from DHCP leases into backend devices table."""
-    leases = parse_dhcp_leases(leases_path)
-    if not leases:
-        logger.info("No DHCP leases available to sync")
-        return True
-
-    payload = {'leases': leases}
     try:
         import urllib.request
 
         url = f"{api_url.rstrip('/')}{endpoint}"
-        data = json.dumps(payload).encode('utf-8')
-
-        logger.info(f"Syncing {len(leases)} DHCP leases to {url}")
-        req = urllib.request.Request(url, data=data, method='POST')
-        for key, value in _api_headers(ingest=True).items():
-            req.add_header(key, value)
-        req.add_header('Content-Type', 'application/json')
-
-        with urllib.request.urlopen(req, timeout=30) as response:
-            body = response.read().decode('utf-8') if response.length != 0 else ''
-            if response.status not in (200, 201):
-                logger.error(f"Device sync failed with status {response.status}: {body}")
-                return False
-            logger.info(f"Device sync completed: {body}")
-            return True
-    except Exception as e:
-        logger.error(f"Failed to sync DHCP leases to backend: {e}", exc_info=True)
-        return False
-
-
-def fetch_client_blocks_from_api(api_url: str, endpoint: str) -> Optional[List[Dict[str, Any]]]:
-    """Fetch per-device behavioral blocks for tagged dnsmasq configs."""
-    if not api_url:
-        return None
-    try:
-        import urllib.request
-
-        url = f"{api_url.rstrip('/')}{endpoint}"
-        logger.info(f"Fetching client blocks from {url}")
+        logger.info(f"Fetching policy DNS sync from {url}")
         req = urllib.request.Request(url, headers=_api_headers(ingest=True))
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=60) as response:
             if response.status != 200:
-                logger.error(f"Client blocks API returned status {response.status}")
+                logger.error(f"Policy DNS sync API returned status {response.status}")
                 return None
-            data = json.loads(response.read().decode('utf-8'))
-            entries = data.get('entries', []) if isinstance(data, dict) else []
-            logger.info(f"Fetched {len(entries)} per-device block entries")
-            return entries
+            return json.loads(response.read().decode('utf-8'))
     except Exception as e:
-        logger.error(f"Error fetching client blocks: {e}", exc_info=True)
+        logger.error(f"Error fetching policy DNS sync: {e}", exc_info=True)
         return None
 
 
-def convert_client_blocks_to_dnsmasq(entries: List[Dict[str, Any]], block_ip: str) -> Dict[str, List[str]]:
-    """
-    Build per-device dnsmasq config file contents using DHCP tags.
-    dhcp-host assigns tag; tag: lines scope address blocks to that client.
-    """
-    files: Dict[str, List[str]] = {}
-    for entry in entries:
-        device_id = entry.get('device_id')
-        mac = (entry.get('mac_address') or '').strip().lower()
-        tag = entry.get('tag') or f"ng_device_{device_id}"
-        domains = entry.get('domains') or []
-        if not device_id or not mac or not domains:
+def domains_to_dnsmasq_lines(domains: List[str], block_ip: str) -> List[str]:
+    entries = []
+    seen = set()
+    for site in domains:
+        domain = str(site).strip().lower()
+        if not domain or domain in seen:
             continue
+        seen.add(domain)
+        domain = domain.replace('http://', '').replace('https://', '').replace('www.', '')
+        domain = domain.split('/')[0].split('?')[0]
+        if domain:
+            entries.append(f"address=/{domain}/{block_ip}")
+    return entries
 
-        lines = [
-            f"# Per-device behavioral blocks (device {device_id})",
-            f"dhcp-host={mac},set:{tag}",
-        ]
-        for domain in domains:
+
+def convert_device_entry_to_dnsmasq(entry: Dict[str, Any], block_ip: str) -> List[str]:
+    mac = (entry.get('mac_address') or '').strip().lower()
+    tag = entry.get('tag') or f"ng_device_{entry.get('device_id')}"
+    if not mac:
+        return []
+
+    lines = [f"# Device {entry.get('device_id')}", f"dhcp-host={mac},set:{tag}"]
+
+    if entry.get('allowlist_only'):
+        lines.append(f"tag:{tag}")
+        lines.append(f"address=/#/{block_ip}")
+        for domain in entry.get('allowlist_domains') or []:
+            d = str(domain).strip().lower()
+            if not d:
+                continue
+            lines.append(f"tag:{tag}")
+            lines.append(f"address=/{d}/#")
+    else:
+        for domain in entry.get('block_domains') or []:
             d = str(domain).strip().lower()
             if not d:
                 continue
             lines.append(f"tag:{tag}")
             lines.append(f"address=/{d}/{block_ip}")
-        files[f"ng-device-{device_id}.conf"] = lines
-    return files
+    return lines
+
+
+def write_dns_config(entries: List[str], config_path: str) -> bool:
+    try:
+        config_file = Path(config_path)
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+        header = [
+            "# NetGarde global policy blocks (auto-generated)",
+            f"# Generated at: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+            "",
+        ]
+        content = '\n'.join(header + entries) + '\n'
+        config_file.write_text(content)
+        logger.info(f"Wrote {len(entries)} global DNS entries to {config_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Error writing DNS config: {e}", exc_info=True)
+        return False
 
 
 def write_client_block_configs(files: Dict[str, List[str]], config_dir: str) -> bool:
-    """Write per-device configs; remove stale ng-device-*.conf files."""
     try:
         config_path = Path(config_dir)
         config_path.mkdir(parents=True, exist_ok=True)
@@ -355,108 +139,134 @@ def write_client_block_configs(files: Dict[str, List[str]], config_dir: str) -> 
             logger.info(f"Wrote {len(lines)} lines to {config_path / filename}")
 
         if not files:
-            logger.info("No per-device block configs to write")
+            logger.info("No per-device policy configs to write")
         return True
     except Exception as e:
         logger.error(f"Error writing client block configs: {e}", exc_info=True)
         return False
 
 
-def sync_client_blocked_domains() -> bool:
-    entries = fetch_client_blocks_from_api(API_BASE_URL, CLIENT_BLOCKS_SYNC_ENDPOINT)
-    if entries is None:
+def reload_dnsmasq(cmd: str) -> bool:
+    if not cmd:
+        return True
+    try:
+        subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        logger.info("dnsmasq reloaded successfully")
+        return True
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to reload dnsmasq: {e.stderr}")
         return False
-    files = convert_client_blocks_to_dnsmasq(entries, BLOCK_IP)
-    return write_client_block_configs(files, CLIENT_BLOCKS_CONFIG_DIR)
 
 
-def sync_blocked_domains():
-    """
-    Main sync function.
-    """
-    logger.info("Starting DNS sync...")
-    
-    # Fetch blocked sites from API
-    blocked_sites = fetch_blocked_sites_from_api(API_BASE_URL, API_ENDPOINT, PAGE_SIZE)
-    if blocked_sites is None:
-        logger.error("Failed to fetch blocked sites from API")
+def sync_policy_dns():
+    logger.info("Starting policy DNS sync...")
+    data = fetch_policy_dns_sync(API_BASE_URL, POLICY_DNS_SYNC_ENDPOINT)
+    if data is None:
         return False
-    
-    if not blocked_sites:
-        logger.warning("No blocked sites returned; writing empty DNS config")
-    
-    # Convert to dnsmasq format
-    entries = convert_to_dnsmasq_format(blocked_sites, BLOCK_IP)
-    
-    # Write configuration
-    if not write_dns_config(entries, DNS_CONFIG_PATH):
-        logger.error("Failed to write DNS configuration")
+
+    global_lines = domains_to_dnsmasq_lines(data.get('global_domains') or [], BLOCK_IP)
+    if not write_dns_config(global_lines, DNS_CONFIG_PATH):
         return False
-    
-    # Reload dnsmasq (skip if DNSMASQ_RESTART_CMD is empty - host script will handle it)
+
+    files: Dict[str, List[str]] = {}
+    for entry in data.get('entries') or []:
+        device_id = entry.get('device_id')
+        lines = convert_device_entry_to_dnsmasq(entry, BLOCK_IP)
+        if device_id and lines:
+            files[f"ng-device-{device_id}.conf"] = lines
+
+    if not write_client_block_configs(files, CLIENT_BLOCKS_CONFIG_DIR):
+        return False
+
     if DNSMASQ_RESTART_CMD:
         if not reload_dnsmasq(DNSMASQ_RESTART_CMD):
             logger.warning("Failed to reload dnsmasq, but config was updated")
             return False
-    else:
-        logger.info("Skipping dnsmasq reload (will be done on host)")
-    
-    logger.info("DNS sync completed successfully")
     return True
 
 
-def sync_cycle() -> bool:
-    """Run one sync cycle for blocked domains and optional DHCP device sync."""
-    blocked_ok = sync_blocked_domains()
-    client_blocks_ok = sync_client_blocked_domains()
+def parse_dhcp_leases(leases_path: str) -> List[Dict[str, Any]]:
+    lease_file = Path(leases_path)
+    if not lease_file.exists():
+        logger.warning(f"DHCP lease file not found: {leases_path}")
+        return []
 
+    leases: List[Dict[str, Any]] = []
+    try:
+        for line in lease_file.read_text(encoding='utf-8', errors='ignore').splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            parts = line.split()
+            if len(parts) < 4:
+                continue
+            mac = parts[1].strip().lower()
+            client_ip = parts[2].strip()
+            hostname = parts[3].strip()
+            if hostname == '*':
+                hostname = None
+            leases.append({
+                'client_ip': client_ip,
+                'hostname': hostname,
+                'mac_address': mac,
+            })
+    except Exception as e:
+        logger.error(f"Error parsing DHCP leases: {e}", exc_info=True)
+        return []
+
+    logger.info(f"Parsed {len(leases)} DHCP lease records")
+    return leases
+
+
+def sync_devices_from_dhcp(api_url: str, endpoint: str, leases_path: str) -> bool:
+    leases = parse_dhcp_leases(leases_path)
+    if not leases:
+        logger.info("No DHCP leases available to sync")
+        return True
+    try:
+        import urllib.request
+
+        url = f"{api_url.rstrip('/')}{endpoint}"
+        data = json.dumps({'leases': leases}).encode('utf-8')
+        logger.info(f"Syncing {len(leases)} DHCP leases to {url}")
+        req = urllib.request.Request(url, data=data, method='POST')
+        for key, value in _api_headers(ingest=True).items():
+            req.add_header(key, value)
+        req.add_header('Content-Type', 'application/json')
+        with urllib.request.urlopen(req, timeout=30) as response:
+            body = response.read().decode('utf-8')
+            if response.status not in (200, 201):
+                logger.error(f"Device sync failed with status {response.status}: {body}")
+                return False
+            logger.info(f"Device sync completed: {body}")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to sync DHCP leases: {e}", exc_info=True)
+        return False
+
+
+def sync_cycle() -> bool:
+    policy_ok = sync_policy_dns()
     devices_ok = True
     if DEVICE_SYNC_ENABLED:
         devices_ok = sync_devices_from_dhcp(API_BASE_URL, DEVICE_SYNC_ENDPOINT, DHCP_LEASES_PATH)
-    else:
-        logger.info("Device sync is disabled (DEVICE_SYNC_ENABLED=0)")
-
-    if blocked_ok and devices_ok and client_blocks_ok:
+    if policy_ok and devices_ok:
         logger.info("Sync cycle completed successfully")
         return True
-
-    logger.warning(
-        "Sync cycle completed with issues "
-        f"(blocked_ok={blocked_ok}, client_blocks_ok={client_blocks_ok}, devices_ok={devices_ok})"
-    )
+    logger.warning(f"Sync cycle completed with issues (policy_ok={policy_ok}, devices_ok={devices_ok})")
     return False
 
 
 def main():
-    """
-    Main entry point.
-    """
     logger.info("DNS Sync Container Started")
-    logger.info(f"Configuration:")
     logger.info(f"  API_BASE_URL: {API_BASE_URL}")
-    logger.info(f"  API_ENDPOINT: {API_ENDPOINT}")
-    logger.info(f"  BLOCK_IP: {BLOCK_IP}")
-    logger.info(f"  DNS_CONFIG_PATH: {DNS_CONFIG_PATH}")
-    logger.info(f"  SYNC_INTERVAL: {SYNC_INTERVAL} seconds")
-    logger.info(f"  PAGE_SIZE: {PAGE_SIZE}")
-    logger.info(f"  DNSMASQ_RESTART_CMD: {DNSMASQ_RESTART_CMD}")
-    logger.info(f"  DEVICE_SYNC_ENABLED: {DEVICE_SYNC_ENABLED}")
-    logger.info(f"  DEVICE_SYNC_ENDPOINT: {DEVICE_SYNC_ENDPOINT}")
-    logger.info(f"  DHCP_LEASES_PATH: {DHCP_LEASES_PATH}")
-    logger.info(f"  CLIENT_BLOCKS_CONFIG_DIR: {CLIENT_BLOCKS_CONFIG_DIR}")
-    logger.info(f"  CLIENT_BLOCKS_SYNC_ENDPOINT: {CLIENT_BLOCKS_SYNC_ENDPOINT}")
-    
-    # Run once immediately
+    logger.info(f"  POLICY_DNS_SYNC_ENDPOINT: {POLICY_DNS_SYNC_ENDPOINT}")
     first_ok = sync_cycle()
-
-    # Then run on interval
     if SYNC_INTERVAL > 0:
-        logger.info(f"Starting periodic sync (every {SYNC_INTERVAL} seconds)")
         while True:
             time.sleep(SYNC_INTERVAL)
             sync_cycle()
     else:
-        logger.info("SYNC_INTERVAL is 0, running once and exiting")
         sys.exit(0 if first_ok else 1)
 
 

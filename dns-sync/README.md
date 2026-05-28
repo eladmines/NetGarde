@@ -1,17 +1,17 @@
 # DNS Sync Container
 
-A containerized utility for syncing blocked sites from the NetGarde API to dnsmasq configuration.
+A containerized utility for syncing **policy DNS rules** (packs, profiles, schedules, behavior blocks, quarantine) from the NetGarde API to dnsmasq.
 
 ## Overview
 
-This container periodically fetches blocked sites from the NetGarde backend API and updates the dnsmasq configuration file to block those domains at the DNS level.
+This container periodically calls `GET /policy/dns-sync` and writes global + per-device tagged dnsmasq configuration.
 
 ## Usage
 
 ### Environment Variables
 
 - `API_BASE_URL` (default: `http://localhost:8000`): Base URL of the NetGarde API
-- `API_ENDPOINT` (default: `/blocked-sites`): API endpoint for blocked sites
+- `POLICY_DNS_SYNC_ENDPOINT` (default: `/policy/dns-sync`): Merged policy DNS sync API
 - `BLOCK_IP` (default: `0.0.0.0`): IP address to redirect blocked domains to
 - `DNS_CONFIG_PATH` (default: `/etc/dnsmasq.d/custom.conf`): Path to dnsmasq configuration file
 - `SYNC_INTERVAL` (default: `3600`): Sync interval in seconds (0 = run once and exit)
