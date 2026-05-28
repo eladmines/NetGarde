@@ -14,12 +14,8 @@ export default function MainGrid() {
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Overview
       </Typography>
+
       <Grid container spacing={2} columns={12}>
-        <Grid size={{ xs: 12 }}>
-          <DnsAlertsView />
-        </Grid>
-      </Grid>
-      <Grid container spacing={2} columns={12} sx={{ mt: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
             Live Clients
@@ -32,13 +28,17 @@ export default function MainGrid() {
           </Typography>
           <DnsLiveFeed />
         </Grid>
-        <Grid size={{ xs: 12 }}>
-          <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 2 }}>
-            Blocked Attempts
-          </Typography>
+      </Grid>
+
+      <Grid container spacing={2} columns={12} sx={{ mt: 4 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <DnsAlertsView />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
           <BlockedAttemptsView />
         </Grid>
       </Grid>
+
       <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 4 }}>
         Blocked & Persisted Queries
       </Typography>
