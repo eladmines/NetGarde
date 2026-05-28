@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getDnsQueriesWebSocketUrl } from '../../../shared/config/apiWebSocketUrl';
 
 export interface LiveDnsQuery {
   timestamp: string;
@@ -13,8 +14,6 @@ interface WebSocketMessage {
   type: string;
   queries: LiveDnsQuery[];
 }
-
-import { getDnsQueriesWebSocketUrl } from '../../../shared/config/apiWebSocketUrl';
 
 const MAX_FEED_SIZE = 200;
 const RECONNECT_DELAY = 3000;
