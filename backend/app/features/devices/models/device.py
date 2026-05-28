@@ -17,6 +17,12 @@ class Device(Base):
     )
     hostname = Column(String(255), nullable=True, index=True)
     mac_address = Column(String(17), nullable=True, unique=True, index=True)  # AA:BB:CC:DD:EE:FF
+    policy_profile_id = Column(
+        Integer,
+        ForeignKey("policy_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     source = Column(String(20), nullable=False, default="manual")  # manual, dhcp_lease, vpn_enroll, dns_observed
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(

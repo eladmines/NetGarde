@@ -24,6 +24,9 @@ from app.features.client_behavior.models.client_behavior_rollup import ClientBeh
 from app.features.client_behavior.models.client_behavior_profile import ClientBehaviorProfile  # noqa: F401
 from app.features.client_behavior.models.client_blocked_domain import ClientBlockedDomain  # noqa: F401
 from app.features.client_behavior.models.device_security_policy import DeviceSecurityPolicy  # noqa: F401
+from app.features.policy.models.policy_pack import PolicyPack  # noqa: F401
+from app.features.policy.models.policy_profile import PolicyProfile  # noqa: F401
+from app.features.policy.models.device_quarantine import DeviceQuarantine  # noqa: F401
 
 
 @pytest.fixture(scope="function")

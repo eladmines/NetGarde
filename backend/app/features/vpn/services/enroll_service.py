@@ -94,8 +94,15 @@ class EnrollService:
         if lease_row is None:
             raise RuntimeError("Lease row missing after allocation")
         self._sync_device_for_lease(lease_row, payload.hostname, payload.mac_address)
+        self.db.flush()
 
         dev = self.db.query(Device).filter(Device.ip_lease_id == lease_row.id).first()
+        if dev:
+            from app.features.policy.services.policy_service import PolicyService
+
+            PolicyService(self.db).assign_profile_by_slug_on_enroll(
+                dev.id, payload.policy_profile_slug
+            )
         self.db.add(
             VpnEnrollEvent(
                 peer_id=peer.id,

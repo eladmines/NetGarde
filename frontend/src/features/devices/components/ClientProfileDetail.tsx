@@ -9,11 +9,17 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import { devicesApi } from '../config/api';
+import { policyApi } from '../../policy/config/api';
+import { DevicePolicyAssignment, PolicyProfile } from '../../policy/types/policy';
 import {
   BehaviorProfile,
   ClientBlockedDomain,
@@ -33,6 +39,8 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
   const [policy, setPolicy] = useState<DeviceSecurityPolicy | null>(null);
   const [blocks, setBlocks] = useState<ClientBlockedDomain[]>([]);
   const [events, setEvents] = useState<DnsAlert[]>([]);
+  const [policyAssignment, setPolicyAssignment] = useState<DevicePolicyAssignment | null>(null);
+  const [policyProfiles, setPolicyProfiles] = useState<PolicyProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -41,16 +49,20 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
     setLoading(true);
     setError(null);
     try {
-      const [p, pol, b, ev] = await Promise.all([
+      const [p, pol, b, ev, assign, profiles] = await Promise.all([
         devicesApi.getBehaviorProfile(device.id),
         devicesApi.getSecurityPolicy(device.id),
         devicesApi.listClientBlocks(device.id),
         devicesApi.getBehaviorEvents(device.id, 1, 10),
+        devicesApi.getPolicyAssignment(device.id),
+        policyApi.listProfiles(),
       ]);
       setProfile(p);
       setPolicy(pol);
       setBlocks(b);
       setEvents(ev.items);
+      setPolicyAssignment(assign);
+      setPolicyProfiles(profiles);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load profile');
     } finally {
@@ -72,6 +84,20 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
       setPolicy(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update policy');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changePolicyProfile = async (slug: string) => {
+    setSaving(true);
+    try {
+      const updated = await devicesApi.assignPolicyProfile(device.id, slug);
+      setPolicyAssignment(updated);
+      const pol = await devicesApi.getSecurityPolicy(device.id);
+      setPolicy(pol);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to assign profile');
     } finally {
       setSaving(false);
     }
@@ -111,6 +137,9 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
             {profile?.last_score != null && (
               <Chip label={`Score: ${profile.last_score}`} color="warning" variant="outlined" />
             )}
+            {policyAssignment?.in_quarantine && (
+              <Chip label="Quarantine" color="error" />
+            )}
             <Button size="small" onClick={load}>
               Refresh
             </Button>
@@ -141,6 +170,33 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
               {profile.last_scored_at && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                   Last scored: {formatShortDateTime(profile.last_scored_at)}
+                </Typography>
+              )}
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Policy profile
+              </Typography>
+              <FormControl size="small" sx={{ minWidth: 220 }} disabled={saving}>
+                <InputLabel id="policy-profile-label">Profile</InputLabel>
+                <Select
+                  labelId="policy-profile-label"
+                  label="Profile"
+                  value={policyAssignment?.policy_profile_slug ?? 'teen'}
+                  onChange={(e) => changePolicyProfile(e.target.value)}
+                >
+                  {policyProfiles.map((pr) => (
+                    <MenuItem key={pr.slug} value={pr.slug}>
+                      {pr.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {policyAssignment?.in_quarantine && policyAssignment.quarantine_expires_at && (
+                <Typography variant="caption" color="error" display="block" sx={{ mt: 1 }}>
+                  Allowlist-only quarantine until{' '}
+                  {formatShortDateTime(policyAssignment.quarantine_expires_at)}
                 </Typography>
               )}
             </Box>
