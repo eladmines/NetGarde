@@ -1,14 +1,17 @@
 import { VpnTopologyApi } from '../types/vpnTopology';
 import { TopologyEdge, TopologyNode, VpnTopologyGraph } from './types';
 
-const SERVER_W = 150;
-const SERVER_H = 58;
-const PEER_W = 120;
-const PEER_H = 50;
+const NODE_W = 108;
+const NODE_H = 108;
 const CENTER_X = 400;
-const SERVER_Y = 175;
-const PEER_RADIUS = 155;
-const PEER_Y_BASE = 310;
+const INTERNET_Y = 8;
+const SERVER_Y = 118;
+const PEER_RADIUS = 165;
+const PEER_Y_BASE = 300;
+
+export const VIEWBOX_W = 800;
+export const VIEWBOX_H = 440;
+export const ICON_CONNECT_RADIUS = 30;
 
 function truncateKey(key: string): string {
   if (key.length <= 12) return key;
@@ -41,11 +44,11 @@ export function buildVpnTopology(
       id: 'internet',
       kind: 'internet',
       label: 'Internet',
-      sublabel: 'Client networks',
-      x: CENTER_X - 70,
-      y: 28,
-      width: 140,
-      height: 44,
+      sublabel: 'WAN',
+      x: CENTER_X - NODE_W / 2,
+      y: INTERNET_Y,
+      width: NODE_W,
+      height: NODE_H,
     },
     {
       id: 'vpn_server',
@@ -53,10 +56,10 @@ export function buildVpnTopology(
       label: 'WireGuard server',
       sublabel: data.server.interface,
       detail: `${data.server.gateway_ip} · ${data.server.endpoint}`,
-      x: CENTER_X - SERVER_W / 2,
+      x: CENTER_X - NODE_W / 2,
       y: SERVER_Y,
-      width: SERVER_W,
-      height: SERVER_H,
+      width: NODE_W,
+      height: NODE_H,
     },
   ];
 
@@ -83,10 +86,10 @@ export function buildVpnTopology(
       label: peerLabel(peer),
       sublabel: `${peer.client_ip}/32`,
       detail: `${statusDetail(peer)} · ${truncateKey(peer.public_key)}`,
-      x: cx - PEER_W / 2,
-      y: cy - PEER_H / 2,
-      width: PEER_W,
-      height: PEER_H,
+      x: cx - NODE_W / 2,
+      y: cy - NODE_H / 2,
+      width: NODE_W,
+      height: NODE_H,
       handshakeStatus: peer.handshake_status,
       isLiveDns,
       deviceId: peer.device_id ?? undefined,
@@ -114,14 +117,55 @@ export function nodeCenter(node: TopologyNode): { x: number; y: number } {
   return { x: node.x + node.width / 2, y: node.y + node.height / 2 };
 }
 
+function pointToward(
+  cx: number,
+  cy: number,
+  tx: number,
+  ty: number,
+  radius: number,
+): { x: number; y: number } {
+  const dx = tx - cx;
+  const dy = ty - cy;
+  const len = Math.hypot(dx, dy) || 1;
+  return { x: cx + (dx / len) * radius, y: cy + (dy / len) * radius };
+}
+
 export function edgeEndpoints(
   from: TopologyNode,
   to: TopologyNode,
+  radius: number = ICON_CONNECT_RADIUS,
 ): { x1: number; y1: number; x2: number; y2: number } {
   const a = nodeCenter(from);
   const b = nodeCenter(to);
-  const dy = b.y - a.y;
-  const y1 = from.y + (dy > 0 ? from.height : 0);
-  const y2 = to.y + (dy > 0 ? 0 : to.height);
-  return { x1: a.x, y1, x2: b.x, y2 };
+  const p1 = pointToward(a.x, a.y, b.x, b.y, radius);
+  const p2 = pointToward(b.x, b.y, a.x, a.y, radius);
+  return { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y };
+}
+
+/** Dashed subnet group behind server + peers */
+export function vpnSubnetBounds(nodes: TopologyNode[]): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} | null {
+  const inSubnet = nodes.filter((n) => n.kind === 'vpn_server' || n.kind === 'vpn_peer');
+  if (inSubnet.length === 0) return null;
+  const pad = 24;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const n of inSubnet) {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + n.width);
+    maxY = Math.max(maxY, n.y + n.height);
+  }
+  return {
+    x: minX - pad,
+    y: minY - pad,
+    width: maxX - minX + pad * 2,
+    height: maxY - minY + pad * 2,
+  };
 }

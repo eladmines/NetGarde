@@ -1,115 +1,29 @@
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { useNavigate } from 'react-router-dom';
-import { edgeEndpoints } from '../topology/buildVpnTopology';
-import { TopologyNode, VpnTopologyGraph, VpnHandshakeStatus } from '../topology/types';
+import type { CSSProperties } from 'react';
+import { edgeEndpoints, VIEWBOX_H, VIEWBOX_W, vpnSubnetBounds } from '../topology/buildVpnTopology';
+import { TopologyNode, VpnTopologyGraph } from '../topology/types';
+import TopologyNodeIcon from './TopologyNodeIcon';
 
-const KIND_STYLES: Record<string, { fill: string; stroke: string }> = {
-  internet: { fill: '#e3f2fd', stroke: '#1565c0' },
-  vpn_server: { fill: '#e8eaf6', stroke: '#283593' },
-};
-
-const PEER_STROKE: Record<VpnHandshakeStatus, string> = {
-  connected: '#2e7d32',
-  idle: '#ed6c02',
-  never: '#9e9e9e',
-  unknown: '#757575',
-};
-
-const PEER_FILL: Record<VpnHandshakeStatus, string> = {
-  connected: '#e8f5e9',
-  idle: '#fff3e0',
-  never: '#fafafa',
-  unknown: '#f5f5f5',
-};
-
-function NodeBox({ node, onSelect }: { node: TopologyNode; onSelect?: (node: TopologyNode) => void }) {
-  const isPeer = node.kind === 'vpn_peer';
-  const hs = node.handshakeStatus ?? 'unknown';
-  const colors = isPeer ? { fill: PEER_FILL[hs], stroke: PEER_STROKE[hs] } : KIND_STYLES[node.kind];
-  const strokeWidth = hs === 'connected' ? 2.5 : 1.5;
-  const clickable = isPeer && node.deviceId != null && onSelect != null;
-
-  return (
-    <g
-      transform={`translate(${node.x}, ${node.y})`}
-      onClick={clickable ? () => onSelect!(node) : undefined}
-      style={clickable ? { cursor: 'pointer' } : undefined}
-      role={clickable ? 'button' : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onKeyDown={
-        clickable
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onSelect!(node);
-            }
-          : undefined
-      }
-    >
-      <rect
-        width={node.width}
-        height={node.height}
-        rx={8}
-        fill={colors.fill}
-        stroke={colors.stroke}
-        strokeWidth={strokeWidth}
-      />
-      {isPeer && hs === 'connected' && (
-        <circle cx={node.width - 10} cy={10} r={5} fill="#2e7d32" />
-      )}
-      {isPeer && node.isLiveDns && (
-        <circle cx={10} cy={10} r={5} fill="#1976d2" />
-      )}
-      <text
-        x={node.width / 2}
-        y={node.height / 2 - (node.detail ? 8 : node.sublabel ? 4 : 0)}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontSize={isPeer ? 11 : 12}
-        fontWeight={600}
-        fill="#212121"
-      >
-        {truncate(node.label, 16)}
-      </text>
-      {node.sublabel && (
-        <text
-          x={node.width / 2}
-          y={node.height / 2 + 8}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize={10}
-          fill="#616161"
-        >
-          {truncate(node.sublabel, 20)}
-        </text>
-      )}
-      {node.detail && isPeer && (
-        <text
-          x={node.width / 2}
-          y={node.height / 2 + 20}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize={9}
-          fill="#757575"
-        >
-          {truncate(node.detail, 24)}
-        </text>
-      )}
-      {node.kind === 'vpn_server' && node.detail && (
-        <text
-          x={node.width / 2}
-          y={node.height - 8}
-          textAnchor="middle"
-          fontSize={9}
-          fill="#5c6bc0"
-        >
-          {truncate(node.detail, 28)}
-        </text>
-      )}
-    </g>
-  );
+function toPercentX(x: number): string {
+  return `${(x / VIEWBOX_W) * 100}%`;
 }
 
-function truncate(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+function toPercentY(y: number): string {
+  return `${(y / VIEWBOX_H) * 100}%`;
+}
+
+function nodePositionStyle(node: TopologyNode): CSSProperties {
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  return {
+    position: 'absolute',
+    left: toPercentX(cx),
+    top: toPercentY(cy),
+    transform: 'translate(-50%, -50%)',
+    zIndex: 2,
+  };
 }
 
 interface NetworkTopologyGraphProps {
@@ -119,6 +33,7 @@ interface NetworkTopologyGraphProps {
 export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphProps) {
   const navigate = useNavigate();
   const nodeById = new Map(topology.nodes.map((n) => [n.id, n]));
+  const subnet = vpnSubnetBounds(topology.nodes);
 
   const handleSelect = (node: TopologyNode) => {
     if (node.href) navigate(node.href);
@@ -128,20 +43,30 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
     <Box
       sx={{
         width: '100%',
-        overflow: 'auto',
+        position: 'relative',
         borderRadius: 1,
         bgcolor: 'grey.50',
         border: 1,
         borderColor: 'divider',
+        minHeight: 380,
+        aspectRatio: `${VIEWBOX_W} / ${VIEWBOX_H}`,
+        maxHeight: 520,
       }}
     >
-      <svg
-        viewBox="0 0 800 420"
-        width="100%"
-        height="auto"
-        style={{ display: 'block', minHeight: 360 }}
+      <Box
+        component="svg"
+        viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
+        preserveAspectRatio="xMidYMid meet"
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          zIndex: 1,
+        }}
         role="img"
-        aria-label="WireGuard VPN topology"
+        aria-hidden
       >
         <defs>
           <marker
@@ -157,6 +82,25 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
           </marker>
         </defs>
 
+        {subnet && (
+          <g>
+            <rect
+              x={subnet.x}
+              y={subnet.y}
+              width={subnet.width}
+              height={subnet.height}
+              rx={14}
+              fill="rgba(92, 107, 192, 0.04)"
+              stroke="#9fa8da"
+              strokeWidth={1.5}
+              strokeDasharray="8 5"
+            />
+            <text x={subnet.x + 14} y={subnet.y + 20} fontSize={11} fill="#5c6bc0" fontWeight={600}>
+              {topology.vpnCidr} · WireGuard VPN
+            </text>
+          </g>
+        )}
+
         {topology.edges.map((edge) => {
           const from = nodeById.get(edge.from);
           const to = nodeById.get(edge.to);
@@ -165,6 +109,7 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
           const mx = (x1 + x2) / 2;
           const my = (y1 + y2) / 2;
           const connected = to.handshakeStatus === 'connected';
+          const isWan = edge.from === 'internet';
           return (
             <g key={edge.id}>
               <line
@@ -172,28 +117,40 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
                 y1={y1}
                 x2={x2}
                 y2={y2}
-                stroke={connected ? '#43a047' : '#90a4ae'}
-                strokeWidth={connected ? 2 : 1.5}
-                strokeDasharray={connected ? undefined : '6 4'}
+                stroke={connected ? '#43a047' : isWan ? '#78909c' : '#90a4ae'}
+                strokeWidth={connected ? 2.5 : isWan ? 2 : 1.5}
+                strokeDasharray={connected || isWan ? undefined : '6 4'}
                 markerEnd="url(#vpn-arrow)"
               />
               {edge.label && (
-                <text x={mx} y={my - 6} fontSize={9} fill="#607d8b" textAnchor="middle">
+                <text x={mx} y={my - 8} fontSize={10} fill="#607d8b" textAnchor="middle">
                   {edge.label}
                 </text>
               )}
             </g>
           );
         })}
+      </Box>
 
-        {topology.nodes.map((node) => (
-          <NodeBox key={node.id} node={node} onSelect={handleSelect} />
-        ))}
+      {topology.nodes.map((node) => (
+        <Box key={node.id} sx={nodePositionStyle(node)}>
+          <TopologyNodeIcon node={node} onSelect={handleSelect} />
+        </Box>
+      ))}
 
-        <text x={16} y={408} fontSize={10} fill="#757575">
-          Pool {topology.vpnCidr} · Gateway {topology.gatewayIp} · Endpoint {topology.serverEndpoint}
-        </text>
-      </svg>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{
+          position: 'absolute',
+          left: 12,
+          bottom: 8,
+          zIndex: 2,
+          fontSize: '0.7rem',
+        }}
+      >
+        Gateway {topology.gatewayIp} · Endpoint {topology.serverEndpoint}
+      </Typography>
     </Box>
   );
 }
