@@ -7,6 +7,7 @@ import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
+import NetworkTopologyView from '../../network/components/NetworkTopologyView';
 
 export default function MainGrid() {
   return (
@@ -14,6 +15,10 @@ export default function MainGrid() {
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Overview
       </Typography>
+
+      <Box sx={{ mb: 3 }}>
+        <NetworkTopologyView />
+      </Box>
 
       <Grid container spacing={2} columns={12}>
         <Grid size={{ xs: 12, md: 6 }}>

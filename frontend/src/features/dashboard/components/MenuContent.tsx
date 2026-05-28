@@ -12,6 +12,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import RouterIcon from '@mui/icons-material/Router';
+import HubIcon from '@mui/icons-material/Hub';
 import RuleIcon from '@mui/icons-material/Rule';
 import CategoryIcon from '@mui/icons-material/Category';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
@@ -29,6 +30,7 @@ const mainListItems = [
 ];
 
 const manageNetworkItems = [
+  { text: 'Network map', icon: <HubIcon />, path: '/network', iconClass: 'networkMapIcon' },
   { text: 'Blocked Sites', icon: <RuleIcon />, path: '/blocked-sites', iconClass: 'blockedSitesIcon' },
   { text: 'Categories', icon: <CategoryIcon />, path: '/categories', iconClass: 'categoriesIcon' },
 ];
