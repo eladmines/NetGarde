@@ -3,7 +3,10 @@ from typing import List
 
 class Settings(BaseSettings):
     DB_URL: str
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://d2qp7beltc09b8.cloudfront.net"
+    CORS_ORIGINS: str = (
+        "http://localhost:3000,http://localhost:3001,"
+        "https://d2qp7beltc09b8.cloudfront.net,https://daemixzdg8jfd.cloudfront.net"
+    )
 
     # WireGuard enroll defaults (single shared pool)
     VPN_POOL_NAME: str = "default"

@@ -354,6 +354,8 @@ jobs:
               echo "WG_AGENT_URL=$WG_AGENT_URL"
               echo "WG_AGENT_TOKEN=$WG_AGENT_TOKEN"
             } > .env
+            chmod +x scripts/ec2-sync-service-tokens.sh
+            bash scripts/ec2-sync-service-tokens.sh
 
             export WG_AGENT_URL="$WG_AGENT_URL"
             export WG_AGENT_TOKEN="$WG_AGENT_TOKEN"
