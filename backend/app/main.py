@@ -14,6 +14,7 @@ from app.features.dns_queries.routes.dns_query_route import router as dns_query_
 from app.features.devices.routes.device_route import router as device_router
 from app.features.vpn.routes.enroll_route import router as vpn_router
 from app.features.vpn.routes.usage_route import router as usage_router
+from app.features.vpn.routes.topology_route import router as vpn_topology_router
 
 # Initialize logging early
 setup_logging()
@@ -113,3 +114,4 @@ app.include_router(dns_query_router)
 app.include_router(device_router)
 app.include_router(vpn_router)
 app.include_router(usage_router)
+app.include_router(vpn_topology_router)

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { devicesApi } from '../../devices/config/api';
-import { Device } from '../../devices/types/device';
 import { isClientActiveNow, subscribeDnsClientActivity } from '../../dns-queries/dnsClientActivity';
-import { buildNetworkTopology } from '../topology/buildNetworkTopology';
-import { NetworkTopology } from '../topology/types';
+import { fetchVpnTopology } from '../config/vpnApi';
+import { buildVpnTopology } from '../topology/buildVpnTopology';
+import { VpnTopologyGraph } from '../topology/types';
+import { VpnTopologyApi } from '../types/vpnTopology';
 
 export function useNetworkTopology() {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [topology, setTopology] = useState<NetworkTopology | null>(null);
+  const [apiData, setApiData] = useState<VpnTopologyApi | null>(null);
+  const [topology, setTopology] = useState<VpnTopologyGraph | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activityTick, setActivityTick] = useState(0);
@@ -15,20 +15,22 @@ export function useNetworkTopology() {
   useEffect(() => subscribeDnsClientActivity(() => setActivityTick((n) => n + 1)), []);
 
   useEffect(() => {
+    if (!apiData) return;
     const liveIps = new Set(
-      devices.filter((d) => isClientActiveNow(d.client_ip)).map((d) => d.client_ip),
+      apiData.peers.filter((p) => isClientActiveNow(p.client_ip)).map((p) => p.client_ip),
     );
-    setTopology(buildNetworkTopology(devices, liveIps));
-  }, [devices, activityTick]);
+    setTopology(buildVpnTopology(apiData, liveIps));
+  }, [apiData, activityTick]);
 
   const refresh = useCallback(async () => {
     setError(null);
     try {
-      const list = await devicesApi.list();
-      setDevices(list);
+      const data = await fetchVpnTopology();
+      setApiData(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load network');
-      setDevices([]);
+      setError(e instanceof Error ? e.message : 'Failed to load VPN topology');
+      setApiData(null);
+      setTopology(null);
     } finally {
       setLoading(false);
     }
@@ -40,8 +42,10 @@ export function useNetworkTopology() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  const liveCount = topology?.nodes.filter((n) => n.kind === 'client' && n.isLive).length ?? 0;
-  const clientCount = topology?.nodes.filter((n) => n.kind === 'client').length ?? 0;
+  const connectedCount =
+    apiData?.peers.filter((p) => p.handshake_status === 'connected').length ?? 0;
+  const peerCount = apiData?.peers.length ?? 0;
+  const liveDnsCount = topology?.nodes.filter((n) => n.kind === 'vpn_peer' && n.isLiveDns).length ?? 0;
 
-  return { topology, loading, error, liveCount, clientCount, refresh };
+  return { topology, loading, error, connectedCount, peerCount, liveDnsCount, refresh };
 }

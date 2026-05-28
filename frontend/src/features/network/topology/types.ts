@@ -1,22 +1,19 @@
-export type TopologyNodeKind =
-  | 'internet'
-  | 'gateway'
-  | 'dns'
-  | 'api'
-  | 'database'
-  | 'log_ingest'
-  | 'client';
+export type VpnHandshakeStatus = 'connected' | 'idle' | 'never' | 'unknown';
+
+export type TopologyNodeKind = 'internet' | 'vpn_server' | 'vpn_peer';
 
 export interface TopologyNode {
   id: string;
   kind: TopologyNodeKind;
   label: string;
   sublabel?: string;
+  detail?: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  isLive?: boolean;
+  handshakeStatus?: VpnHandshakeStatus;
+  isLiveDns?: boolean;
   deviceId?: number;
   href?: string;
 }
@@ -29,9 +26,10 @@ export interface TopologyEdge {
   dashed?: boolean;
 }
 
-export interface NetworkTopology {
+export interface VpnTopologyGraph {
   nodes: TopologyNode[];
   edges: TopologyEdge[];
+  serverEndpoint: string;
   vpnCidr: string;
   gatewayIp: string;
 }

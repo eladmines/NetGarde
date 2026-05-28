@@ -12,7 +12,8 @@ import { useNetworkTopology } from '../hooks/useNetworkTopology';
 import NetworkTopologyGraph from './NetworkTopologyGraph';
 
 export default function NetworkTopologyView() {
-  const { topology, loading, error, liveCount, clientCount, refresh } = useNetworkTopology();
+  const { topology, loading, error, connectedCount, peerCount, liveDnsCount, refresh } =
+    useNetworkTopology();
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -26,20 +27,24 @@ export default function NetworkTopologyView() {
       >
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Network topology
+            VPN network map
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            How traffic flows from clients through the VPN gateway, DNS filtering, and API.
+            WireGuard hub ({topology?.gatewayIp ?? '10.0.0.1'}) and enrolled peers on{' '}
+            {topology?.vpnCidr ?? '10.0.0.0/24'}.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
-          {clientCount > 0 && (
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          {peerCount > 0 && (
             <Chip
               size="small"
-              label={`${liveCount} live / ${clientCount} registered`}
-              color={liveCount > 0 ? 'success' : 'default'}
+              label={`${connectedCount} tunnel${connectedCount === 1 ? '' : 's'} up / ${peerCount} peer${peerCount === 1 ? '' : 's'}`}
+              color={connectedCount > 0 ? 'success' : 'default'}
               variant="outlined"
             />
+          )}
+          {liveDnsCount > 0 && (
+            <Chip size="small" label={`${liveDnsCount} using DNS`} color="info" variant="outlined" />
           )}
           <Tooltip title="Refresh">
             <IconButton size="small" onClick={refresh} disabled={loading}>
@@ -63,11 +68,11 @@ export default function NetworkTopologyView() {
         <NetworkTopologyGraph topology={topology} />
       ) : null}
 
-      <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 2 }}>
-        <LegendSwatch label="Internet / WAN" color="#1976d2" />
-        <LegendSwatch label="Gateway & services" color="#3949ab" />
-        <LegendSwatch label="VPN client (live)" color="#2e7d32" />
-        <LegendSwatch label="VPN client (idle)" color="#9e9e9e" />
+      <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2 }}>
+        <LegendSwatch label="Tunnel connected (handshake)" color="#2e7d32" />
+        <LegendSwatch label="Peer idle / stale" color="#ed6c02" />
+        <LegendSwatch label="Enrolled, not connected" color="#9e9e9e" />
+        <LegendSwatch label="Active DNS (blue dot)" color="#1976d2" />
       </Stack>
     </Paper>
   );

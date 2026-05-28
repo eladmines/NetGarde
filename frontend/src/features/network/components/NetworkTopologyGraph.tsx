@@ -1,23 +1,33 @@
 import Box from '@mui/material/Box';
 import { useNavigate } from 'react-router-dom';
-import { edgePath, nodeAnchor } from '../topology/buildNetworkTopology';
-import { NetworkTopology, TopologyNode } from '../topology/types';
+import { edgeEndpoints } from '../topology/buildVpnTopology';
+import { TopologyNode, VpnTopologyGraph, VpnHandshakeStatus } from '../topology/types';
 
-const KIND_COLORS: Record<string, { fill: string; stroke: string }> = {
-  internet: { fill: '#e3f2fd', stroke: '#1976d2' },
-  gateway: { fill: '#e8eaf6', stroke: '#3949ab' },
-  dns: { fill: '#fff3e0', stroke: '#ef6c00' },
-  api: { fill: '#e8f5e9', stroke: '#2e7d32' },
-  database: { fill: '#fce4ec', stroke: '#c2185b' },
-  log_ingest: { fill: '#f3e5f5', stroke: '#7b1fa2' },
-  client: { fill: '#fafafa', stroke: '#9e9e9e' },
+const KIND_STYLES: Record<string, { fill: string; stroke: string }> = {
+  internet: { fill: '#e3f2fd', stroke: '#1565c0' },
+  vpn_server: { fill: '#e8eaf6', stroke: '#283593' },
+};
+
+const PEER_STROKE: Record<VpnHandshakeStatus, string> = {
+  connected: '#2e7d32',
+  idle: '#ed6c02',
+  never: '#9e9e9e',
+  unknown: '#757575',
+};
+
+const PEER_FILL: Record<VpnHandshakeStatus, string> = {
+  connected: '#e8f5e9',
+  idle: '#fff3e0',
+  never: '#fafafa',
+  unknown: '#f5f5f5',
 };
 
 function NodeBox({ node, onSelect }: { node: TopologyNode; onSelect?: (node: TopologyNode) => void }) {
-  const colors = KIND_COLORS[node.kind] ?? KIND_COLORS.client;
-  const stroke = node.isLive ? '#2e7d32' : colors.stroke;
-  const strokeWidth = node.isLive ? 2.5 : 1.5;
-  const clickable = node.deviceId != null && onSelect != null;
+  const isPeer = node.kind === 'vpn_peer';
+  const hs = node.handshakeStatus ?? 'unknown';
+  const colors = isPeer ? { fill: PEER_FILL[hs], stroke: PEER_STROKE[hs] } : KIND_STYLES[node.kind];
+  const strokeWidth = hs === 'connected' ? 2.5 : 1.5;
+  const clickable = isPeer && node.deviceId != null && onSelect != null;
 
   return (
     <g
@@ -38,34 +48,60 @@ function NodeBox({ node, onSelect }: { node: TopologyNode; onSelect?: (node: Top
         width={node.width}
         height={node.height}
         rx={8}
-        fill={node.isLive ? '#e8f5e9' : colors.fill}
-        stroke={stroke}
+        fill={colors.fill}
+        stroke={colors.stroke}
         strokeWidth={strokeWidth}
       />
-      {node.isLive && (
+      {isPeer && hs === 'connected' && (
         <circle cx={node.width - 10} cy={10} r={5} fill="#2e7d32" />
+      )}
+      {isPeer && node.isLiveDns && (
+        <circle cx={10} cy={10} r={5} fill="#1976d2" />
       )}
       <text
         x={node.width / 2}
-        y={node.height / 2 - (node.sublabel ? 6 : 0)}
+        y={node.height / 2 - (node.detail ? 8 : node.sublabel ? 4 : 0)}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={12}
+        fontSize={isPeer ? 11 : 12}
         fontWeight={600}
         fill="#212121"
       >
-        {truncate(node.label, 14)}
+        {truncate(node.label, 16)}
       </text>
       {node.sublabel && (
         <text
           x={node.width / 2}
-          y={node.height / 2 + 12}
+          y={node.height / 2 + 8}
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize={10}
           fill="#616161"
         >
-          {truncate(node.sublabel, 18)}
+          {truncate(node.sublabel, 20)}
+        </text>
+      )}
+      {node.detail && isPeer && (
+        <text
+          x={node.width / 2}
+          y={node.height / 2 + 20}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={9}
+          fill="#757575"
+        >
+          {truncate(node.detail, 24)}
+        </text>
+      )}
+      {node.kind === 'vpn_server' && node.detail && (
+        <text
+          x={node.width / 2}
+          y={node.height - 8}
+          textAnchor="middle"
+          fontSize={9}
+          fill="#5c6bc0"
+        >
+          {truncate(node.detail, 28)}
         </text>
       )}
     </g>
@@ -77,7 +113,7 @@ function truncate(text: string, max: number): string {
 }
 
 interface NetworkTopologyGraphProps {
-  topology: NetworkTopology;
+  topology: VpnTopologyGraph;
 }
 
 export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphProps) {
@@ -100,16 +136,16 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
       }}
     >
       <svg
-        viewBox="0 0 800 440"
+        viewBox="0 0 800 420"
         width="100%"
         height="auto"
         style={{ display: 'block', minHeight: 360 }}
         role="img"
-        aria-label="NetGarde network topology"
+        aria-label="WireGuard VPN topology"
       >
         <defs>
           <marker
-            id="arrow"
+            id="vpn-arrow"
             markerWidth="8"
             markerHeight="8"
             refX="7"
@@ -117,7 +153,7 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
             orient="auto"
             markerUnits="strokeWidth"
           >
-            <path d="M0,0 L8,4 L0,8 Z" fill="#90a4ae" />
+            <path d="M0,0 L8,4 L0,8 Z" fill="#78909c" />
           </marker>
         </defs>
 
@@ -125,20 +161,24 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
           const from = nodeById.get(edge.from);
           const to = nodeById.get(edge.to);
           if (!from || !to) return null;
-          const d = edgePath(from, to);
-          const mid = labelMidpoint(from, to);
+          const { x1, y1, x2, y2 } = edgeEndpoints(from, to);
+          const mx = (x1 + x2) / 2;
+          const my = (y1 + y2) / 2;
+          const connected = to.handshakeStatus === 'connected';
           return (
             <g key={edge.id}>
-              <path
-                d={d}
-                fill="none"
-                stroke={edge.dashed ? '#b0bec5' : '#78909c'}
-                strokeWidth={1.5}
-                strokeDasharray={edge.dashed ? '6 4' : undefined}
-                markerEnd="url(#arrow)"
+              <line
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke={connected ? '#43a047' : '#90a4ae'}
+                strokeWidth={connected ? 2 : 1.5}
+                strokeDasharray={connected ? undefined : '6 4'}
+                markerEnd="url(#vpn-arrow)"
               />
               {edge.label && (
-                <text x={mid.x} y={mid.y} fontSize={9} fill="#607d8b" textAnchor="middle">
+                <text x={mx} y={my - 6} fontSize={9} fill="#607d8b" textAnchor="middle">
                   {edge.label}
                 </text>
               )}
@@ -150,16 +190,10 @@ export default function NetworkTopologyGraph({ topology }: NetworkTopologyGraphP
           <NodeBox key={node.id} node={node} onSelect={handleSelect} />
         ))}
 
-        <text x={16} y={430} fontSize={10} fill="#757575">
-          VPN subnet {topology.vpnCidr} · Gateway {topology.gatewayIp} · Green = live DNS activity
+        <text x={16} y={408} fontSize={10} fill="#757575">
+          Pool {topology.vpnCidr} · Gateway {topology.gatewayIp} · Endpoint {topology.serverEndpoint}
         </text>
       </svg>
     </Box>
   );
-}
-
-function labelMidpoint(from: TopologyNode, to: TopologyNode): { x: number; y: number } {
-  const a = nodeAnchor(from, 'bottom');
-  const b = nodeAnchor(to, 'top');
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }

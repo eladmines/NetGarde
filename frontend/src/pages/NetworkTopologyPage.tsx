@@ -6,7 +6,7 @@ export default function NetworkTopologyPage() {
   return (
     <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1200px' } }}>
       <Typography component="h1" variant="h5" sx={{ mb: 2 }}>
-        My network
+        VPN network
       </Typography>
       <NetworkTopologyView />
     </Box>

@@ -30,7 +30,7 @@ const mainListItems = [
 ];
 
 const manageNetworkItems = [
-  { text: 'Network map', icon: <HubIcon />, path: '/network', iconClass: 'networkMapIcon' },
+  { text: 'VPN map', icon: <HubIcon />, path: '/network', iconClass: 'networkMapIcon' },
   { text: 'Blocked Sites', icon: <RuleIcon />, path: '/blocked-sites', iconClass: 'blockedSitesIcon' },
   { text: 'Categories', icon: <CategoryIcon />, path: '/categories', iconClass: 'categoriesIcon' },
 ];
