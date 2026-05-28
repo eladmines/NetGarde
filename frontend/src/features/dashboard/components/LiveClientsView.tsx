@@ -4,7 +4,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Divider from '@mui/material/Divider';
@@ -17,7 +17,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Link as RouterLink } from 'react-router-dom';
-import Button from '@mui/material/Button';
+import { clientProfilePath } from '../../devices/clientProfilePaths';
 import {
   formatClientSource,
   LiveClientRow,
@@ -30,8 +30,20 @@ function ClientRow({ client }: { client: LiveClientRow }) {
   if (client.mac_address) subtitleParts.push(client.mac_address);
   if (client.source) subtitleParts.push(formatClientSource(client.source));
 
+  if (client.device_id == null) {
+    return null;
+  }
+
   return (
-    <ListItem sx={{ py: 1, px: 2 }}>
+    <ListItemButton
+      component={RouterLink}
+      to={clientProfilePath(client.device_id)}
+      sx={{
+        py: 1,
+        px: 2,
+        '&:hover': { backgroundColor: 'action.hover' },
+      }}
+    >
       <ListItemIcon sx={{ minWidth: 36 }}>
         {client.source === 'vpn_enroll' ? (
           <VpnKeyIcon color="primary" fontSize="small" />
@@ -56,27 +68,17 @@ function ClientRow({ client }: { client: LiveClientRow }) {
           </Stack>
         }
         secondary={
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.25 }}>
-            <Typography variant="caption" color="text.secondary">
-              {subtitleParts.join(' · ')}
-            </Typography>
-            {client.query_count > 0 && (
-              <Chip
-                label={`${client.query_count.toLocaleString()} queries`}
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 20 }}
-              />
-            )}
-          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+            {subtitleParts.join(' · ')}
+          </Typography>
         }
       />
-    </ListItem>
+    </ListItemButton>
   );
 }
 
 export default function LiveClientsView() {
-  const { clients, loading, error, statsSource, enrolledCount, refetch } = useLiveClients();
+  const { clients, loading, error, enrolledCount, refetch } = useLiveClients();
 
   if (loading && clients.length === 0) {
     return (
@@ -100,13 +102,7 @@ export default function LiveClientsView() {
             : `${clients.length} connected client${clients.length === 1 ? '' : 's'}`}
           {enrolledCount > 0 && ` · ${enrolledCount} VPN enrolled`}
         </Typography>
-        {statsSource === 'live' && (
-          <Chip label="Query counts since server start" size="small" variant="outlined" />
-        )}
         <Box sx={{ flex: 1 }} />
-        <Button component={RouterLink} to="/client-profiles" size="small" variant="text">
-          Profiles
-        </Button>
         <Tooltip title="Refresh">
           <IconButton size="small" onClick={refetch} disabled={loading}>
             <RefreshIcon fontSize="small" />
