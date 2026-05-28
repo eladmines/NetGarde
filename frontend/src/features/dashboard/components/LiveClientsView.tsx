@@ -68,19 +68,9 @@ function ClientRow({ client }: { client: LiveClientRow }) {
           </Stack>
         }
         secondary={
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.25 }}>
-            <Typography variant="caption" color="text.secondary">
-              {subtitleParts.join(' · ')}
-            </Typography>
-            {client.query_count > 0 && (
-              <Chip
-                label={`${client.query_count.toLocaleString()} queries`}
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 20 }}
-              />
-            )}
-          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+            {subtitleParts.join(' · ')}
+          </Typography>
         }
       />
     </ListItemButton>
@@ -88,7 +78,7 @@ function ClientRow({ client }: { client: LiveClientRow }) {
 }
 
 export default function LiveClientsView() {
-  const { clients, loading, error, statsSource, enrolledCount, refetch } = useLiveClients();
+  const { clients, loading, error, enrolledCount, refetch } = useLiveClients();
 
   if (loading && clients.length === 0) {
     return (
@@ -112,9 +102,6 @@ export default function LiveClientsView() {
             : `${clients.length} connected client${clients.length === 1 ? '' : 's'}`}
           {enrolledCount > 0 && ` · ${enrolledCount} VPN enrolled`}
         </Typography>
-        {statsSource === 'live' && (
-          <Chip label="Query counts since server start" size="small" variant="outlined" />
-        )}
         <Box sx={{ flex: 1 }} />
         <Tooltip title="Refresh">
           <IconButton size="small" onClick={refetch} disabled={loading}>
