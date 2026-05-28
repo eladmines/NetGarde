@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getDnsQueriesWebSocketUrl } from '../../../shared/config/apiWebSocketUrl';
+import { recordDnsClientActivity } from '../dnsClientActivity';
 
 export interface LiveDnsQuery {
   timestamp: string;
@@ -76,6 +77,7 @@ export function useDnsLiveFeed() {
 
           const data: WebSocketMessage = JSON.parse(raw);
           if (data.type === 'dns_queries' && data.queries?.length > 0) {
+            recordDnsClientActivity(data.queries);
             // Only update feed if not paused
             if (!isPausedRef.current) {
               setFeed((prev) => {
