@@ -69,10 +69,10 @@ export default function NetworkTopologyView() {
       ) : null}
 
       <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2 }}>
-        <LegendSwatch label="Tunnel connected (handshake)" color="#2e7d32" />
-        <LegendSwatch label="Peer idle / stale" color="#ed6c02" />
-        <LegendSwatch label="Enrolled, not connected" color="#9e9e9e" />
-        <LegendSwatch label="Active DNS (blue dot)" color="#1976d2" />
+        <LegendSwatch label="Tunnel up (green ring)" color="#2e7d32" />
+        <LegendSwatch label="Peer idle (orange ring)" color="#ed6c02" />
+        <LegendSwatch label="Not connected (gray ring)" color="#9e9e9e" />
+        <LegendSwatch label="DNS active (blue dot)" color="#1976d2" />
       </Stack>
     </Paper>
   );
