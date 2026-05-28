@@ -5,6 +5,7 @@ from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, Dhcp
 from app.features.client_behavior.schemas.behavior import (
     BehaviorProfileRead,
     BehaviorRecomputeResult,
+    BlockedClientsListResponse,
     ClientBlockSyncResponse,
     ClientBlockedDomainRead,
     DeviceSecurityPolicyRead,
@@ -89,6 +90,15 @@ def client_blocks_sync_endpoint(
 ):
     """Per-device blocks for dnsmasq sync (service token)."""
     return behavior.get_client_blocks_for_sync()
+
+
+@router.get("/blocked-clients", response_model=BlockedClientsListResponse)
+def list_blocked_clients_endpoint(
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    """Devices with active auto-blocks after abnormal behavior scores."""
+    return behavior.list_blocked_clients()
 
 
 @router.post("/recompute-behavior-baselines", response_model=BehaviorRecomputeResult)

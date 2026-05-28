@@ -88,6 +88,24 @@ class ClientBlockedDomainRepository:
             .all()
         )
 
+    def list_active_behavior_auto_blocks(self) -> List[ClientBlockedDomain]:
+        """Active auto-blocks with device loaded (for admin blocked-clients list)."""
+        now = datetime.now(timezone.utc)
+        return (
+            self.db.query(ClientBlockedDomain)
+            .join(Device, ClientBlockedDomain.device_id == Device.id)
+            .options(
+                joinedload(ClientBlockedDomain.device).joinedload(Device.ip_lease),  # type: ignore[arg-type]
+            )
+            .filter(
+                ClientBlockedDomain.source == "behavior_auto",
+                ClientBlockedDomain.revoked_at.is_(None),
+                or_(ClientBlockedDomain.expires_at.is_(None), ClientBlockedDomain.expires_at > now),
+            )
+            .order_by(ClientBlockedDomain.created_at.desc())
+            .all()
+        )
+
     def list_active_for_sync(self) -> List[ClientBlockedDomain]:
         """Active blocks with device MAC for dnsmasq sync."""
         now = datetime.now(timezone.utc)
