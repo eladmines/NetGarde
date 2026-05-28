@@ -45,22 +45,14 @@ function ClientRow({ client }: { client: LiveClientRow }) {
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
               {title}
             </Typography>
-            {client.is_active_now && (
-              <Chip
-                icon={<FiberManualRecordIcon sx={{ fontSize: '10px !important' }} />}
-                label="Live"
-                size="small"
-                color="success"
-                variant="outlined"
-                sx={{ height: 22, '& .MuiChip-icon': { color: 'success.main' } }}
-              />
-            )}
-            {!client.is_active_now && client.has_dns_traffic && (
-              <Chip label="Seen" size="small" variant="outlined" sx={{ height: 22 }} />
-            )}
-            {client.device_id == null && (
-              <Chip label="Unregistered" size="small" color="warning" variant="outlined" sx={{ height: 22 }} />
-            )}
+            <Chip
+              icon={<FiberManualRecordIcon sx={{ fontSize: '10px !important' }} />}
+              label="Live"
+              size="small"
+              color="success"
+              variant="outlined"
+              sx={{ height: 22, '& .MuiChip-icon': { color: 'success.main' } }}
+            />
           </Stack>
         }
         secondary={
@@ -84,8 +76,7 @@ function ClientRow({ client }: { client: LiveClientRow }) {
 }
 
 export default function LiveClientsView() {
-  const { clients, loading, error, statsSource, activeCount, enrolledCount, refetch } =
-    useLiveClients();
+  const { clients, loading, error, statsSource, enrolledCount, refetch } = useLiveClients();
 
   if (loading && clients.length === 0) {
     return (
@@ -104,8 +95,9 @@ export default function LiveClientsView() {
         sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexWrap: 'wrap' }}
       >
         <Typography variant="body2" color="text.secondary">
-          {clients.length} client{clients.length === 1 ? '' : 's'}
-          {activeCount > 0 && ` · ${activeCount} live now`}
+          {clients.length === 0
+            ? 'No clients connected'
+            : `${clients.length} connected client${clients.length === 1 ? '' : 's'}`}
           {enrolledCount > 0 && ` · ${enrolledCount} VPN enrolled`}
         </Typography>
         {statsSource === 'live' && (
@@ -142,8 +134,8 @@ export default function LiveClientsView() {
             }}
           >
             <Typography variant="body2">
-              No clients yet. Devices appear after VPN enroll or when DNS traffic is observed from a
-              known lease.
+              No clients are sending DNS through the VPN right now. Connect with the NetGarde client
+              and browse to appear here.
             </Typography>
           </Box>
         ) : (
