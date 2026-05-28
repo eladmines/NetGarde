@@ -8,9 +8,6 @@ import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
-import { Link as RouterLink } from 'react-router-dom';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
 
 export default function MainGrid() {
   return (
@@ -19,17 +16,6 @@ export default function MainGrid() {
         Overview
       </Typography>
       <DnsStatsCards />
-      <Paper variant="outlined" sx={{ p: 2, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-        <Box>
-          <Typography variant="subtitle1">Client behavior profiles</Typography>
-          <Typography variant="body2" color="text.secondary">
-            View baselines, scores, and per-device policy on the dedicated profiles page.
-          </Typography>
-        </Box>
-        <Button component={RouterLink} to="/client-profiles" variant="outlined" size="small">
-          Open client profiles
-        </Button>
-      </Paper>
       <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
         <Grid size={{ xs: 12 }}>
           <DnsAlertsView />

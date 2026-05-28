@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -12,10 +13,31 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import { useDevices } from './hooks/useDevices';
 import ClientProfileDetail from './components/ClientProfileDetail';
+import { clientProfilePath, parseDeviceIdParam } from './clientProfilePaths';
 
 export default function ClientProfiles() {
   const { devices, loading, error, refresh } = useDevices();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  const deviceFromUrl = parseDeviceIdParam(searchParams.get('device'));
+
+  useEffect(() => {
+    if (devices.length === 0) return;
+    const match =
+      deviceFromUrl != null ? devices.find((d) => d.id === deviceFromUrl) : undefined;
+    const nextId = match?.id ?? devices[0].id;
+    setSelectedId(nextId);
+    if (deviceFromUrl !== nextId) {
+      navigate(clientProfilePath(nextId), { replace: true });
+    }
+  }, [devices, deviceFromUrl, navigate]);
+
+  const selectDevice = (id: number) => {
+    setSelectedId(id);
+    navigate(clientProfilePath(id));
+  };
 
   const selected =
     devices.find((d) => d.id === selectedId) ?? (devices.length > 0 ? devices[0] : null);
@@ -63,7 +85,7 @@ export default function ClientProfiles() {
                     <ListItemButton
                       key={d.id}
                       selected={isSelected}
-                      onClick={() => setSelectedId(d.id)}
+                      onClick={() => selectDevice(d.id)}
                     >
                       <ListItemText
                         primary={d.hostname || d.client_ip}

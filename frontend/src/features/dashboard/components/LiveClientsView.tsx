@@ -4,7 +4,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Divider from '@mui/material/Divider';
@@ -17,7 +17,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Link as RouterLink } from 'react-router-dom';
-import Button from '@mui/material/Button';
+import { clientProfilePath } from '../../devices/clientProfilePaths';
 import {
   formatClientSource,
   LiveClientRow,
@@ -30,8 +30,20 @@ function ClientRow({ client }: { client: LiveClientRow }) {
   if (client.mac_address) subtitleParts.push(client.mac_address);
   if (client.source) subtitleParts.push(formatClientSource(client.source));
 
+  if (client.device_id == null) {
+    return null;
+  }
+
   return (
-    <ListItem sx={{ py: 1, px: 2 }}>
+    <ListItemButton
+      component={RouterLink}
+      to={clientProfilePath(client.device_id)}
+      sx={{
+        py: 1,
+        px: 2,
+        '&:hover': { backgroundColor: 'action.hover' },
+      }}
+    >
       <ListItemIcon sx={{ minWidth: 36 }}>
         {client.source === 'vpn_enroll' ? (
           <VpnKeyIcon color="primary" fontSize="small" />
@@ -71,7 +83,7 @@ function ClientRow({ client }: { client: LiveClientRow }) {
           </Stack>
         }
       />
-    </ListItem>
+    </ListItemButton>
   );
 }
 
@@ -104,9 +116,6 @@ export default function LiveClientsView() {
           <Chip label="Query counts since server start" size="small" variant="outlined" />
         )}
         <Box sx={{ flex: 1 }} />
-        <Button component={RouterLink} to="/client-profiles" size="small" variant="text">
-          Profiles
-        </Button>
         <Tooltip title="Refresh">
           <IconButton size="small" onClick={refetch} disabled={loading}>
             <RefreshIcon fontSize="small" />
