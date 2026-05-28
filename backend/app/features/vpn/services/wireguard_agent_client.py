@@ -34,3 +34,31 @@ def apply_peer_on_host(*, public_key: str, allowed_ip: str) -> None:
         raise RuntimeError(f"wg agent HTTP {e.code}: {err}") from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"wg agent URL error: {e.reason}") from e
+
+
+def list_peers_on_host() -> list[dict]:
+    """Return live WireGuard peers from the host agent (wg show dump)."""
+    base = (settings.WG_AGENT_URL or "").strip().rstrip("/")
+    token = (settings.WG_AGENT_TOKEN or "").strip()
+    if not base or not token:
+        raise RuntimeError("WG_AGENT_URL and WG_AGENT_TOKEN must be set")
+
+    url = f"{base}/v1/peers"
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("Authorization", f"Bearer {token}")
+
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            if resp.status != 200:
+                raise RuntimeError(f"wg agent returned {resp.status}: {body}")
+            data = json.loads(body)
+            peers = data.get("peers")
+            if not isinstance(peers, list):
+                return []
+            return peers
+    except urllib.error.HTTPError as e:
+        err = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"wg agent HTTP {e.code}: {err}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"wg agent URL error: {e.reason}") from e
