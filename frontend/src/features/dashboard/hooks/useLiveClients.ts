@@ -64,27 +64,16 @@ function buildRows(
     });
   }
 
-  for (const ip of clientIps) {
-    if (byIp.has(ip)) continue;
-    byIp.set(ip, {
-      client_ip: ip,
-      hostname: null,
-      mac_address: null,
-      source: null,
-      device_id: null,
-      query_count: queryCounts.get(ip) ?? 0,
-      has_dns_traffic: true,
-      is_active_now: false,
-    });
-  }
-
   return Array.from(byIp.values());
+}
+
+/** Registered devices with DNS activity in the live feed window. */
+function filterLiveRegisteredClients(rows: LiveClientRow[]): LiveClientRow[] {
+  return rows.filter((row) => row.device_id != null && row.is_active_now);
 }
 
 function sortClients(rows: LiveClientRow[]): LiveClientRow[] {
   return [...rows].sort((a, b) => {
-    if (a.is_active_now !== b.is_active_now) return a.is_active_now ? -1 : 1;
-    if (a.has_dns_traffic !== b.has_dns_traffic) return a.has_dns_traffic ? -1 : 1;
     if (b.query_count !== a.query_count) return b.query_count - a.query_count;
     const nameA = (a.hostname || a.client_ip).toLowerCase();
     const nameB = (b.hostname || b.client_ip).toLowerCase();
@@ -110,7 +99,9 @@ export function useLiveClients() {
 
   const recomputeClients = useCallback(() => {
     setClients(
-      sortClients(withLiveActivity(buildRows(devices, clientIps, queryCounts))),
+      sortClients(
+        filterLiveRegisteredClients(withLiveActivity(buildRows(devices, clientIps, queryCounts))),
+      ),
     );
   }, [devices, clientIps, queryCounts]);
 
@@ -161,7 +152,6 @@ export function useLiveClients() {
     return () => clearInterval(id);
   }, [fetchAll]);
 
-  const activeCount = clients.filter((c) => c.is_active_now).length;
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
 
   return {
@@ -169,7 +159,6 @@ export function useLiveClients() {
     loading,
     error,
     statsSource,
-    activeCount,
     enrolledCount,
     refetch: fetchAll,
   };
