@@ -8,6 +8,8 @@ from app.features.client_behavior.repositories.client_blocked_domain_repository 
 from app.features.client_behavior.repositories.device_security_policy_repository import DeviceSecurityPolicyRepository
 from app.features.client_behavior.schemas.behavior import (
     BehaviorProfileRead,
+    BlockedClientSummary,
+    BlockedClientsListResponse,
     ClientBlockSyncEntry,
     ClientBlockSyncResponse,
     ClientBlockedDomainRead,
@@ -108,6 +110,46 @@ class ClientBehaviorApiService:
 
     def recompute_baselines(self) -> int:
         return BehaviorBaselineService(self.db).recompute_all()
+
+    def list_blocked_clients(self) -> BlockedClientsListResponse:
+        """Devices with active behavior_auto DNS blocks (abnormal score enforcement)."""
+        blocks = self.block_repo.list_active_behavior_auto_blocks()
+        by_device: dict[int, BlockedClientSummary] = {}
+
+        for block in blocks:
+            device = block.device
+            if not device:
+                continue
+            lease = getattr(device, "ip_lease", None)
+            client_ip = lease.ip if lease is not None else None
+            summary = by_device.get(device.id)
+            if summary is None:
+                profile = self.profile_repo.get_by_device_id(device.id)
+                summary = BlockedClientSummary(
+                    device_id=device.id,
+                    client_ip=client_ip,
+                    hostname=device.hostname,
+                    mac_address=device.mac_address,
+                    last_score=profile.last_score if profile else None,
+                    last_scored_at=profile.last_scored_at if profile else None,
+                    active_block_count=0,
+                    latest_blocked_domain=block.domain,
+                    latest_block_at=block.created_at,
+                )
+                by_device[device.id] = summary
+            summary.active_block_count += 1
+            if block.created_at and (
+                summary.latest_block_at is None or block.created_at > summary.latest_block_at
+            ):
+                summary.latest_blocked_domain = block.domain
+                summary.latest_block_at = block.created_at
+
+        items = sorted(
+            by_device.values(),
+            key=lambda x: x.latest_block_at or datetime.min.replace(tzinfo=timezone.utc),
+            reverse=True,
+        )
+        return BlockedClientsListResponse(items=items, total=len(items))
 
     def get_client_blocks_for_sync(self) -> ClientBlockSyncResponse:
         blocks = self.block_repo.list_active_for_sync()

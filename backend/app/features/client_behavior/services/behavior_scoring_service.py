@@ -10,6 +10,8 @@ from app.features.client_behavior.repositories.client_blocked_domain_repository 
 from app.features.client_behavior.repositories.device_security_policy_repository import DeviceSecurityPolicyRepository
 from app.features.client_behavior.services.behavior_baseline_service import BehaviorBaselineService
 from app.features.devices.repositories.device_repository import DeviceRepository
+from app.features.policy.repositories.policy_repository import PolicyRepository
+from app.features.policy.sensitivity import alert_threshold_for_sensitivity
 from app.features.dns_queries.dns_anomaly import get_suspicious_domain_reasons
 from app.features.dns_queries.models.dns_alert import DnsAlert
 from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
@@ -28,11 +30,12 @@ class BehaviorScoringService:
         self.db = db
         self.rollup_repo = BehaviorRollupRepository(db)
         self.profile_repo = BehaviorProfileRepository(db)
-        self.policy_repo = DeviceSecurityPolicyRepository(db)
+        self.security_policy_repo = DeviceSecurityPolicyRepository(db)
         self.block_repo = ClientBlockedDomainRepository(db)
         self.alert_repo = DnsAlertRepository(db)
         self.device_repo = DeviceRepository(db)
         self.baseline_service = BehaviorBaselineService(db)
+        self.policy_repo = PolicyRepository(db)
 
     def process_queries(self, queries: List[DnsQueryCreate]) -> int:
         if not queries:
@@ -72,7 +75,10 @@ class BehaviorScoringService:
         )
         self.profile_repo.update_score(device_id, score)
 
-        alert_threshold = settings.BEHAVIOR_ALERT_THRESHOLD
+        policy_profile = self._get_device_policy_profile(device_id)
+        alert_threshold = alert_threshold_for_sensitivity(
+            policy_profile.behavior_sensitivity if policy_profile else "medium"
+        )
         if score < alert_threshold:
             return 0
 
@@ -88,36 +94,61 @@ class BehaviorScoringService:
             )
             .first()
         )
-        if recent_alert:
-            return 0
 
-        client_ip = entries[0][0]
-        message = f"Behavior score {score}: " + "; ".join(reasons)
-        if top_domain:
-            message += f" (top domain: {top_domain})"
+        events = 0
+        if not recent_alert:
+            client_ip = entries[0][0]
+            message = f"Behavior score {score}: " + "; ".join(reasons)
+            if top_domain:
+                message += f" (top domain: {top_domain})"
 
-        self.alert_repo.create(
-            timestamp=datetime.now(timezone.utc),
-            client_ip=client_ip,
-            alert_type="behavior_anomaly",
-            severity="high" if score >= 85 else "medium",
-            domain=top_domain,
-            root_domain=extract_root_domain(top_domain) if top_domain else None,
-            message=message,
-            device_id=device_id,
+            self.alert_repo.create(
+                timestamp=datetime.now(timezone.utc),
+                client_ip=client_ip,
+                alert_type="behavior_anomaly",
+                severity="high" if score >= 85 else "medium",
+                domain=top_domain,
+                root_domain=extract_root_domain(top_domain) if top_domain else None,
+                message=message,
+                device_id=device_id,
+            )
+            events = 1
+
+        blocks_added = self._apply_auto_blocks_if_needed(device_id, score, entries)
+        if self._maybe_start_quarantine(device_id, score, policy_profile):
+            if events == 0:
+                events = 1
+        elif blocks_added > 0 and events == 0:
+            events = 1
+
+        return events
+
+    def _get_device_policy_profile(self, device_id: int):
+        device = self.device_repo.get_by_id(device_id)
+        if not device:
+            return self.policy_repo.get_default_profile()
+        if device.policy_profile_id:
+            profile = self.policy_repo.get_profile_by_id(device.policy_profile_id)
+            if profile:
+                return profile
+        return self.policy_repo.get_default_profile()
+
+    def _maybe_start_quarantine(self, device_id: int, score: int, policy_profile) -> bool:
+        if policy_profile is None or not policy_profile.quarantine_on_abnormal:
+            return False
+        sec = self.security_policy_repo.get_or_create(device_id)
+        block_threshold = sec.auto_block_threshold or settings.BEHAVIOR_AUTO_BLOCK_THRESHOLD
+        if not sec.auto_block_enabled or score < block_threshold:
+            return False
+        if self.policy_repo.get_active_quarantine(device_id):
+            return False
+        hours = max(1, int(policy_profile.quarantine_hours or 4))
+        self.policy_repo.start_quarantine(device_id, score, hours)
+        logger.info(
+            "Device quarantine started (allowlist-only DNS)",
+            extra={"device_id": device_id, "score": score, "hours": hours},
         )
-
-        policy = self.policy_repo.get_or_create(device_id)
-        block_threshold = policy.auto_block_threshold or settings.BEHAVIOR_AUTO_BLOCK_THRESHOLD
-        if (
-            policy.auto_block_enabled
-            and score >= block_threshold
-            and top_domain
-            and not is_whitelisted_root(extract_root_domain(top_domain))
-        ):
-            self._maybe_auto_block(device_id, top_domain, score)
-
-        return 1
+        return True
 
     def _should_recompute_baseline(self, profile) -> bool:
         if profile is None:
@@ -155,7 +186,6 @@ class BehaviorScoringService:
         now = datetime.now(timezone.utc)
         hour_hist = baseline.get("hour_histogram") or {}
         hist_count = int(hour_hist.get(now.hour, hour_hist.get(str(now.hour), 0)))
-        total_hist = sum(int(v) for v in hour_hist.values()) or 1
         if hist_count == 0 and query_count >= 20:
             reasons.append(f"unusual activity at hour {now.hour} UTC")
             points += 15
@@ -175,13 +205,56 @@ class BehaviorScoringService:
 
         return min(100, points), reasons, top_domain
 
-    def _maybe_auto_block(self, device_id: int, domain: str, score: int) -> None:
-        policy = self.policy_repo.get_or_create(device_id)
-        if self.block_repo.count_blocks_today(device_id) >= policy.max_blocks_per_day:
-            logger.info("Auto-block skipped: daily limit", extra={"device_id": device_id})
-            return
+    def _domains_for_auto_block(self, entries: List[Tuple[str, str, str]]) -> List[str]:
+        """Prioritize suspicious domains, then other non-whitelisted roots in the batch."""
+        suspicious: List[str] = []
+        others: List[str] = []
+        seen_roots: set[str] = set()
+        max_domains = max(1, settings.BEHAVIOR_AUTO_BLOCK_DOMAINS_PER_EVENT)
 
+        for _ip, domain, root in entries:
+            root_key = root.lower()
+            if root_key in seen_roots:
+                continue
+            seen_roots.add(root_key)
+            if is_whitelisted_root(root):
+                continue
+            if get_suspicious_domain_reasons(domain):
+                suspicious.append(domain.lower())
+            else:
+                others.append(domain.lower())
+
+        combined = suspicious + others
+        return combined[:max_domains]
+
+    def _apply_auto_blocks_if_needed(
+        self,
+        device_id: int,
+        score: int,
+        entries: List[Tuple[str, str, str]],
+    ) -> int:
+        policy = self.security_policy_repo.get_or_create(device_id)
+        block_threshold = policy.auto_block_threshold or settings.BEHAVIOR_AUTO_BLOCK_THRESHOLD
+        if not policy.auto_block_enabled or score < block_threshold:
+            return 0
+
+        remaining = policy.max_blocks_per_day - self.block_repo.count_blocks_today(device_id)
+        if remaining <= 0:
+            logger.info("Auto-block skipped: daily limit", extra={"device_id": device_id})
+            return 0
+
+        domains = self._domains_for_auto_block(entries)[:remaining]
+        created = 0
+        for domain in domains:
+            if self._create_auto_block(device_id, domain, score):
+                created += 1
+        return created
+
+    def _create_auto_block(self, device_id: int, domain: str, score: int) -> bool:
         root = extract_root_domain(domain)
+        if is_whitelisted_root(root):
+            return False
+
         ttl_hours = settings.BEHAVIOR_AUTO_BLOCK_TTL_HOURS
         expires = datetime.now(timezone.utc) + timedelta(hours=ttl_hours)
         self.block_repo.create_block(
@@ -196,3 +269,4 @@ class BehaviorScoringService:
             "Behavior auto-block created",
             extra={"device_id": device_id, "domain": domain, "score": score},
         )
+        return True

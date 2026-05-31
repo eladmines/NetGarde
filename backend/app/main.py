@@ -8,12 +8,12 @@ import os
 
 from app.shared.utils.logging import setup_logging
 from app.shared.dependencies import get_db
-from app.features.blocked_sites.routes.blocked_site_route import router as blocked_site_router
-from app.features.categories.routes.category_route import router as category_router
 from app.features.dns_queries.routes.dns_query_route import router as dns_query_router
+from app.features.policy.routes.policy_route import router as policy_router
 from app.features.devices.routes.device_route import router as device_router
 from app.features.vpn.routes.enroll_route import router as vpn_router
 from app.features.vpn.routes.usage_route import router as usage_router
+from app.features.vpn.routes.topology_route import router as vpn_topology_router
 
 # Initialize logging early
 setup_logging()
@@ -107,9 +107,9 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok"}
 
 # Include routers
-app.include_router(blocked_site_router)
-app.include_router(category_router)
+app.include_router(policy_router)
 app.include_router(dns_query_router)
 app.include_router(device_router)
 app.include_router(vpn_router)
 app.include_router(usage_router)
+app.include_router(vpn_topology_router)

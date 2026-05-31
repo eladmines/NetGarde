@@ -51,6 +51,34 @@ def _validate_ipv4(ip: str, pool_cidr: str) -> str:
     return str(addr)
 
 
+def _wg_list_peers(iface: str) -> list[Dict[str, Any]]:
+    cmd = ["wg", "show", iface, "dump"]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(p.stderr.strip() or p.stdout.strip() or "wg show dump failed")
+    lines = [ln for ln in p.stdout.strip().splitlines() if ln.strip()]
+    if len(lines) < 2:
+        return []
+    peers: list[Dict[str, Any]] = []
+    for line in lines[1:]:
+        parts = line.split("\t")
+        if len(parts) < 8:
+            continue
+        endpoint = parts[2] if parts[2] != "(none)" else None
+        latest = int(parts[4]) if parts[4] else 0
+        peers.append(
+            {
+                "public_key": parts[0],
+                "endpoint": endpoint,
+                "allowed_ips": parts[3],
+                "latest_handshake": latest,
+                "rx_bytes": int(parts[5]) if parts[5] else 0,
+                "tx_bytes": int(parts[6]) if parts[6] else 0,
+            }
+        )
+    return peers
+
+
 def _wg_set_peer_allowed_ips(iface: str, pubkey: str, allowed_ip: str) -> None:
     # `wg set` updates are in-memory; persistence is intentionally out of scope here.
     cmd = ["wg", "set", iface, "peer", pubkey, "allowed-ips", f"{allowed_ip}/32"]
@@ -75,9 +103,22 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
 
     def do_GET(self) -> None:  # noqa: N802
+        server: "AgentServer" = self.server  # type: ignore[assignment]
         parsed = urlparse(self.path)
         if parsed.path == "/health":
             self._json(200, {"status": "ok"})
+            return
+        if parsed.path == "/v1/peers":
+            auth = self.headers.get("Authorization", "")
+            if auth != f"Bearer {server.token}":
+                self._json(401, {"detail": "unauthorized"})
+                return
+            try:
+                peers = _wg_list_peers(server.iface)
+            except Exception as e:
+                self._json(500, {"detail": str(e)})
+                return
+            self._json(200, {"interface": server.iface, "peers": peers})
             return
         self._json(404, {"detail": "not found"})
 

@@ -5,12 +5,15 @@ from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, Dhcp
 from app.features.client_behavior.schemas.behavior import (
     BehaviorProfileRead,
     BehaviorRecomputeResult,
+    BlockedClientsListResponse,
     ClientBlockSyncResponse,
     ClientBlockedDomainRead,
     DeviceSecurityPolicyRead,
     DeviceSecurityPolicyUpdate,
 )
 from app.features.client_behavior.services.client_behavior_api_service import ClientBehaviorApiService
+from app.features.policy.schemas.policy import AssignPolicyProfileRequest, DevicePolicyAssignmentRead
+from app.features.policy.services.policy_service import PolicyService
 from app.features.devices.controllers.device_controller import (
     create_device_controller,
     get_devices_controller,
@@ -29,6 +32,10 @@ router = APIRouter(prefix="/devices", tags=["Devices"])
 
 def get_client_behavior_service(db: Session = Depends(get_db)) -> ClientBehaviorApiService:
     return ClientBehaviorApiService(db)
+
+
+def get_policy_service(db: Session = Depends(get_db)) -> PolicyService:
+    return PolicyService(db)
 
 
 @router.post("")
@@ -85,10 +92,32 @@ def sync_dhcp_endpoint(
 @router.get("/client-blocks/sync", response_model=ClientBlockSyncResponse)
 def client_blocks_sync_endpoint(
     _: None = Depends(verify_dns_ingest_service),
+    db: Session = Depends(get_db),
+):
+    """Legacy alias; use GET /policy/dns-sync. Returns block domains only (no quarantine allowlist)."""
+    from app.features.client_behavior.schemas.behavior import ClientBlockSyncEntry
+    from app.features.policy.services.policy_dns_service import PolicyDnsService
+
+    sync = PolicyDnsService(db).build_dns_sync()
+    entries = [
+        ClientBlockSyncEntry(
+            device_id=e.device_id,
+            mac_address=e.mac_address,
+            tag=e.tag,
+            domains=e.block_domains if not e.allowlist_only else e.allowlist_domains,
+        )
+        for e in sync.entries
+    ]
+    return ClientBlockSyncResponse(entries=entries)
+
+
+@router.get("/blocked-clients", response_model=BlockedClientsListResponse)
+def list_blocked_clients_endpoint(
+    _: None = Depends(verify_admin_api_token),
     behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
 ):
-    """Per-device blocks for dnsmasq sync (service token)."""
-    return behavior.get_client_blocks_for_sync()
+    """Devices with active auto-blocks after abnormal behavior scores."""
+    return behavior.list_blocked_clients()
 
 
 @router.post("/recompute-behavior-baselines", response_model=BehaviorRecomputeResult)
@@ -98,6 +127,25 @@ def recompute_behavior_baselines_endpoint(
 ):
     updated = behavior.recompute_baselines()
     return BehaviorRecomputeResult(devices_updated=updated)
+
+
+@router.get("/{device_id}/policy-assignment", response_model=DevicePolicyAssignmentRead)
+def get_device_policy_assignment_endpoint(
+    device_id: int,
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    return service.get_device_policy(device_id)
+
+
+@router.put("/{device_id}/policy-assignment", response_model=DevicePolicyAssignmentRead)
+def assign_device_policy_profile_endpoint(
+    device_id: int,
+    body: AssignPolicyProfileRequest,
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    return service.assign_profile_to_device(device_id, body.policy_profile_slug)
 
 
 @router.get("/{device_id}/behavior-profile", response_model=BehaviorProfileRead)

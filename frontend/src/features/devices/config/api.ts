@@ -1,6 +1,13 @@
 import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 import { DnsAlertListResponse } from '../../dns-queries/types/dnsQuery';
-import { Device, BehaviorProfile, DeviceSecurityPolicy, ClientBlockedDomain } from '../types/device';
+import {
+  Device,
+  BehaviorProfile,
+  DeviceSecurityPolicy,
+  ClientBlockedDomain,
+  BlockedClientsListResponse,
+} from '../types/device';
+import { DevicePolicyAssignment } from '../../policy/types/policy';
 
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 
@@ -22,6 +29,15 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const devicesApi = {
   list: () => apiFetch<Device[]>('/devices'),
+  listBlockedClients: () => apiFetch<BlockedClientsListResponse>('/devices/blocked-clients'),
+  getPolicyAssignment: (deviceId: number) =>
+    apiFetch<DevicePolicyAssignment>(`/devices/${deviceId}/policy-assignment`),
+  assignPolicyProfile: (deviceId: number, policy_profile_slug: string) =>
+    apiFetch<DevicePolicyAssignment>(`/devices/${deviceId}/policy-assignment`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ policy_profile_slug }),
+    }),
   getBehaviorProfile: (deviceId: number) =>
     apiFetch<BehaviorProfile>(`/devices/${deviceId}/behavior-profile`),
   getSecurityPolicy: (deviceId: number) =>

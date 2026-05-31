@@ -4,7 +4,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Divider from '@mui/material/Divider';
@@ -17,7 +17,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Link as RouterLink } from 'react-router-dom';
-import Button from '@mui/material/Button';
+import { clientProfilePath } from '../../devices/clientProfilePaths';
 import {
   formatClientSource,
   LiveClientRow,
@@ -30,8 +30,20 @@ function ClientRow({ client }: { client: LiveClientRow }) {
   if (client.mac_address) subtitleParts.push(client.mac_address);
   if (client.source) subtitleParts.push(formatClientSource(client.source));
 
+  if (client.device_id == null) {
+    return null;
+  }
+
   return (
-    <ListItem sx={{ py: 1, px: 2 }}>
+    <ListItemButton
+      component={RouterLink}
+      to={clientProfilePath(client.device_id)}
+      sx={{
+        py: 1,
+        px: 2,
+        '&:hover': { backgroundColor: 'action.hover' },
+      }}
+    >
       <ListItemIcon sx={{ minWidth: 36 }}>
         {client.source === 'vpn_enroll' ? (
           <VpnKeyIcon color="primary" fontSize="small" />
@@ -45,47 +57,28 @@ function ClientRow({ client }: { client: LiveClientRow }) {
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
               {title}
             </Typography>
-            {client.is_active_now && (
-              <Chip
-                icon={<FiberManualRecordIcon sx={{ fontSize: '10px !important' }} />}
-                label="Live"
-                size="small"
-                color="success"
-                variant="outlined"
-                sx={{ height: 22, '& .MuiChip-icon': { color: 'success.main' } }}
-              />
-            )}
-            {!client.is_active_now && client.has_dns_traffic && (
-              <Chip label="Seen" size="small" variant="outlined" sx={{ height: 22 }} />
-            )}
-            {client.device_id == null && (
-              <Chip label="Unregistered" size="small" color="warning" variant="outlined" sx={{ height: 22 }} />
-            )}
+            <Chip
+              icon={<FiberManualRecordIcon sx={{ fontSize: '10px !important' }} />}
+              label="Live"
+              size="small"
+              color="success"
+              variant="outlined"
+              sx={{ height: 22, '& .MuiChip-icon': { color: 'success.main' } }}
+            />
           </Stack>
         }
         secondary={
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.25 }}>
-            <Typography variant="caption" color="text.secondary">
-              {subtitleParts.join(' · ')}
-            </Typography>
-            {client.query_count > 0 && (
-              <Chip
-                label={`${client.query_count.toLocaleString()} queries`}
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 20 }}
-              />
-            )}
-          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+            {subtitleParts.join(' · ')}
+          </Typography>
         }
       />
-    </ListItem>
+    </ListItemButton>
   );
 }
 
 export default function LiveClientsView() {
-  const { clients, loading, error, statsSource, activeCount, enrolledCount, refetch } =
-    useLiveClients();
+  const { clients, loading, error, enrolledCount, refetch } = useLiveClients();
 
   if (loading && clients.length === 0) {
     return (
@@ -104,17 +97,12 @@ export default function LiveClientsView() {
         sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexWrap: 'wrap' }}
       >
         <Typography variant="body2" color="text.secondary">
-          {clients.length} client{clients.length === 1 ? '' : 's'}
-          {activeCount > 0 && ` · ${activeCount} live now`}
+          {clients.length === 0
+            ? 'No clients connected'
+            : `${clients.length} connected client${clients.length === 1 ? '' : 's'}`}
           {enrolledCount > 0 && ` · ${enrolledCount} VPN enrolled`}
         </Typography>
-        {statsSource === 'live' && (
-          <Chip label="Query counts since server start" size="small" variant="outlined" />
-        )}
         <Box sx={{ flex: 1 }} />
-        <Button component={RouterLink} to="/client-profiles" size="small" variant="text">
-          Profiles
-        </Button>
         <Tooltip title="Refresh">
           <IconButton size="small" onClick={refetch} disabled={loading}>
             <RefreshIcon fontSize="small" />
@@ -142,8 +130,8 @@ export default function LiveClientsView() {
             }}
           >
             <Typography variant="body2">
-              No clients yet. Devices appear after VPN enroll or when DNS traffic is observed from a
-              known lease.
+              No clients are sending DNS through the VPN right now. Connect with the NetGarde client
+              and browse to appear here.
             </Typography>
           </Box>
         ) : (
