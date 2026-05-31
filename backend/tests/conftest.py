@@ -27,6 +27,7 @@ from app.features.client_behavior.models.device_security_policy import DeviceSec
 from app.features.policy.models.policy_pack import PolicyPack  # noqa: F401
 from app.features.policy.models.policy_profile import PolicyProfile  # noqa: F401
 from app.features.policy.models.device_quarantine import DeviceQuarantine  # noqa: F401
+from app.features.policy.models.policy_sync_status import PolicySyncStatus  # noqa: F401
 
 
 @pytest.fixture(scope="function")

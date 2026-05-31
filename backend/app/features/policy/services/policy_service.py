@@ -9,11 +9,14 @@ from app.features.client_behavior.repositories.device_security_policy_repository
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.features.policy.pack_loader import load_all_packs
 from app.features.policy.repositories.policy_repository import PolicyRepository
+from app.features.policy.repositories.policy_sync_repository import PolicySyncRepository
 from app.features.policy.schemas.policy import (
     DevicePolicyAssignmentRead,
+    PolicyApplyResponse,
     PolicyPackRead,
     PolicyProfileRead,
     PolicyProfileUpdate,
+    PolicySyncStatusRead,
 )
 from app.features.policy.sensitivity import block_threshold_for_sensitivity
 
@@ -24,6 +27,7 @@ class PolicyService:
         self.repo = PolicyRepository(db)
         self.device_repo = DeviceRepository(db)
         self.security_repo = DeviceSecurityPolicyRepository(db)
+        self.sync_repo = PolicySyncRepository(db)
 
     def list_packs(self) -> List[PolicyPackRead]:
         counts = {slug: len(domains) for slug, domains in load_all_packs().items()}
@@ -109,3 +113,17 @@ class PolicyService:
         policy.auto_block_enabled = True
         policy.auto_block_threshold = block_threshold_for_sensitivity(sensitivity)
         policy.max_blocks_per_day = settings.BEHAVIOR_MAX_BLOCKS_PER_DAY
+
+    def get_sync_status(self) -> PolicySyncStatusRead:
+        return self.sync_repo.get_status()
+
+    def record_sync_report(self, *, success: bool, message: Optional[str] = None) -> PolicySyncStatusRead:
+        return self.sync_repo.record_sync(success=success, message=message)
+
+    def apply_policy_now(self) -> PolicyApplyResponse:
+        """Queue immediate dns-sync via PostgreSQL NOTIFY (fallback if triggers missed)."""
+        self.sync_repo.notify_policy_changed(source="manual_apply")
+        return PolicyApplyResponse(
+            queued=True,
+            message="Policy enforcement sync queued; dnsmasq reload follows in ~30 seconds",
+        )

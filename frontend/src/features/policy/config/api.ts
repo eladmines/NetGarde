@@ -1,6 +1,6 @@
 import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
-import { DevicePolicyAssignment, PolicyPack, PolicyProfile } from '../types/policy';
+import { DevicePolicyAssignment, PolicyApplyResult, PolicyPack, PolicyProfile, PolicySyncStatus } from '../types/policy';
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -27,6 +27,11 @@ export const policyApi = {
       body: JSON.stringify({ enabled_globally }),
     }),
   listProfiles: () => apiFetch<PolicyProfile[]>('/policy/profiles'),
+  getSyncStatus: () => apiFetch<PolicySyncStatus>('/policy/sync-status'),
+  applyPolicy: () =>
+    apiFetch<PolicyApplyResult>('/policy/apply', {
+      method: 'POST',
+    }),
   getDeviceAssignment: (deviceId: number) =>
     apiFetch<DevicePolicyAssignment>(`/devices/${deviceId}/policy-assignment`),
   assignProfile: (deviceId: number, policy_profile_slug: string) =>

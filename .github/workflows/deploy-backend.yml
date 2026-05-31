@@ -435,8 +435,8 @@ jobs:
               sudo apt-get install -y python3-psycopg2
             fi
 
-            # Install and start blocked-sites DB listener service (LISTEN/NOTIFY -> run-sync.sh)
-            echo "Installing blocked-sites listener systemd service..."
+            # Install and start DNS policy listener (LISTEN/NOTIFY -> run-sync.sh)
+            echo "Installing DNS sync listener systemd service..."
             sudo chmod +x /home/ubuntu/netgarde/dns-sync/run-sync.sh
             sudo cp /home/ubuntu/netgarde/dns-sync/netgarde-blocked-sites-listener.service /etc/systemd/system/netgarde-blocked-sites-listener.service
             sudo systemctl daemon-reload

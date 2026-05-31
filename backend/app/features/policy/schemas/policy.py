@@ -69,3 +69,19 @@ class PolicyDeviceDnsEntry(BaseModel):
 class PolicyDnsSyncResponse(BaseModel):
     global_domains: List[str] = Field(default_factory=list)
     entries: List[PolicyDeviceDnsEntry] = Field(default_factory=list)
+
+
+class PolicySyncStatusRead(BaseModel):
+    last_sync_at: Optional[datetime] = None
+    last_success: Optional[bool] = None
+    last_message: Optional[str] = None
+
+
+class PolicySyncReport(BaseModel):
+    success: bool
+    message: Optional[str] = None
+
+
+class PolicyApplyResponse(BaseModel):
+    queued: bool = True
+    message: str = "Policy enforcement sync queued"

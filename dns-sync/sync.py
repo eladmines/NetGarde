@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 POLICY_DNS_SYNC_ENDPOINT = os.getenv('POLICY_DNS_SYNC_ENDPOINT', '/policy/dns-sync')
+POLICY_SYNC_REPORT_ENDPOINT = os.getenv('POLICY_SYNC_REPORT_ENDPOINT', '/policy/sync-report')
 BLOCK_IP = os.getenv('BLOCK_IP', '0.0.0.0')
 DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
 SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))
@@ -245,15 +246,42 @@ def sync_devices_from_dhcp(api_url: str, endpoint: str, leases_path: str) -> boo
         return False
 
 
+def report_policy_sync(success: bool, message: str = "") -> None:
+    if not API_BASE_URL:
+        return
+    try:
+        import urllib.request
+
+        url = f"{API_BASE_URL.rstrip('/')}{POLICY_SYNC_REPORT_ENDPOINT}"
+        body = json.dumps({"success": success, "message": message or None}).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={**_api_headers(ingest=True), "Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as response:
+            logger.info("Policy sync status reported: %s", response.read().decode("utf-8"))
+    except Exception as e:
+        logger.warning("Failed to report policy sync status: %s", e)
+
+
 def sync_cycle() -> bool:
     policy_ok = sync_policy_dns()
     devices_ok = True
     if DEVICE_SYNC_ENABLED:
         devices_ok = sync_devices_from_dhcp(API_BASE_URL, DEVICE_SYNC_ENDPOINT, DHCP_LEASES_PATH)
-    if policy_ok and devices_ok:
+    overall = policy_ok and devices_ok
+    report_policy_sync(
+        overall,
+        "Policy DNS sync completed" if overall else "Policy DNS sync completed with issues",
+    )
+    if overall:
         logger.info("Sync cycle completed successfully")
         return True
-    logger.warning(f"Sync cycle completed with issues (policy_ok={policy_ok}, devices_ok={devices_ok})")
+    logger.warning(
+        f"Sync cycle completed with issues (policy_ok={policy_ok}, devices_ok={devices_ok})"
+    )
     return False
 
 

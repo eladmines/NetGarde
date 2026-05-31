@@ -1,5 +1,5 @@
 [Unit]
-Description=NetGarde Blocked Sites DB Listener
+Description=NetGarde DNS Policy DB Listener (LISTEN/NOTIFY -> run-sync.sh)
 After=network-online.target docker.service
 Wants=network-online.target
 
@@ -7,7 +7,8 @@ Wants=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/home/ubuntu/netgarde
-EnvironmentFile=/home/ubuntu/netgarde/backend/.env.production
+EnvironmentFile=/etc/netgarde/backend.env
+Environment=DB_NOTIFY_CHANNELS=blocked_sites_changed,policy_changed
 Environment=SYNC_COMMAND=/home/ubuntu/netgarde/dns-sync/run-sync.sh
 ExecStart=/usr/bin/python3 /home/ubuntu/netgarde/dns-sync/blocked_sites_listener.py
 Restart=always
