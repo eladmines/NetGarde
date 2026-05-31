@@ -103,13 +103,14 @@ crontab -e
 
 ## Event-Driven Sync (PostgreSQL LISTEN/NOTIFY)
 
-NetGarde also supports instant sync when `blocked_sites` changes:
+Policy and legacy blocked-site changes trigger immediate dns-sync on the EC2 host:
 
-1. Backend migration creates trigger `tr_blocked_sites_changed_notify`.
-2. PostgreSQL sends `NOTIFY blocked_sites_changed`.
-3. `blocked_sites_listener.py` receives event and runs `run-sync.sh`.
+1. DB triggers send `NOTIFY policy_changed` when packs, profiles, or device assignments change.
+2. Legacy `blocked_sites` changes still send `NOTIFY blocked_sites_changed`.
+3. `blocked_sites_listener.py` listens on both channels (configurable via `DB_NOTIFY_CHANNELS`) and runs `run-sync.sh`.
+4. `run-sync.sh` writes dnsmasq config, reloads dnsmasq, and reports status to `POST /policy/sync-report`.
 
-The listener is intended to run on the EC2 host as a systemd service:
+The listener runs on the EC2 host as a systemd service (`EnvironmentFile=/etc/netgarde/backend.env`):
 
 ```bash
 sudo cp dns-sync/netgarde-blocked-sites-listener.service /etc/systemd/system/

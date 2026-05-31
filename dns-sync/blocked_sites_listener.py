@@ -24,7 +24,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-CHANNEL_NAME = os.getenv("DB_NOTIFY_CHANNEL", "blocked_sites_changed")
+CHANNEL_NAMES = [
+    c.strip()
+    for c in os.getenv("DB_NOTIFY_CHANNELS", "blocked_sites_changed,policy_changed").split(",")
+    if c.strip()
+]
 SYNC_COMMAND = os.getenv("SYNC_COMMAND", "/home/ubuntu/netgarde/dns-sync/run-sync.sh")
 RECONNECT_DELAY = int(os.getenv("RECONNECT_DELAY", "5"))
 LISTEN_TIMEOUT_SECONDS = int(os.getenv("LISTEN_TIMEOUT_SECONDS", "60"))
@@ -81,8 +85,9 @@ def listen_forever(db_url: str) -> None:
         try:
             conn = connect(db_url)
             cursor = conn.cursor()
-            cursor.execute(f"LISTEN {CHANNEL_NAME};")
-            logger.info("Listening on PostgreSQL channel '%s'", CHANNEL_NAME)
+            for channel in CHANNEL_NAMES:
+                cursor.execute(f"LISTEN {channel};")
+            logger.info("Listening on PostgreSQL channels: %s", ", ".join(CHANNEL_NAMES))
 
             while True:
                 ready = select.select([conn], [], [], LISTEN_TIMEOUT_SECONDS)
@@ -113,8 +118,8 @@ def main() -> int:
         return 1
 
     db_url = normalize_db_url(raw_db_url)
-    logger.info("Starting blocked sites DB listener")
-    logger.info("Channel: %s", CHANNEL_NAME)
+    logger.info("Starting NetGarde DNS sync DB listener")
+    logger.info("Channels: %s", ", ".join(CHANNEL_NAMES))
     logger.info("Sync command: %s", SYNC_COMMAND)
     listen_forever(db_url)
     return 0

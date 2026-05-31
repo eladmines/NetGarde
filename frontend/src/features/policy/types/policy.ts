@@ -37,3 +37,14 @@ export interface DevicePolicyAssignment {
   in_quarantine: boolean;
   quarantine_expires_at: string | null;
 }
+
+export interface PolicySyncStatus {
+  last_sync_at: string | null;
+  last_success: boolean | null;
+  last_message: string | null;
+}
+
+export interface PolicyApplyResult {
+  queued: boolean;
+  message: string;
+}

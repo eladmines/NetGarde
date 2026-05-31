@@ -9,15 +9,43 @@ import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { policyApi } from '../features/policy/config/api';
-import { PolicyPack, PolicyProfile } from '../features/policy/types/policy';
+import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
+import { formatShortDateTime } from '../shared/utils/dateUtils';
+
+const SYNC_POLL_MS = 8000;
+
+function syncStatusLabel(status: PolicySyncStatus | null): string {
+  if (!status?.last_sync_at) {
+    return 'Not applied to dnsmasq yet';
+  }
+  const when = formatShortDateTime(status.last_sync_at);
+  if (status.last_success === false) {
+    return `Last apply failed · ${when}`;
+  }
+  return `Last applied · ${when}`;
+}
 
 export default function PolicyPage() {
   const [packs, setPacks] = useState<PolicyPack[]>([]);
   const [profiles, setProfiles] = useState<PolicyProfile[]>([]);
+  const [syncStatus, setSyncStatus] = useState<PolicySyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  const loadSyncStatus = useCallback(async () => {
+    try {
+      const status = await policyApi.getSyncStatus();
+      setSyncStatus(status);
+    } catch {
+      /* optional on older backends */
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -26,26 +54,49 @@ export default function PolicyPage() {
       const [p, pr] = await Promise.all([policyApi.listPacks(), policyApi.listProfiles()]);
       setPacks(p);
       setProfiles(pr);
+      await loadSyncStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load policy');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadSyncStatus]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const id = window.setInterval(loadSyncStatus, SYNC_POLL_MS);
+    return () => window.clearInterval(id);
+  }, [loadSyncStatus]);
+
   const togglePack = async (pack: PolicyPack) => {
     setSavingSlug(pack.slug);
+    setInfo(null);
     try {
       const updated = await policyApi.updatePack(pack.slug, !pack.enabled_globally);
       setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+      setInfo(
+        `${updated.name} saved. Enforcement sync runs automatically (dns-sync + dnsmasq reload).`,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update pack');
     } finally {
       setSavingSlug(null);
+    }
+  };
+
+  const applyNow = async () => {
+    setApplying(true);
+    setError(null);
+    try {
+      const result = await policyApi.applyPolicy();
+      setInfo(result.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to queue policy apply');
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -59,17 +110,37 @@ export default function PolicyPage() {
 
   return (
     <Box sx={{ maxWidth: 960 }}>
-      <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-        Policy
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Category packs, device profiles (Kids / Teen / Work), schedules, and quarantine replace manual
-        blocked-site lists.
-      </Typography>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
+            Policy
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Changes sync to dnsmasq automatically via the host listener.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            {syncStatusLabel(syncStatus)}
+          </Typography>
+        </Box>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={applyNow}
+          disabled={applying}
+        >
+          Apply now
+        </Button>
+      </Stack>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+      {info && (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setInfo(null)}>
+          {info}
         </Alert>
       )}
 
@@ -78,7 +149,8 @@ export default function PolicyPage() {
           List packs (network-wide)
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Enabled packs apply to every device, merged with each device&apos;s profile.
+          Enabled packs apply to every device, merged with each device&apos;s profile. Toggling queues
+          an immediate DNS policy sync on the server.
         </Typography>
         <Stack spacing={1}>
           {packs.map((pack) => (
@@ -150,10 +222,6 @@ export default function PolicyPage() {
                   {profile.schedule_rules[0].pack_slugs.join(', ')})
                 </Typography>
               )}
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Assign on Client profiles or at VPN enroll with{' '}
-                <code>policy_profile_slug</code>.
-              </Typography>
             </Box>
           ))}
         </Stack>

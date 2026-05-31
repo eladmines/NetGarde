@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 from app.features.policy.schemas.policy import (
     AssignPolicyProfileRequest,
     DevicePolicyAssignmentRead,
+    PolicyApplyResponse,
     PolicyDnsSyncResponse,
     PolicyPackRead,
     PolicyPackUpdate,
     PolicyProfileRead,
     PolicyProfileUpdate,
+    PolicySyncReport,
+    PolicySyncStatusRead,
 )
 from app.features.policy.services.policy_dns_service import PolicyDnsService
 from app.features.policy.services.policy_service import PolicyService
@@ -66,3 +69,30 @@ def policy_dns_sync(
 ):
     """Merged pack/profile/schedule/behavior blocks for dnsmasq (replaces blocked-sites sync)."""
     return PolicyDnsService(db).build_dns_sync()
+
+
+@router.get("/sync-status", response_model=PolicySyncStatusRead)
+def policy_sync_status(
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    return service.get_sync_status()
+
+
+@router.post("/sync-report", response_model=PolicySyncStatusRead)
+def policy_sync_report(
+    body: PolicySyncReport,
+    _: None = Depends(verify_dns_ingest_service),
+    service: PolicyService = Depends(get_policy_service),
+):
+    """Called by dns-sync after writing dnsmasq config."""
+    return service.record_sync_report(success=body.success, message=body.message)
+
+
+@router.post("/apply", response_model=PolicyApplyResponse)
+def apply_policy_now(
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    """Manually queue policy DNS sync + dnsmasq reload on the host listener."""
+    return service.apply_policy_now()
