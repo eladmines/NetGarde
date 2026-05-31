@@ -35,24 +35,24 @@ def upgrade() -> None:
         CREATE OR REPLACE FUNCTION notify_policy_changed()
         RETURNS trigger AS $$
         DECLARE
-            payload json;
+            payload jsonb;
         BEGIN
-            payload := json_build_object(
+            payload := jsonb_build_object(
                 'operation', TG_OP,
                 'table', TG_TABLE_NAME,
                 'at', now()
             );
             IF TG_TABLE_NAME = 'policy_packs' THEN
-                payload := payload || json_build_object(
+                payload := payload || jsonb_build_object(
                     'slug', COALESCE(NEW.slug, OLD.slug),
                     'enabled_globally', COALESCE(NEW.enabled_globally, OLD.enabled_globally)
                 );
             ELSIF TG_TABLE_NAME = 'policy_profiles' THEN
-                payload := payload || json_build_object(
+                payload := payload || jsonb_build_object(
                     'slug', COALESCE(NEW.slug, OLD.slug)
                 );
             ELSIF TG_TABLE_NAME = 'devices' THEN
-                payload := payload || json_build_object(
+                payload := payload || jsonb_build_object(
                     'device_id', COALESCE(NEW.id, OLD.id),
                     'policy_profile_id', COALESCE(NEW.policy_profile_id, OLD.policy_profile_id)
                 );
