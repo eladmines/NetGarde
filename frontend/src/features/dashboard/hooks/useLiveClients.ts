@@ -5,7 +5,11 @@ import {
   isClientActiveNow,
   subscribeDnsClientActivity,
 } from '../../dns-queries/dnsClientActivity';
-import { ClientBandwidth } from '../types/usageLive';
+import { ClientBandwidth, DeviceUsageLiveItem } from '../types/usageLive';
+import {
+  NetworkThroughputPoint,
+  ServerNetworkThroughput,
+} from '../types/networkThroughput';
 
 export interface LiveClientRow {
   client_ip: string;
@@ -21,6 +25,28 @@ export interface LiveClientRow {
 
 const POLL_MS = 12_000;
 const USAGE_POLL_MS = 4_000;
+const THROUGHPUT_HISTORY_MAX = 45;
+
+function formatTimeLabel(d: Date): string {
+  return d.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+/** Sum all VPN usage samples = total traffic through the server (all reporting peers). */
+export function aggregateServerUsage(items: DeviceUsageLiveItem[]): ServerNetworkThroughput {
+  return items.reduce(
+    (acc, item) => ({
+      rx_mib_per_sec: acc.rx_mib_per_sec + item.rx_mib_per_sec,
+      tx_mib_per_sec: acc.tx_mib_per_sec + item.tx_mib_per_sec,
+      total_mib_per_sec: acc.total_mib_per_sec + item.total_mib_per_sec,
+      reporting_clients: acc.reporting_clients + 1,
+    }),
+    { rx_mib_per_sec: 0, tx_mib_per_sec: 0, total_mib_per_sec: 0, reporting_clients: 0 },
+  );
+}
 
 function sourceLabel(source: string | null): string {
   switch (source) {
@@ -122,6 +148,13 @@ export function useLiveClients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usageError, setUsageError] = useState<string | null>(null);
+  const [serverThroughput, setServerThroughput] = useState<ServerNetworkThroughput>({
+    rx_mib_per_sec: 0,
+    tx_mib_per_sec: 0,
+    total_mib_per_sec: 0,
+    reporting_clients: 0,
+  });
+  const [throughputHistory, setThroughputHistory] = useState<NetworkThroughputPoint[]>([]);
 
   const recomputeClients = useCallback(() => {
     const base = sortClients(
@@ -160,6 +193,20 @@ export function useLiveClients() {
       const maps = buildUsageMaps(resp.items);
       setUsageByDevice(maps.byDeviceId);
       setUsageByIp(maps.byClientIp);
+      const server = aggregateServerUsage(resp.items);
+      setServerThroughput(server);
+      const now = new Date();
+      const point: NetworkThroughputPoint = {
+        ...server,
+        ts: now.getTime(),
+        label: formatTimeLabel(now),
+      };
+      setThroughputHistory((prev) => {
+        const next = [...prev, point];
+        return next.length > THROUGHPUT_HISTORY_MAX
+          ? next.slice(-THROUGHPUT_HISTORY_MAX)
+          : next;
+      });
       setUsageError(null);
     } catch (e) {
       setUsageError(e instanceof Error ? e.message : 'Failed to load bandwidth');
@@ -174,7 +221,8 @@ export function useLiveClients() {
 
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
 
-  const aggregateBandwidth = clients.reduce(
+  /** Live DNS clients only (subset of server throughput). */
+  const liveClientsBandwidth = clients.reduce(
     (acc, c) => {
       if (!c.bandwidth) {
         return acc;
@@ -198,7 +246,9 @@ export function useLiveClients() {
     error,
     usageError,
     enrolledCount,
-    aggregateBandwidth,
+    liveClientsBandwidth,
+    serverThroughput,
+    throughputHistory,
     refetch,
   };
 }

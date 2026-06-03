@@ -27,6 +27,7 @@ import {
   useLiveClients,
 } from '../hooks/useLiveClients';
 import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
+import LiveNetworkGraph from './LiveNetworkGraph';
 
 function BandwidthChips({ client }: { client: LiveClientRow }) {
   const bw = client.bandwidth;
@@ -151,8 +152,16 @@ function ClientRow({ client }: { client: LiveClientRow }) {
 }
 
 export default function LiveClientsView() {
-  const { clients, loading, error, usageError, enrolledCount, aggregateBandwidth, refetch } =
-    useLiveClients();
+  const {
+    clients,
+    loading,
+    error,
+    usageError,
+    enrolledCount,
+    serverThroughput,
+    throughputHistory,
+    refetch,
+  } = useLiveClients();
 
   if (loading && clients.length === 0) {
     return (
@@ -163,7 +172,7 @@ export default function LiveClientsView() {
   }
 
   return (
-    <Paper variant="outlined" sx={{ maxHeight: 500, display: 'flex', flexDirection: 'column' }}>
+    <Paper variant="outlined" sx={{ maxHeight: 720, display: 'flex', flexDirection: 'column' }}>
       <Stack
         direction="row"
         alignItems="center"
@@ -175,8 +184,8 @@ export default function LiveClientsView() {
             ? 'No clients connected'
             : `${clients.length} connected client${clients.length === 1 ? '' : 's'}`}
           {enrolledCount > 0 && ` · ${enrolledCount} VPN enrolled`}
-          {aggregateBandwidth.total_mib_per_sec > 0 &&
-            ` · ↓ ${formatMibPerSec(aggregateBandwidth.rx_mib_per_sec)} / ↑ ${formatMibPerSec(aggregateBandwidth.tx_mib_per_sec)} MiB/s total`}
+          {serverThroughput.reporting_clients > 0 &&
+            ` · server ${formatMibPerSec(serverThroughput.total_mib_per_sec)} MiB/s`}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <Tooltip title="Refresh">
@@ -191,11 +200,21 @@ export default function LiveClientsView() {
           {error}
         </Alert>
       )}
+      <LiveNetworkGraph
+        serverThroughput={serverThroughput}
+        history={throughputHistory}
+        usageError={usageError}
+      />
+
       {usageError && (
         <Alert severity="info" sx={{ mx: 2, mt: 1 }}>
           Bandwidth: {usageError}
         </Alert>
       )}
+
+      <Typography variant="subtitle2" sx={{ px: 2, pt: 1, pb: 0.5 }}>
+        Connected clients
+      </Typography>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {clients.length === 0 ? (
