@@ -18,8 +18,12 @@ import {
 } from '../utils/bandwidthColors';
 import {
   downsampleThroughputForChart,
+  peakSeriesRate,
   THROUGHPUT_HISTORY_WINDOW_MS,
 } from '../utils/throughputHistory';
+
+const Y_AXIS_HEADROOM = 1.1;
+const Y_AXIS_MIN = 0.1;
 
 function AreaGradient({ color, id }: { color: string; id: string }) {
   return (
@@ -85,10 +89,18 @@ export default function LiveNetworkGraph({
     [chartPoints],
   );
 
-  const peakTotal = useMemo(
-    () => history.reduce((max, p) => Math.max(max, p.total_mib_per_sec), 0),
-    [history],
-  );
+  const peakSeries = useMemo(() => peakSeriesRate(history), [history]);
+
+  // Y scale only grows during this page view so past spikes (e.g. 22:20) keep the same height.
+  const [yAxisMax, setYAxisMax] = useState(Y_AXIS_MIN);
+  useEffect(() => {
+    if (history.length === 0) {
+      setYAxisMax(Y_AXIS_MIN);
+      return;
+    }
+    const next = Math.max(peakSeries * Y_AXIS_HEADROOM, Y_AXIS_MIN);
+    setYAxisMax((prev) => (next > prev ? next : prev));
+  }, [history.length, peakSeries]);
 
   const chartReady = chartPoints.length >= 2;
   const downSeries = chartPoints.map((p) => p.rx_mib_per_sec);
@@ -147,8 +159,12 @@ export default function LiveNetworkGraph({
           variant="outlined"
           label={`${serverThroughput.reporting_clients} reporting`}
         />
-        {peakTotal > 0 && (
-          <Chip size="small" variant="outlined" label={`Peak ${formatMibPerSec(peakTotal)} MiB/s`} />
+        {peakSeries > 0 && (
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`Peak ↓/↑ ${formatMibPerSec(peakSeries)} MiB/s`}
+          />
         )}
       </Stack>
 
@@ -189,6 +205,8 @@ export default function LiveNetworkGraph({
             {
               width: 48,
               label: 'MiB/s',
+              min: 0,
+              max: yAxisMax,
             },
           ]}
           series={[
