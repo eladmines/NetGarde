@@ -7,6 +7,7 @@ services:
     # Published on all host interfaces (includes wg0 / 10.0.0.1 for VPN clients)
     ports:
       - "${BLOCK_PAGE_HOST_BIND:-0.0.0.0}:80:80"
+      - "${BLOCK_PAGE_HOST_BIND:-0.0.0.0}:443:443"
     restart: always
 
   backend:

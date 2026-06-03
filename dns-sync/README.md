@@ -15,6 +15,8 @@ This container periodically calls `GET /policy/dns-sync` and writes global + per
 - `BLOCK_IP` (default: `10.0.0.1`): IPv4 returned for blocked domains (A records). Points VPN clients at the **block-page** nginx on the WireGuard gateway. Use **`0.0.0.0`** for sinkhole-only (“site can’t be reached”). Do **not** use EC2 VPC `172.31.x.x` — unreachable from `10.0.0.x` clients.
 - `BLOCK_PAGE_IP` (default: `10.0.0.1`): Same as gateway IP; used when `BLOCK_IP` is unset.
 - `BLOCK_IPV6_IP` (default: `::`): IPv6 sinkhole for blocked domains (AAAA records). Without this, browsers may still reach sites via IPv6 while A records return `0.0.0.0`.
+
+The **block-page** container serves HTTP (80) and HTTPS (443) on the gateway IP. HTTPS uses a self-signed certificate; browsers show a security warning before the block page (expected).
 - `DNS_CONFIG_PATH` (default: `/etc/dnsmasq.d/custom.conf`): Path to dnsmasq configuration file
 - `SYNC_INTERVAL` (default: `3600`): Sync interval in seconds (0 = run once and exit)
 - `PAGE_SIZE` (default: `100`): Number of items per page when fetching from API
