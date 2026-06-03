@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import threading
 
 from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,29 +19,35 @@ from app.features.vpn.routes.usage_route import router as usage_router
 from app.features.vpn.routes.topology_route import router as vpn_topology_router
 from app.features.policy.startup import warmup_policy_packs
 from app.shared.redis_client import close_redis
+from app.shared.config import settings
 
 # Initialize logging early
 setup_logging()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    warmup_policy_packs()
-    yield
-    close_redis()
-
-_allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
-ALLOWED_ORIGINS = (
-    [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
-    if _allowed_origins_env
-    else [
-        # Production frontend (S3 website endpoint)
+def _build_allowed_origins() -> list[str]:
+    """Merge env, settings.CORS_ORIGINS, and known production frontends."""
+    origins: set[str] = {
         "http://netgarde-frontend.s3-website-us-east-1.amazonaws.com",
-        # Local dev
         "http://localhost:3000",
         "http://localhost:3001",
-    ]
-)
+    }
+    env = os.getenv("ALLOWED_ORIGINS", "").strip()
+    if env:
+        origins.update(o.strip() for o in env.split(",") if o.strip())
+    origins.update(settings.cors_origins_list)
+    return sorted(origins)
+
+
+ALLOWED_ORIGINS = _build_allowed_origins()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if settings.POLICY_PACK_FETCH_ENABLED and settings.POLICY_PACK_REFRESH_ON_STARTUP:
+        threading.Thread(target=warmup_policy_packs, name="policy-pack-warmup", daemon=True).start()
+    yield
+    close_redis()
 
 # Middleware to ensure redirects use HTTPS when behind CloudFront
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):

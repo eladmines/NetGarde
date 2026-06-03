@@ -143,8 +143,7 @@ export default function AppNavbar() {
             <ColorModeIconDropdown />
             <Avatar
               sizes="small"
-              alt="User"
-              src="/static/images/avatar/7.jpg"
+              alt="NetGarde"
               sx={{
                 width: 32,
                 height: 32,
