@@ -6,7 +6,6 @@ import Stack from '@mui/material/Stack';
 import MuiToolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
-import { alpha } from '@mui/material/styles';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
