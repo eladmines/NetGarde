@@ -1,0 +1,135 @@
+"""Fetch curated pack lists from upstream hosts files and cache on disk."""
+
+from __future__ import annotations
+
+import logging
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import FrozenSet, Optional, Set
+
+from app.features.policy.pack_common import DATA_DIR, normalize_domain
+from app.shared.config import settings
+
+log = logging.getLogger(__name__)
+
+SNAPSHOT_DIR = DATA_DIR / "snapshots"
+
+DEFAULT_REMOTE_PACK_URLS: dict[str, str] = {
+    "social": (
+        "https://raw.githubusercontent.com/StevenBlack/hosts/master/extensions/social/hosts"
+    ),
+}
+
+_HOSTS_BLOCK_IPS = frozenset({"0.0.0.0", "127.0.0.1", "::", "::1", "0.0.0.0"})
+
+
+def parse_hosts_file(text: str) -> Set[str]:
+    domains: Set[str] = set()
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        if parts[0] not in _HOSTS_BLOCK_IPS:
+            continue
+        d = normalize_domain(parts[-1])
+        if d and "." in d:
+            domains.add(d)
+    return domains
+
+
+def snapshot_path(slug: str) -> Path:
+    return SNAPSHOT_DIR / f"{slug}.txt"
+
+
+def _read_domains_file(path: Path) -> Set[str]:
+    domains: Set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        d = normalize_domain(line)
+        if d:
+            domains.add(d)
+    return domains
+
+
+def write_snapshot(slug: str, domains: Set[str]) -> Path:
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    path = snapshot_path(slug)
+    body = "\n".join(sorted(domains)) + ("\n" if domains else "")
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+def snapshot_age_seconds(slug: str) -> Optional[float]:
+    path = snapshot_path(slug)
+    if not path.is_file():
+        return None
+    return time.time() - path.stat().st_mtime
+
+
+def fetch_remote_hosts(url: str, timeout: float) -> Set[str]:
+    req = urllib.request.Request(url, headers={"User-Agent": "NetGarde-PolicyPack/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        text = resp.read().decode("utf-8", errors="replace")
+    domains = parse_hosts_file(text)
+    if not domains:
+        raise ValueError(f"no domains parsed from {url}")
+    return domains
+
+
+def remote_pack_url(slug: str) -> Optional[str]:
+    if not settings.POLICY_PACK_FETCH_ENABLED:
+        return None
+    override = settings.policy_pack_remote_urls.get(slug)
+    if override:
+        return override.strip()
+    return DEFAULT_REMOTE_PACK_URLS.get(slug)
+
+
+def refresh_remote_pack(slug: str, *, force: bool = False) -> FrozenSet[str]:
+    """Download upstream list, write snapshot, return domains."""
+    url = remote_pack_url(slug)
+    if not url:
+        raise ValueError(f"pack {slug!r} has no remote source or fetch is disabled")
+
+    if not force:
+        age = snapshot_age_seconds(slug)
+        if age is not None and age < settings.POLICY_PACK_SNAPSHOT_MAX_AGE_SECONDS:
+            domains = _read_domains_file(snapshot_path(slug))
+            if domains:
+                return frozenset(domains)
+
+    static_fallback = DATA_DIR / f"{slug}.txt"
+    try:
+        domains = fetch_remote_hosts(url, settings.POLICY_PACK_FETCH_TIMEOUT_SECONDS)
+        write_snapshot(slug, domains)
+        log.info("refreshed policy pack %s from %s (%d domains)", slug, url, len(domains))
+        return frozenset(domains)
+    except (urllib.error.URLError, TimeoutError, ValueError) as e:
+        log.warning("failed to fetch policy pack %s from %s: %s", slug, url, e)
+        snap = snapshot_path(slug)
+        if snap.is_file():
+            domains = _read_domains_file(snap)
+            if domains:
+                log.info("using stale snapshot for pack %s (%d domains)", slug, len(domains))
+                return frozenset(domains)
+        if static_fallback.is_file():
+            domains = _read_domains_file(static_fallback)
+            log.info("using static fallback for pack %s (%d domains)", slug, len(domains))
+            return frozenset(domains)
+        raise
+
+
+def load_remote_or_static_pack(slug: str) -> FrozenSet[str]:
+    if remote_pack_url(slug):
+        return refresh_remote_pack(slug, force=False)
+    path = DATA_DIR / f"{slug}.txt"
+    if not path.exists():
+        return frozenset()
+    return frozenset(_read_domains_file(path))

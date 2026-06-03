@@ -18,6 +18,12 @@ class PolicyPackUpdate(BaseModel):
     enabled_globally: bool
 
 
+class PolicyPackRefreshResponse(BaseModel):
+    slug: str
+    domain_count: int
+    message: str
+
+
 class PolicyProfileRead(BaseModel):
     id: int
     slug: str

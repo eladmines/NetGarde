@@ -1,29 +1,25 @@
-"""Load curated domain list packs from static files."""
+"""Load curated domain list packs (static files + optional remote snapshots)."""
 
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path
 from typing import Dict, List, Set
 
-DATA_DIR = Path(__file__).resolve().parent / "data"
+from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, DATA_DIR, REMOTE_PACK_SLUGS, normalize_domain
+from app.features.policy.pack_fetch import load_remote_or_static_pack, refresh_remote_pack
 
-BUILTIN_PACK_SLUGS = ("adult", "gambling", "malware", "social", "games")
 
-
-def normalize_domain(domain: str) -> str:
-    d = domain.strip().lower()
-    for prefix in ("https://", "http://", "www."):
-        if d.startswith(prefix):
-            d = d[len(prefix) :]
-    d = d.split("/")[0].split("?")[0]
-    return d
+def clear_pack_cache() -> None:
+    load_all_packs.cache_clear()
 
 
 @lru_cache(maxsize=1)
 def load_all_packs() -> Dict[str, frozenset[str]]:
     packs: Dict[str, frozenset[str]] = {}
     for slug in BUILTIN_PACK_SLUGS:
+        if slug in REMOTE_PACK_SLUGS:
+            packs[slug] = load_remote_or_static_pack(slug)
+            continue
         path = DATA_DIR / f"{slug}.txt"
         if not path.exists():
             packs[slug] = frozenset()
@@ -38,6 +34,19 @@ def load_all_packs() -> Dict[str, frozenset[str]]:
                 domains.add(normalized)
         packs[slug] = frozenset(domains)
     return packs
+
+
+def refresh_pack(slug: str) -> int:
+    """Force-refresh a pack list; returns domain count."""
+    if slug not in BUILTIN_PACK_SLUGS:
+        raise ValueError(f"unknown pack slug: {slug}")
+    if slug in REMOTE_PACK_SLUGS:
+        count = len(refresh_remote_pack(slug, force=True))
+    else:
+        clear_pack_cache()
+        return len(load_all_packs().get(slug, ()))
+    clear_pack_cache()
+    return count
 
 
 def domains_for_packs(slugs: List[str]) -> Set[str]:
