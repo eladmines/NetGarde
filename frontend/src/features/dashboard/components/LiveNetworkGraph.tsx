@@ -10,6 +10,11 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { LineChart } from '@mui/x-charts/LineChart';
 import type { NetworkThroughputPoint, ServerNetworkThroughput } from '../types/networkThroughput';
 import { formatMibPerSec } from '../utils/formatBandwidth';
+import {
+  downloadChipSx,
+  getBandwidthColors,
+  uploadChipSx,
+} from '../utils/bandwidthColors';
 
 function AreaGradient({ color, id }: { color: string; id: string }) {
   return (
@@ -49,8 +54,7 @@ export default function LiveNetworkGraph({
   const downSeries = history.map((p) => p.rx_mib_per_sec);
   const upSeries = history.map((p) => p.tx_mib_per_sec);
 
-  const downColor = theme.palette.info.main;
-  const upColor = theme.palette.secondary.main;
+  const { download: downColor, upload: upColor } = getBandwidthColors(theme);
 
   return (
     <Box sx={{ px: 2, py: 2 }}>
@@ -90,11 +94,13 @@ export default function LiveNetworkGraph({
           size="small"
           variant="outlined"
           label={`↓ ${formatMibPerSec(serverThroughput.rx_mib_per_sec)} MiB/s`}
+          sx={downloadChipSx(theme)}
         />
         <Chip
           size="small"
           variant="outlined"
           label={`↑ ${formatMibPerSec(serverThroughput.tx_mib_per_sec)} MiB/s`}
+          sx={uploadChipSx(theme)}
         />
         <Chip
           size="small"
@@ -121,8 +127,13 @@ export default function LiveNetworkGraph({
       ) : (
         <LineChart
           height={260}
-          margin={{ left: 4, right: 12, top: 8, bottom: 0 }}
+          margin={{ left: 4, right: 12, top: 8, bottom: 24 }}
           grid={{ horizontal: true }}
+          slotProps={{
+            legend: {
+              position: { vertical: 'bottom', horizontal: 'center' },
+            },
+          }}
           xAxis={[
             {
               scaleType: 'point',
