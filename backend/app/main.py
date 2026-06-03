@@ -17,6 +17,7 @@ from app.features.vpn.routes.enroll_route import router as vpn_router
 from app.features.vpn.routes.usage_route import router as usage_router
 from app.features.vpn.routes.topology_route import router as vpn_topology_router
 from app.features.policy.startup import warmup_policy_packs
+from app.shared.redis_client import close_redis
 
 # Initialize logging early
 setup_logging()
@@ -26,6 +27,7 @@ setup_logging()
 async def lifespan(app: FastAPI):
     warmup_policy_packs()
     yield
+    close_redis()
 
 _allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
 ALLOWED_ORIGINS = (

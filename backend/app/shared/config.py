@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     NEW_DOMAIN_ALERTS: bool = True
     BANDWIDTH_ALERT_MIB_PER_SEC: float = 50.0
     USAGE_LIVE_MAX_AGE_SEC: int = 45
+    REDIS_URL: str = "redis://redis:6379/0"
+    USAGE_REDIS_ENABLED: bool = True
+    USAGE_HISTORY_MINUTES: int = 60
+    USAGE_PERSIST_SAMPLES: bool = False
 
     # Device identity (issued at VPN enroll, used for /v1/usage and future device APIs)
     DEVICE_TOKEN_SECRET: str = ""

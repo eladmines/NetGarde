@@ -6,8 +6,12 @@ from sqlalchemy.orm import Session
 from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
 from app.features.vpn.repositories.device_usage_repository import DeviceUsageRepository
 from app.features.vpn.schemas.usage import UsageReportRequest, UsageReportResponse
+from app.features.vpn.schemas.usage_history import UsageHistoryResponse
 from app.features.vpn.schemas.usage_live import DeviceUsageLiveItem, DeviceUsageLiveResponse
+from app.features.vpn.services import usage_redis_store
+from app.features.vpn.services.usage_broadcast import broadcast_usage_update
 from app.shared.config import settings
+from app.shared.redis_client import redis_available
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -26,15 +30,23 @@ class UsageService:
         total_delta = payload.delta_rx_bytes + payload.delta_tx_bytes
         rate_mib_per_sec = (total_delta / MIB) / payload.interval_sec
 
-        self.usage_repo.create_sample(
-            device_external_id=payload.device_id.strip(),
-            recorded_at=now,
-            interval_sec=payload.interval_sec,
-            rx_bytes=payload.rx_bytes,
-            tx_bytes=payload.tx_bytes,
-            delta_rx_bytes=payload.delta_rx_bytes,
-            delta_tx_bytes=payload.delta_tx_bytes,
-        )
+        record_result = None
+        if redis_available():
+            try:
+                record_result = usage_redis_store.record_sample(payload)
+            except Exception as exc:
+                logger.warning("Redis usage record failed: %s", exc)
+
+        if settings.USAGE_PERSIST_SAMPLES:
+            self.usage_repo.create_sample(
+                device_external_id=payload.device_id.strip(),
+                recorded_at=now,
+                interval_sec=payload.interval_sec,
+                rx_bytes=payload.rx_bytes,
+                tx_bytes=payload.tx_bytes,
+                delta_rx_bytes=payload.delta_rx_bytes,
+                delta_tx_bytes=payload.delta_tx_bytes,
+            )
 
         alert_created = False
         if rate_mib_per_sec >= settings.BANDWIDTH_ALERT_MIB_PER_SEC:
@@ -56,12 +68,21 @@ class UsageService:
             alert_created = True
 
         self.db.commit()
+
+        if record_result is not None:
+            live = DeviceUsageLiveResponse(
+                items=usage_redis_store.enrich_live_items(self.db, record_result.live_items),
+                max_age_sec=settings.USAGE_LIVE_MAX_AGE_SEC,
+            )
+            broadcast_usage_update(aggregate_point=record_result.aggregate_point, live=live)
+
         logger.info(
             "Usage sample stored",
             extra={
                 "device_id": payload.device_id,
                 "rate_mib_per_sec": round(rate_mib_per_sec, 2),
                 "alert": alert_created,
+                "redis": record_result is not None,
             },
         )
         return UsageReportResponse(
@@ -71,17 +92,23 @@ class UsageService:
         )
 
     def list_live_bandwidth(self, *, max_age_sec: Optional[int] = None) -> DeviceUsageLiveResponse:
+        if redis_available():
+            try:
+                return usage_redis_store.list_live(self.db, max_age_sec=max_age_sec)
+            except Exception as exc:
+                logger.warning("Redis usage live read failed: %s", exc)
+
         age = max_age_sec if max_age_sec is not None else settings.USAGE_LIVE_MAX_AGE_SEC
         age = max(5, min(age, 300))
         since = datetime.now(timezone.utc) - timedelta(seconds=age)
         rows = self.usage_repo.list_latest_with_device_since(since)
-        items: list[DeviceUsageLiveItem] = []
+        pg_items = []
         for row in rows:
             sample = row.sample
             interval = float(sample.interval_sec) or 1.0
             rx_rate = (sample.delta_rx_bytes / MIB) / interval
             tx_rate = (sample.delta_tx_bytes / MIB) / interval
-            items.append(
+            pg_items.append(
                 DeviceUsageLiveItem(
                     device_id=row.device_id,
                     vpn_device_id=sample.device_external_id,
@@ -97,4 +124,12 @@ class UsageService:
                     total_mib_per_sec=round(rx_rate + tx_rate, 3),
                 )
             )
-        return DeviceUsageLiveResponse(items=items, max_age_sec=age)
+        return DeviceUsageLiveResponse(items=pg_items, max_age_sec=age)
+
+    def list_usage_history(self, *, minutes: Optional[int] = None) -> UsageHistoryResponse:
+        if redis_available():
+            try:
+                return usage_redis_store.list_history(minutes=minutes)
+            except Exception as exc:
+                logger.warning("Redis usage history read failed: %s", exc)
+        return UsageHistoryResponse(points=[], minutes=minutes or settings.USAGE_HISTORY_MINUTES)
