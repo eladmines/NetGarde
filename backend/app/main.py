@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
@@ -14,9 +16,16 @@ from app.features.devices.routes.device_route import router as device_router
 from app.features.vpn.routes.enroll_route import router as vpn_router
 from app.features.vpn.routes.usage_route import router as usage_router
 from app.features.vpn.routes.topology_route import router as vpn_topology_router
+from app.features.policy.startup import warmup_policy_packs
 
 # Initialize logging early
 setup_logging()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    warmup_policy_packs()
+    yield
 
 _allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
 ALLOWED_ORIGINS = (
@@ -79,6 +88,7 @@ class StableCORSHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="NetGarde API",
     redirect_slashes=False,  # allow redirects for trailing slash handling
+    lifespan=lifespan,
 )
 
 # Add HTTPS redirect middleware first (before other middleware)

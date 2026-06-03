@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import Dict, List
 
 class Settings(BaseSettings):
     DB_URL: str
@@ -60,6 +60,31 @@ class Settings(BaseSettings):
     BEHAVIOR_AUTO_BLOCK_TTL_HOURS: int = 24
     BEHAVIOR_AUTO_BLOCK_DOMAINS_PER_EVENT: int = 5
     BEHAVIOR_MAX_BLOCKS_PER_DAY: int = 10
+
+    # Global policy packs: fetch upstream hosts lists into on-disk snapshots (e.g. social).
+    POLICY_PACK_FETCH_ENABLED: bool = True
+    POLICY_PACK_FETCH_TIMEOUT_SECONDS: float = 30.0
+    POLICY_PACK_SNAPSHOT_MAX_AGE_SECONDS: int = 86400
+    # Comma-separated slug=url overrides, e.g. social=https://example.com/hosts
+    POLICY_PACK_REMOTE_URLS: str = ""
+    POLICY_PACK_REFRESH_ON_STARTUP: bool = True
+
+    @property
+    def policy_pack_remote_urls(self) -> Dict[str, str]:
+        out: Dict[str, str] = {}
+        raw = self.POLICY_PACK_REMOTE_URLS.strip()
+        if not raw:
+            return out
+        for part in raw.split(","):
+            part = part.strip()
+            if not part or "=" not in part:
+                continue
+            slug, url = part.split("=", 1)
+            slug = slug.strip().lower()
+            url = url.strip()
+            if slug and url:
+                out[slug] = url
+        return out
 
     @property
     def device_token_secret(self) -> str:

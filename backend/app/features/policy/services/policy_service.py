@@ -7,13 +7,15 @@ from app.features.client_behavior.repositories.device_security_policy_repository
     DeviceSecurityPolicyRepository,
 )
 from app.features.devices.repositories.device_repository import DeviceRepository
-from app.features.policy.pack_loader import load_all_packs
+from app.features.policy.pack_common import REMOTE_PACK_SLUGS
+from app.features.policy.pack_loader import load_all_packs, refresh_pack
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.repositories.policy_sync_repository import PolicySyncRepository
 from app.features.policy.schemas.policy import (
     DevicePolicyAssignmentRead,
     PolicyApplyResponse,
     PolicyPackRead,
+    PolicyPackRefreshResponse,
     PolicyProfileRead,
     PolicyProfileUpdate,
     PolicySyncStatusRead,
@@ -42,6 +44,25 @@ class PolicyService:
             )
             for p in self.repo.list_packs()
         ]
+
+    def refresh_pack_domains(self, slug: str) -> PolicyPackRefreshResponse:
+        slug = slug.strip().lower()
+        if slug not in REMOTE_PACK_SLUGS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Pack {slug} uses static data only; remote refresh not configured",
+            )
+        try:
+            count = refresh_pack(slug)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Failed to refresh pack: {e}") from e
+        return PolicyPackRefreshResponse(
+            slug=slug,
+            domain_count=count,
+            message=f"Refreshed {count} domains for pack {slug}",
+        )
 
     def set_pack_enabled_globally(self, slug: str, enabled: bool) -> PolicyPackRead:
         pack = self.repo.update_pack_global(slug, enabled)

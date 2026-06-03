@@ -10,7 +10,8 @@ from app.features.client_behavior.behavior_whitelist import BEHAVIOR_BLOCK_WHITE
 from app.features.client_behavior.repositories.client_blocked_domain_repository import (
     ClientBlockedDomainRepository,
 )
-from app.features.policy.pack_loader import domains_for_packs, normalize_domain
+from app.features.policy.pack_common import normalize_domain
+from app.features.policy.pack_loader import domains_for_packs
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.schedule import active_schedule_pack_slugs
 from app.features.policy.schemas.policy import PolicyDeviceDnsEntry, PolicyDnsSyncResponse
@@ -23,6 +24,7 @@ class PolicyDnsService:
         self.block_repo = ClientBlockedDomainRepository(db)
 
     def build_dns_sync(self) -> PolicyDnsSyncResponse:
+        """Build dnsmasq rules: global_domains apply to all VPN/LAN DNS clients."""
         self.policy_repo.end_expired_quarantines()
         packs = self.policy_repo.list_packs()
         global_slugs = [p.slug for p in packs if p.enabled_globally]

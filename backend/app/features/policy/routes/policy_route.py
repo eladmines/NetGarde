@@ -7,6 +7,7 @@ from app.features.policy.schemas.policy import (
     PolicyApplyResponse,
     PolicyDnsSyncResponse,
     PolicyPackRead,
+    PolicyPackRefreshResponse,
     PolicyPackUpdate,
     PolicyProfileRead,
     PolicyProfileUpdate,
@@ -32,6 +33,16 @@ def list_policy_packs(
     service: PolicyService = Depends(get_policy_service),
 ):
     return service.list_packs()
+
+
+@router.post("/packs/{slug}/refresh", response_model=PolicyPackRefreshResponse)
+def refresh_policy_pack(
+    slug: str,
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    """Re-download upstream domain list (global packs, e.g. social)."""
+    return service.refresh_pack_domains(slug)
 
 
 @router.put("/packs/{slug}", response_model=PolicyPackRead)
