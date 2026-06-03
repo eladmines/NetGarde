@@ -166,13 +166,26 @@ def load_cached_pack(slug: str) -> FrozenSet[str]:
 
 def count_cached_pack_domains(slug: str) -> int:
     """Domain count for API display without loading full packs into memory."""
+    count, _ = pack_domain_count_meta(slug)
+    return count
+
+
+def pack_domain_count_meta(slug: str) -> tuple[int, str]:
+    """
+    Return (count, source).
+    source is 'snapshot' (downloaded upstream list), 'seed' (bundled fallback), or 'empty'.
+    """
     snap = snapshot_path(slug)
     if snap.is_file():
-        return len(_read_domains_file(snap))
+        snap_count = len(_read_domains_file(snap))
+        if snap_count > 0:
+            return snap_count, "snapshot"
     static = DATA_DIR / f"{slug}.txt"
     if static.is_file():
-        return len(_read_domains_file(static))
-    return 0
+        seed_count = len(_read_domains_file(static))
+        if seed_count > 0:
+            return seed_count, "seed"
+    return 0, "empty"
 
 
 def load_remote_or_static_pack(slug: str) -> FrozenSet[str]:

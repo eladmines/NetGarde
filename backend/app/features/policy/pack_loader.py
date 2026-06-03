@@ -7,8 +7,8 @@ from typing import Dict, List, Set
 
 from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, REMOTE_PACK_SLUGS
 from app.features.policy.pack_fetch import (
-    count_cached_pack_domains,
     load_remote_or_static_pack,
+    pack_domain_count_meta,
     refresh_remote_pack,
 )
 
@@ -38,7 +38,11 @@ def refresh_pack(slug: str) -> int:
 
 def pack_domain_counts() -> Dict[str, int]:
     """Counts for admin API — never triggers upstream fetch."""
-    return {slug: count_cached_pack_domains(slug) for slug in BUILTIN_PACK_SLUGS}
+    return {slug: pack_domain_count_meta(slug)[0] for slug in BUILTIN_PACK_SLUGS}
+
+
+def pack_domain_count_sources() -> Dict[str, str]:
+    return {slug: pack_domain_count_meta(slug)[1] for slug in BUILTIN_PACK_SLUGS}
 
 
 def domains_for_packs(slugs: List[str]) -> Set[str]:
