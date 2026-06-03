@@ -1,25 +1,25 @@
-import Link from '@mui/material/Link';
+import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import type { TypographyProps } from '@mui/material/Typography';
 
-export default function Copyright(props: any) {
+export default function Copyright(props: TypographyProps) {
+  const year = new Date().getFullYear();
+
   return (
     <Typography
       variant="body2"
       align="center"
       {...props}
       sx={[
-        {
-          color: 'text.secondary',
-        },
-        ...(Array.isArray(props.sx) ? props.sx : [props.sx]),
+        { color: 'text.secondary' },
+        ...(Array.isArray(props.sx) ? props.sx : props.sx ? [props.sx] : []),
       ]}
     >
       {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Sitemark
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
+      <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+        NetGarde
+      </Box>
+      {` ${year}. VPN network monitoring & DNS security.`}
     </Typography>
   );
 }
