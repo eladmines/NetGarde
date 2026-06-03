@@ -3,11 +3,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Copyright from '../internals/components/Copyright';
-import CustomizedDataGrid from './CustomizedDataGrid';
 import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
 import LiveNetworkGraph from './LiveNetworkGraph';
-import BlockedClientsView from './BlockedClientsView';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
 import { useLiveClients } from '../hooks/useLiveClients';
@@ -53,29 +51,19 @@ export default function MainGrid() {
         </Grid>
       </Grid>
 
-      <Grid container spacing={2} columns={12} sx={{ mt: 4 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <BlockedClientsView />
+      <Grid container spacing={2} columns={12} sx={{ mt: 4, alignItems: 'stretch' }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
+          <Box sx={{ width: '100%' }}>
+            <DnsAlertsView />
+          </Box>
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <DnsAlertsView />
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={2} columns={12} sx={{ mt: 2 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <BlockedAttemptsView />
+        <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
+          <Box sx={{ width: '100%' }}>
+            <BlockedAttemptsView />
+          </Box>
         </Grid>
       </Grid>
 
-      <Typography component="h2" variant="h6" sx={{ mb: 2, mt: 4 }}>
-        Blocked & Persisted Queries
-      </Typography>
-      <Grid container spacing={2} columns={12}>
-        <Grid size={{ xs: 12 }}>
-          <CustomizedDataGrid />
-        </Grid>
-      </Grid>
       <Copyright sx={{ my: 4 }} />
     </Box>
   );
