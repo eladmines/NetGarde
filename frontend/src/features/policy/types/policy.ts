@@ -5,6 +5,8 @@ export interface PolicyPack {
   description: string | null;
   enabled_globally: boolean;
   domain_count: number;
+  /** snapshot = full downloaded list; seed = small bundled list until Refresh */
+  domain_list_source?: 'snapshot' | 'seed' | 'empty';
 }
 
 export interface PolicyProfile {

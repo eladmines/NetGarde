@@ -79,7 +79,9 @@ export default function PolicyPage() {
       const result = await policyApi.refreshPack(pack.slug);
       setPacks((prev) =>
         prev.map((p) =>
-          p.slug === pack.slug ? { ...p, domain_count: result.domain_count } : p,
+          p.slug === pack.slug
+            ? { ...p, domain_count: result.domain_count, domain_list_source: 'snapshot' as const }
+            : p,
         ),
       );
       setInfo(result.message);
@@ -185,7 +187,11 @@ export default function PolicyPage() {
                   {pack.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {pack.description} · {pack.domain_count} domains
+                  {pack.description}
+                  {' · '}
+                  {pack.domain_list_source === 'snapshot'
+                    ? `${pack.domain_count.toLocaleString()} domains (downloaded)`
+                    : `${pack.domain_count} seed domains — click Refresh for full blocklist`}
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1} alignItems="center">

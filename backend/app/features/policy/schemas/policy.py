@@ -11,6 +11,8 @@ class PolicyPackRead(BaseModel):
     description: Optional[str] = None
     enabled_globally: bool
     domain_count: int = 0
+    """snapshot = downloaded upstream list; seed = bundled fallback until Refresh."""
+    domain_list_source: str = "seed"
     model_config = ConfigDict(from_attributes=True)
 
 
