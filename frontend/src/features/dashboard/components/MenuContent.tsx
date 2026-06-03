@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
+import { sidebarNavItemSx, sidebarSectionButtonSx } from '../../../shared/theme/navigationChrome';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -50,9 +52,13 @@ interface MenuContentProps {
 }
 
 export default function MenuContent({ open = true }: MenuContentProps) {
+  const theme = useTheme();
   const location = useLocation();
   const [manageNetworkOpen, setManageNetworkOpen] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const navItemSx = sidebarNavItemSx(theme);
+  const nestedNavItemSx = sidebarNavItemSx(theme, true);
+  const sectionSx = sidebarSectionButtonSx(theme);
 
   useEffect(() => {
     const hasSelectedChild = manageNetworkItems.some(item => location.pathname === item.path);
@@ -81,35 +87,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
         to={item.path}
         selected={isSelected}
         className="azure-sidebar-item"
-        sx={{
-          minHeight: 40,
-          borderRadius: '4px',
-          px: 1.5,
-          py: 1,
-          mx: 0.5,
-          mb: 0.5,
-          position: 'relative',
-          '&.Mui-selected': {
-            backgroundColor: 'rgba(0, 120, 212, 0.08)',
-            '&:hover': {
-              backgroundColor: 'rgba(0, 120, 212, 0.12)',
-            },
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 3,
-              height: 20,
-              backgroundColor: '#0078d4',
-              borderRadius: '0 2px 2px 0',
-            },
-          },
-          '&:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-        }}
+        sx={navItemSx}
       >
         <ListItemIcon
           className={`menuIcon ${item.iconClass}`}
@@ -123,10 +101,10 @@ export default function MenuContent({ open = true }: MenuContentProps) {
         {open && (
           <ListItemText
             primary={item.text}
+            sx={{ color: isSelected ? 'text.primary' : 'text.secondary' }}
             primaryTypographyProps={{
               fontSize: '0.875rem',
               fontWeight: isSelected ? 500 : 400,
-              color: isSelected ? 'rgba(0, 0, 0, 0.87)' : 'rgba(0, 0, 0, 0.6)',
             }}
           />
         )}
@@ -156,17 +134,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
             <ListItem disablePadding sx={{ display: 'block' }}>
               <ListItemButton
                 onClick={handleManageNetworkClick}
-                sx={{
-                  minHeight: 40,
-                  borderRadius: '4px',
-                  px: 1.5,
-                  py: 1,
-                  mx: 0.5,
-                  mb: 0.5,
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                }}
+                sx={sectionSx}
               >
                 <ListItemIcon
                   className="menuIcon"
@@ -179,10 +147,10 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                 </ListItemIcon>
                 <ListItemText
                   primary="My network"
+                  sx={{ color: 'text.secondary' }}
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 400,
-                    color: 'rgba(0, 0, 0, 0.6)',
                   }}
                 />
                 {manageNetworkOpen ? <ExpandLess /> : <ExpandMore />}
@@ -198,36 +166,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                       to={item.path}
                       selected={isSelected}
                       className="azure-sidebar-item"
-                      sx={{
-                        minHeight: 40,
-                        borderRadius: '4px',
-                        px: 1.5,
-                        py: 1,
-                        mx: 0.5,
-                        mb: 0.5,
-                        ml: 4, // Indent for nested items
-                        position: 'relative',
-                        '&.Mui-selected': {
-                          backgroundColor: 'rgba(0, 120, 212, 0.08)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                          },
-                          '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            width: 3,
-                            height: 20,
-                            backgroundColor: '#0078d4',
-                            borderRadius: '0 2px 2px 0',
-                          },
-                        },
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                        },
-                      }}
+                      sx={nestedNavItemSx}
                     >
                       <ListItemIcon
                         className={`menuIcon ${item.iconClass}`}
@@ -240,10 +179,10 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                       </ListItemIcon>
                       <ListItemText
                         primary={item.text}
+                        sx={{ color: isSelected ? 'text.primary' : 'text.secondary' }}
                         primaryTypographyProps={{
                           fontSize: '0.875rem',
                           fontWeight: isSelected ? 500 : 400,
-                          color: isSelected ? 'rgba(0, 0, 0, 0.87)' : 'rgba(0, 0, 0, 0.6)',
                         }}
                       />
                     </ListItemButton>
@@ -265,17 +204,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
             <ListItem disablePadding sx={{ display: 'block' }}>
               <ListItemButton
                 onClick={handleAnalyticsClick}
-                sx={{
-                  minHeight: 40,
-                  borderRadius: '4px',
-                  px: 1.5,
-                  py: 1,
-                  mx: 0.5,
-                  mb: 0.5,
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                }}
+                sx={sectionSx}
               >
                 <ListItemIcon
                   className="menuIcon"
@@ -288,10 +217,10 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                 </ListItemIcon>
                 <ListItemText
                   primary="Analytics"
+                  sx={{ color: 'text.secondary' }}
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 400,
-                    color: 'rgba(0, 0, 0, 0.6)',
                   }}
                 />
                 {analyticsOpen ? <ExpandLess /> : <ExpandMore />}
@@ -307,36 +236,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                       to={item.path}
                       selected={isSelected}
                       className="azure-sidebar-item"
-                      sx={{
-                        minHeight: 40,
-                        borderRadius: '4px',
-                        px: 1.5,
-                        py: 1,
-                        mx: 0.5,
-                        mb: 0.5,
-                        ml: 4, // Indent for nested items
-                        position: 'relative',
-                        '&.Mui-selected': {
-                          backgroundColor: 'rgba(0, 120, 212, 0.08)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                          },
-                          '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            width: 3,
-                            height: 20,
-                            backgroundColor: '#0078d4',
-                            borderRadius: '0 2px 2px 0',
-                          },
-                        },
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                        },
-                      }}
+                      sx={nestedNavItemSx}
                     >
                       <ListItemIcon
                         className={`menuIcon ${item.iconClass}`}
@@ -349,10 +249,10 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                       </ListItemIcon>
                       <ListItemText
                         primary={item.text}
+                        sx={{ color: isSelected ? 'text.primary' : 'text.secondary' }}
                         primaryTypographyProps={{
                           fontSize: '0.875rem',
                           fontWeight: isSelected ? 500 : 400,
-                          color: isSelected ? 'rgba(0, 0, 0, 0.87)' : 'rgba(0, 0, 0, 0.6)',
                         }}
                       />
                     </ListItemButton>
@@ -379,35 +279,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                   to={item.path}
                   selected={isSelected}
                   className="azure-sidebar-item"
-                  sx={{
-                    minHeight: 40,
-                    borderRadius: '4px',
-                    px: 1.5,
-                    py: 1,
-                    mx: 0.5,
-                    mb: 0.5,
-                    position: 'relative',
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(0, 120, 212, 0.08)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                      },
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        left: 0,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: 3,
-                        height: 20,
-                        backgroundColor: '#0078d4',
-                        borderRadius: '0 2px 2px 0',
-                      },
-                    },
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    },
-                  }}
+                  sx={navItemSx}
                 >
                   <ListItemIcon
                     className={`menuIcon ${item.iconClass}`}
@@ -437,35 +309,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
                   to={item.path}
                   selected={isSelected}
                   className="azure-sidebar-item"
-                  sx={{
-                    minHeight: 40,
-                    borderRadius: '4px',
-                    px: 1.5,
-                    py: 1,
-                    mx: 0.5,
-                    mb: 0.5,
-                    position: 'relative',
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(0, 120, 212, 0.08)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                      },
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        left: 0,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: 3,
-                        height: 20,
-                        backgroundColor: '#0078d4',
-                        borderRadius: '0 2px 2px 0',
-                      },
-                    },
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    },
-                  }}
+                  sx={navItemSx}
                 >
                   <ListItemIcon
                     className={`menuIcon ${item.iconClass}`}
@@ -499,35 +343,7 @@ export default function MenuContent({ open = true }: MenuContentProps) {
               to={item.path}
               selected={isSelected}
               className="azure-sidebar-item"
-              sx={{
-                minHeight: 40,
-                borderRadius: '4px',
-                px: 1.5,
-                py: 1,
-                mx: 0.5,
-                mb: 0.5,
-                position: 'relative',
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(0, 120, 212, 0.08)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                  },
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 3,
-                    height: 20,
-                    backgroundColor: '#0078d4',
-                    borderRadius: '0 2px 2px 0',
-                  },
-                },
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                },
-              }}
+              sx={navItemSx}
             >
               <ListItemIcon
                 className={`menuIcon ${item.iconClass}`}
@@ -541,10 +357,10 @@ export default function MenuContent({ open = true }: MenuContentProps) {
               {open && (
                 <ListItemText
                   primary={item.text}
+                  sx={{ color: isSelected ? 'text.primary' : 'text.secondary' }}
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: isSelected ? 500 : 400,
-                    color: isSelected ? 'rgba(0, 0, 0, 0.87)' : 'rgba(0, 0, 0, 0.6)',
                   }}
                 />
               )}

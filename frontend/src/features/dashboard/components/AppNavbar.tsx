@@ -1,18 +1,24 @@
 import { useState } from 'react';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import MuiToolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
+import { alpha } from '@mui/material/styles';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import SideMenuMobile from './SideMenuMobile';
 import MenuButton from './MenuButton';
 import ColorModeIconDropdown from '../../../shared/theme/ColorModeIconDropdown';
-import './AppNavbar.css';
+import {
+  navbarBackground,
+  navbarColorModeButtonSx,
+  navbarIconButtonSx,
+  NAVBAR_HEIGHT,
+} from '../../../shared/theme/navigationChrome';
 
 const Toolbar = styled(MuiToolbar)({
   width: '100%',
@@ -25,22 +31,32 @@ const Toolbar = styled(MuiToolbar)({
   flexShrink: 0,
 });
 
-const AzureToolbar = styled(MuiToolbar)({
-  minHeight: '48px !important',
+const AzureToolbar = styled(MuiToolbar)(({ theme }) => ({
+  minHeight: `${NAVBAR_HEIGHT}px !important`,
   padding: '0 16px !important',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  backgroundColor: '#0078d4',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-});
+  backgroundColor: navbarBackground(theme),
+  borderBottom: `1px solid ${alpha(
+    theme.palette.common.white,
+    theme.palette.mode === 'dark' ? 0.08 : 0.1,
+  )}`,
+}));
 
 export default function AppNavbar() {
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
+  const onDarkNavbar = theme.palette.mode === 'dark';
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
   };
+
+  const navbarFg = onDarkNavbar ? theme.palette.text.primary : '#ffffff';
+  const navbarIconBg = onDarkNavbar
+    ? alpha(theme.palette.common.white, 0.08)
+    : 'rgba(255, 255, 255, 0.1)';
 
   return (
     <>
@@ -92,11 +108,13 @@ export default function AppNavbar() {
           top: 0,
           left: 0,
           right: 0,
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: '#0078d4',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          zIndex: (t) => t.zIndex.drawer + 1,
+          backgroundColor: navbarBackground(theme),
+          boxShadow: (t) =>
+            t.palette.mode === 'dark'
+              ? '0 2px 8px rgba(0,0,0,0.45)'
+              : '0 2px 4px rgba(0,0,0,0.1)',
         }}
-        className="azure-navbar"
       >
         <AzureToolbar>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
@@ -108,16 +126,16 @@ export default function AppNavbar() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: navbarIconBg,
               }}
             >
-              <DashboardRoundedIcon sx={{ color: '#ffffff', fontSize: '20px' }} />
+              <DashboardRoundedIcon sx={{ color: navbarFg, fontSize: '20px' }} />
             </Box>
             <Typography
               variant="h6"
               component="div"
               sx={{
-                color: '#ffffff',
+                color: navbarFg,
                 fontWeight: 600,
                 fontSize: '1.125rem',
                 letterSpacing: '0.01em',
@@ -128,29 +146,25 @@ export default function AppNavbar() {
           </Stack>
 
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <MenuButton
-              aria-label="notifications"
-              sx={{
-                color: 'rgba(255, 255, 255, 0.8)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                },
-              }}
-            >
+            <MenuButton aria-label="notifications" sx={navbarIconButtonSx(theme)}>
               <NotificationsRoundedIcon />
             </MenuButton>
-            <ColorModeIconDropdown />
+            <ColorModeIconDropdown sx={navbarColorModeButtonSx(theme)} />
             <Avatar
               sizes="small"
               alt="NetGarde"
               sx={{
                 width: 32,
                 height: 32,
-                border: '2px solid rgba(255, 255, 255, 0.3)',
+                border: '2px solid',
+                borderColor: onDarkNavbar
+                  ? alpha(theme.palette.common.white, 0.2)
+                  : 'rgba(255, 255, 255, 0.3)',
                 cursor: 'pointer',
                 '&:hover': {
-                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                  borderColor: onDarkNavbar
+                    ? alpha(theme.palette.common.white, 0.35)
+                    : 'rgba(255, 255, 255, 0.5)',
                 },
               }}
             />

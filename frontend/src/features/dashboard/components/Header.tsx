@@ -12,7 +12,9 @@ export default function Header() {
         justifyContent: 'flex-start',
         height: { xs: '56px', md: '48px' },
         px: 2,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
         borderRadius: '0',
       }}
       spacing={0}
