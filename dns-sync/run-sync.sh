@@ -16,13 +16,12 @@ if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
 fi
 
-# Get DNSMASQ_RESTART_CMD from environment or use default
-DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
+# Reload host dnsmasq (signals root-owned process on EC2)
+DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-sudo systemctl reload dnsmasq}
 
-# Blocked domains: default 0.0.0.0 (DNS sinkhole). Do NOT use EC2 VPC IP (172.31.x.x):
-# WireGuard clients (10.0.0.x) cannot reach it. Set BLOCK_PAGE_IP=10.0.0.1 only if you
-# serve a block page on wg0.
-BLOCK_IP=${BLOCK_IP:-${BLOCK_PAGE_IP:-0.0.0.0}}
+# Block page on WireGuard gateway (docker block-page :80). Not 172.31.x.x (VPC — unreachable from VPN).
+BLOCK_PAGE_IP=${BLOCK_PAGE_IP:-10.0.0.1}
+BLOCK_IP=${BLOCK_IP:-${BLOCK_PAGE_IP}}
 
 # Run the DNS sync container once (SYNC_INTERVAL=0 means run once and exit)
 # Note: We disable the internal reload since it can't access host dnsmasq
@@ -38,14 +37,17 @@ docker compose run --rm --no-deps \
 
 # Reload dnsmasq on the host after container completes
 if [ $? -eq 0 ]; then
-    echo "Reloading dnsmasq on host..."
-    $DNSMASQ_RESTART_CMD || {
-        # Try alternative methods if killall fails
+    echo "Reloading dnsmasq on host (BLOCK_IP=$BLOCK_IP)..."
+    if eval "$DNSMASQ_RESTART_CMD"; then
+        echo "dnsmasq reloaded."
+    else
         sudo systemctl reload dnsmasq 2>/dev/null || \
-        sudo service dnsmasq reload 2>/dev/null || \
-        sudo killall -HUP dnsmasq 2>/dev/null || \
-        echo "Warning: Could not reload dnsmasq. You may need to reload manually."
-    }
+        sudo systemctl restart dnsmasq 2>/dev/null || \
+        sudo killall -HUP dnsmasq 2>/dev/null || {
+            echo "Could not reload dnsmasq. Run: sudo systemctl restart dnsmasq"
+            exit 1
+        }
+    fi
 fi
 
 exit $?

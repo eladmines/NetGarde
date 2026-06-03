@@ -376,12 +376,17 @@ jobs:
             # Export DB_URL for docker compose
             export DB_URL="$DB_URL"
             
-            # DNS sinkhole for blocked domains (VPN clients cannot reach VPC 172.31.x.x)
-            export BLOCK_IP="${BLOCK_IP:-0.0.0.0}"
-            echo "Using BLOCK_IP=$BLOCK_IP for blocked-domain redirect"
-            grep -q '^BLOCK_IP=' "$HOME/netgarde/.env" 2>/dev/null && \
-              sed -i.bak "s|^BLOCK_IP=.*|BLOCK_IP=$BLOCK_IP|" "$HOME/netgarde/.env" && rm -f "$HOME/netgarde/.env.bak" || \
-              echo "BLOCK_IP=$BLOCK_IP" >> "$HOME/netgarde/.env"
+            # Block page on WireGuard gateway (not VPC 172.31.x.x)
+            export BLOCK_PAGE_IP="${BLOCK_PAGE_IP:-10.0.0.1}"
+            export BLOCK_IP="${BLOCK_IP:-$BLOCK_PAGE_IP}"
+            export BLOCK_IPV6_IP="${BLOCK_IPV6_IP:-::}"
+            echo "Using BLOCK_IP=$BLOCK_IP BLOCK_IPV6_IP=$BLOCK_IPV6_IP for blocked domains"
+            for kv in "BLOCK_PAGE_IP=$BLOCK_PAGE_IP" "BLOCK_IP=$BLOCK_IP" "BLOCK_IPV6_IP=$BLOCK_IPV6_IP"; do
+              key="${kv%%=*}"
+              grep -q "^${key}=" "$HOME/netgarde/.env" 2>/dev/null && \
+                sed -i.bak "s|^${key}=.*|${kv}|" "$HOME/netgarde/.env" && rm -f "$HOME/netgarde/.env.bak" || \
+                echo "$kv" >> "$HOME/netgarde/.env"
+            done
 
             # Install WireGuard host agent (applies wg set for /v1/enroll)
             if command -v wg >/dev/null 2>&1; then
@@ -426,6 +431,16 @@ jobs:
             # Start all services and remove orphaned containers (like old postgres containers)
             echo "Starting services..."
             docker compose -f docker-compose.yml up -d --remove-orphans
+
+            echo "Ensuring block-page on WireGuard gateway..."
+            sudo chmod +x /home/ubuntu/netgarde/scripts/setup-block-page-wg.sh
+            sudo bash /home/ubuntu/netgarde/scripts/setup-block-page-wg.sh || true
+
+            echo "Applying policy DNS (block page IP)..."
+            export BLOCK_PAGE_IP="${BLOCK_PAGE_IP:-10.0.0.1}"
+            export BLOCK_IP="${BLOCK_IP:-$BLOCK_PAGE_IP}"
+            export BLOCK_IPV6_IP="${BLOCK_IPV6_IP:-::}"
+            bash /home/ubuntu/netgarde/dns-sync/run-sync.sh || true
 
             # Ensure host dependency for DB LISTEN/NOTIFY listener
             if ! python3 -c "import psycopg2" >/dev/null 2>&1; then
