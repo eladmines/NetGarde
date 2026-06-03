@@ -16,10 +16,14 @@ log = logging.getLogger(__name__)
 
 SNAPSHOT_DIR = DATA_DIR / "snapshots"
 
+# StevenBlack extension data lives under per-source subfolders (e.g. sinfonietta/).
+_STEVENBLACK = "https://raw.githubusercontent.com/StevenBlack/hosts/master"
 DEFAULT_REMOTE_PACK_URLS: dict[str, str] = {
-    "social": (
-        "https://raw.githubusercontent.com/StevenBlack/hosts/master/extensions/social/hosts"
-    ),
+    "social": f"{_STEVENBLACK}/extensions/social/sinfonietta/hosts",
+    "adult": f"{_STEVENBLACK}/extensions/porn/sinfonietta/hosts",
+    "gambling": f"{_STEVENBLACK}/extensions/gambling/sinfonietta/hosts",
+    "malware": f"{_STEVENBLACK}/hosts",
+    "games": "https://raw.githubusercontent.com/olbat/ut1-blacklists/master/blacklists/games/domains",
 }
 
 _HOSTS_BLOCK_IPS = frozenset({"0.0.0.0", "127.0.0.1", "::", "::1", "0.0.0.0"})
@@ -40,6 +44,27 @@ def parse_hosts_file(text: str) -> Set[str]:
         if d and "." in d:
             domains.add(d)
     return domains
+
+
+def parse_domain_list(text: str) -> Set[str]:
+    """Plain-text lists with one domain per line (e.g. UT1 blacklists)."""
+    domains: Set[str] = set()
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        d = normalize_domain(line.split()[0])
+        if d and "." in d:
+            domains.add(d)
+    return domains
+
+
+def parse_pack_text(text: str) -> Set[str]:
+    """Hosts file format first; fall back to plain domain-per-line."""
+    from_hosts = parse_hosts_file(text)
+    if from_hosts:
+        return from_hosts
+    return parse_domain_list(text)
 
 
 def snapshot_path(slug: str) -> Path:
@@ -77,7 +102,7 @@ def fetch_remote_hosts(url: str, timeout: float) -> Set[str]:
     req = urllib.request.Request(url, headers={"User-Agent": "NetGarde-PolicyPack/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         text = resp.read().decode("utf-8", errors="replace")
-    domains = parse_hosts_file(text)
+    domains = parse_pack_text(text)
     if not domains:
         raise ValueError(f"no domains parsed from {url}")
     return domains

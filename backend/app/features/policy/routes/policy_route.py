@@ -41,7 +41,7 @@ def refresh_policy_pack(
     _: None = Depends(verify_admin_api_token),
     service: PolicyService = Depends(get_policy_service),
 ):
-    """Re-download upstream domain list (global packs, e.g. social)."""
+    """Re-download upstream domain list for a built-in pack (social, adult, etc.)."""
     return service.refresh_pack_domains(slug)
 
 

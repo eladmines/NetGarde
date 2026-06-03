@@ -5,7 +5,8 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
 BUILTIN_PACK_SLUGS = ("adult", "gambling", "malware", "social", "games")
-REMOTE_PACK_SLUGS = frozenset({"social"})
+# All built-in packs refresh from upstream lists (snapshot + static fallback).
+REMOTE_PACK_SLUGS = frozenset(BUILTIN_PACK_SLUGS)
 
 
 def normalize_domain(domain: str) -> str:

@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     BEHAVIOR_AUTO_BLOCK_DOMAINS_PER_EVENT: int = 5
     BEHAVIOR_MAX_BLOCKS_PER_DAY: int = 10
 
-    # Global policy packs: fetch upstream hosts lists into on-disk snapshots (e.g. social).
+    # Policy packs: fetch upstream hosts lists into on-disk snapshots (all built-in packs).
     POLICY_PACK_FETCH_ENABLED: bool = True
     POLICY_PACK_FETCH_TIMEOUT_SECONDS: float = 30.0
     POLICY_PACK_SNAPSHOT_MAX_AGE_SECONDS: int = 86400
