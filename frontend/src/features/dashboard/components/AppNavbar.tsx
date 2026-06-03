@@ -15,6 +15,7 @@ import MenuButton from './MenuButton';
 import ColorModeIconDropdown from '../../../shared/theme/ColorModeIconDropdown';
 import {
   navbarBackground,
+  navbarBorderColor,
   navbarColorModeButtonSx,
   navbarIconButtonSx,
   NAVBAR_HEIGHT,
@@ -38,24 +39,21 @@ const AzureToolbar = styled(MuiToolbar)(({ theme }) => ({
   alignItems: 'center',
   justifyContent: 'space-between',
   backgroundColor: navbarBackground(theme),
-  borderBottom: `1px solid ${alpha(
-    theme.palette.common.white,
-    theme.palette.mode === 'dark' ? 0.08 : 0.1,
-  )}`,
+  borderBottom: `1px solid ${navbarBorderColor(theme)}`,
 }));
 
 export default function AppNavbar() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
-  const onDarkNavbar = theme.palette.mode === 'dark';
+  const isDark = theme.palette.mode === 'dark';
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
   };
 
-  const navbarFg = onDarkNavbar ? theme.palette.text.primary : '#ffffff';
-  const navbarIconBg = onDarkNavbar
-    ? alpha(theme.palette.common.white, 0.08)
+  const navbarFg = isDark ? theme.palette.text.primary : '#ffffff';
+  const navbarIconBg = isDark
+    ? theme.palette.action.hover
     : 'rgba(255, 255, 255, 0.1)';
 
   return (
@@ -110,10 +108,9 @@ export default function AppNavbar() {
           right: 0,
           zIndex: (t) => t.zIndex.drawer + 1,
           backgroundColor: navbarBackground(theme),
-          boxShadow: (t) =>
-            t.palette.mode === 'dark'
-              ? '0 2px 8px rgba(0,0,0,0.45)'
-              : '0 2px 4px rgba(0,0,0,0.1)',
+          borderBottom: 1,
+          borderColor: 'divider',
+          boxShadow: 'none',
         }}
       >
         <AzureToolbar>
@@ -157,13 +154,11 @@ export default function AppNavbar() {
                 width: 32,
                 height: 32,
                 border: '2px solid',
-                borderColor: onDarkNavbar
-                  ? alpha(theme.palette.common.white, 0.2)
-                  : 'rgba(255, 255, 255, 0.3)',
+                borderColor: isDark ? 'divider' : 'rgba(255, 255, 255, 0.3)',
                 cursor: 'pointer',
                 '&:hover': {
-                  borderColor: onDarkNavbar
-                    ? alpha(theme.palette.common.white, 0.35)
+                  borderColor: isDark
+                    ? theme.palette.text.secondary
                     : 'rgba(255, 255, 255, 0.5)',
                 },
               }}
