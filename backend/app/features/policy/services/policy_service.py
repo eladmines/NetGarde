@@ -8,6 +8,7 @@ from app.features.client_behavior.repositories.device_security_policy_repository
 )
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, REMOTE_PACK_SLUGS
+from app.features.policy.pack_fetch import list_pack_domains_page
 from app.features.policy.pack_loader import (
     load_all_packs,
     pack_domain_count_sources,
@@ -19,6 +20,7 @@ from app.features.policy.repositories.policy_sync_repository import PolicySyncRe
 from app.features.policy.schemas.policy import (
     DevicePolicyAssignmentRead,
     PolicyApplyResponse,
+    PolicyPackDomainsPage,
     PolicyPackRead,
     PolicyPackRefreshResponse,
     PolicyProfileRead,
@@ -52,6 +54,30 @@ class PolicyService:
             )
             for p in self.repo.list_packs()
         ]
+
+    def list_pack_domains(
+        self,
+        slug: str,
+        *,
+        q: str = "",
+        skip: int = 0,
+        limit: int = 50,
+    ) -> PolicyPackDomainsPage:
+        slug = slug.strip().lower()
+        if slug not in BUILTIN_PACK_SLUGS:
+            raise HTTPException(status_code=404, detail=f"Pack {slug} not found")
+        limit = max(1, min(limit, 200))
+        skip = max(0, skip)
+        domains, total, source = list_pack_domains_page(slug, q=q, skip=skip, limit=limit)
+        return PolicyPackDomainsPage(
+            slug=slug,
+            domains=domains,
+            total=total,
+            skip=skip,
+            limit=limit,
+            domain_list_source=source,
+            query=q.strip(),
+        )
 
     def refresh_pack_domains(self, slug: str) -> PolicyPackRefreshResponse:
         slug = slug.strip().lower()

@@ -7,7 +7,8 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import FrozenSet, Optional, Set
+from functools import lru_cache
+from typing import FrozenSet, List, Optional, Set, Tuple
 
 from app.features.policy.pack_common import DATA_DIR, normalize_domain
 from app.shared.config import settings
@@ -135,6 +136,7 @@ def refresh_remote_pack(slug: str, *, force: bool = False) -> FrozenSet[str]:
         domains = fetch_remote_hosts(url, settings.POLICY_PACK_FETCH_TIMEOUT_SECONDS)
         write_snapshot(slug, domains)
         log.info("refreshed policy pack %s from %s (%d domains)", slug, url, len(domains))
+        clear_sorted_pack_domains_cache()
         return frozenset(domains)
     except (urllib.error.URLError, TimeoutError, ValueError) as e:
         log.warning("failed to fetch policy pack %s from %s: %s", slug, url, e)
@@ -186,6 +188,33 @@ def pack_domain_count_meta(slug: str) -> tuple[int, str]:
         if seed_count > 0:
             return seed_count, "seed"
     return 0, "empty"
+
+
+def clear_sorted_pack_domains_cache() -> None:
+    _sorted_pack_domains.cache_clear()
+
+
+@lru_cache(maxsize=16)
+def _sorted_pack_domains(slug: str) -> Tuple[str, ...]:
+    return tuple(sorted(load_cached_pack(slug)))
+
+
+def list_pack_domains_page(
+    slug: str,
+    *,
+    q: str = "",
+    skip: int = 0,
+    limit: int = 50,
+) -> Tuple[List[str], int, str]:
+    """Paginated domain list for admin UI (search is substring match)."""
+    _, source = pack_domain_count_meta(slug)
+    domains = list(_sorted_pack_domains(slug))
+    query = q.strip().lower()
+    if query:
+        domains = [d for d in domains if query in d]
+    total = len(domains)
+    page = domains[max(0, skip) : max(0, skip) + limit]
+    return page, total, source
 
 
 def load_remote_or_static_pack(slug: str) -> FrozenSet[str]:

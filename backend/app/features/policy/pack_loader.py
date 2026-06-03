@@ -7,6 +7,7 @@ from typing import Dict, List, Set
 
 from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, REMOTE_PACK_SLUGS
 from app.features.policy.pack_fetch import (
+    clear_sorted_pack_domains_cache,
     load_remote_or_static_pack,
     pack_domain_count_meta,
     refresh_remote_pack,
@@ -15,6 +16,7 @@ from app.features.policy.pack_fetch import (
 
 def clear_pack_cache() -> None:
     load_all_packs.cache_clear()
+    clear_sorted_pack_domains_cache()
 
 
 @lru_cache(maxsize=1)
