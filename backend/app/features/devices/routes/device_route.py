@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -24,6 +26,8 @@ from app.features.devices.controllers.device_controller import (
 from app.features.devices.dependencies import get_device_service
 from app.features.devices.services.device_service_interface import IDeviceService
 from app.shared.dependencies import get_db
+from app.features.vpn.schemas.usage_live import DeviceUsageLiveResponse
+from app.features.vpn.services.usage_service import UsageService
 from app.shared.admin_auth import verify_admin_api_token
 from app.shared.service_auth import verify_dns_ingest_service
 
@@ -55,6 +59,16 @@ def get_devices_endpoint(
     service: IDeviceService = Depends(get_device_service),
 ):
     return get_devices_controller(db, service)
+
+
+@router.get("/usage/live", response_model=DeviceUsageLiveResponse)
+def list_live_device_usage(
+    max_age_sec: Optional[int] = Query(default=None, ge=5, le=300),
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
+    """Latest per-device VPN throughput from netgarde-wg /v1/usage reports."""
+    return UsageService(db).list_live_bandwidth(max_age_sec=max_age_sec)
 
 
 @router.put("/{device_id}")

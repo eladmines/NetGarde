@@ -1,10 +1,12 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
 from app.features.vpn.repositories.device_usage_repository import DeviceUsageRepository
 from app.features.vpn.schemas.usage import UsageReportRequest, UsageReportResponse
+from app.features.vpn.schemas.usage_live import DeviceUsageLiveItem, DeviceUsageLiveResponse
 from app.shared.config import settings
 from app.shared.utils.logging import get_logger
 
@@ -67,3 +69,32 @@ class UsageService:
             alert_created=alert_created,
             rate_mib_per_sec=round(rate_mib_per_sec, 2),
         )
+
+    def list_live_bandwidth(self, *, max_age_sec: Optional[int] = None) -> DeviceUsageLiveResponse:
+        age = max_age_sec if max_age_sec is not None else settings.USAGE_LIVE_MAX_AGE_SEC
+        age = max(5, min(age, 300))
+        since = datetime.now(timezone.utc) - timedelta(seconds=age)
+        rows = self.usage_repo.list_latest_with_device_since(since)
+        items: list[DeviceUsageLiveItem] = []
+        for row in rows:
+            sample = row.sample
+            interval = float(sample.interval_sec) or 1.0
+            rx_rate = (sample.delta_rx_bytes / MIB) / interval
+            tx_rate = (sample.delta_tx_bytes / MIB) / interval
+            items.append(
+                DeviceUsageLiveItem(
+                    device_id=row.device_id,
+                    vpn_device_id=sample.device_external_id,
+                    client_ip=row.client_ip,
+                    recorded_at=sample.recorded_at,
+                    interval_sec=interval,
+                    rx_bytes=sample.rx_bytes,
+                    tx_bytes=sample.tx_bytes,
+                    delta_rx_bytes=sample.delta_rx_bytes,
+                    delta_tx_bytes=sample.delta_tx_bytes,
+                    rx_mib_per_sec=round(rx_rate, 3),
+                    tx_mib_per_sec=round(tx_rate, 3),
+                    total_mib_per_sec=round(rx_rate + tx_rate, 3),
+                )
+            )
+        return DeviceUsageLiveResponse(items=items, max_age_sec=age)
