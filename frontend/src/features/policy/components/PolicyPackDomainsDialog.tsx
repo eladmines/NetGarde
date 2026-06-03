@@ -21,8 +21,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { policyApi } from '../config/api';
 import { PolicyPack } from '../types/policy';
-import { formatBlockedSiteCount } from '../utils/packCounts';
-
 const PAGE_SIZE = 50;
 
 export interface PolicyPackDomainsDialogProps {
@@ -128,8 +126,7 @@ export default function PolicyPackDomainsDialog({
         {pack && (
           <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
-              {formatBlockedSiteCount(total)} sites
-              {source === 'snapshot' ? ' (full list on server)' : ' (seed list — update from upstream for full list)'}
+              {source === 'snapshot' ? 'Full list on server' : 'Seed list — use Update from upstream for full list'}
               {appliedQuery ? ` · filtered by “${appliedQuery}”` : ''}
             </Typography>
 
