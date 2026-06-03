@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -60,18 +60,25 @@ export default function LiveNetworkGraph({
 }: LiveNetworkGraphProps) {
   const theme = useTheme();
 
+  // Wall-clock window so the chart scrolls left between samples (not only on each WS point).
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const chartPoints = useMemo(
     () => downsampleThroughputForChart(history),
     [history],
   );
 
-  const axisRange = useMemo(() => {
-    const end = chartPoints.length > 0 ? chartPoints[chartPoints.length - 1].ts : Date.now();
-    return {
-      min: new Date(end - THROUGHPUT_HISTORY_WINDOW_MS),
-      max: new Date(end),
-    };
-  }, [chartPoints]);
+  const axisRange = useMemo(
+    () => ({
+      min: new Date(nowMs - THROUGHPUT_HISTORY_WINDOW_MS),
+      max: new Date(nowMs),
+    }),
+    [nowMs],
+  );
 
   const timeAxisData = useMemo(
     () => chartPoints.map((p) => new Date(p.ts)),
