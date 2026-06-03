@@ -51,6 +51,7 @@ services:
       USAGE_REDIS_ENABLED: ${USAGE_REDIS_ENABLED:-true}
       USAGE_HISTORY_MINUTES: ${USAGE_HISTORY_MINUTES:-60}
       USAGE_PERSIST_SAMPLES: ${USAGE_PERSIST_SAMPLES:-false}
+      POLICY_PACK_SNAPSHOT_DIR: /var/lib/netgarde/policy-snapshots
     depends_on:
       redis:
         condition: service_healthy
@@ -63,6 +64,7 @@ services:
       start_period: 40s
     volumes:
       - ./backend:/app
+      - policy-pack-snapshots:/var/lib/netgarde/policy-snapshots
     command: >
       bash -c "
       alembic upgrade head &&
@@ -100,4 +102,7 @@ services:
       block-page:
         condition: service_started
     # No restart policy for cron mode - container runs once and exits
+
+volumes:
+  policy-pack-snapshots:
 

@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     BEHAVIOR_MAX_BLOCKS_PER_DAY: int = 10
 
     # Policy packs: fetch upstream hosts lists into on-disk snapshots (all built-in packs).
+    # Writable dir in Docker production (see docker-compose policy-pack-snapshots volume).
+    POLICY_PACK_SNAPSHOT_DIR: str = ""
     POLICY_PACK_FETCH_ENABLED: bool = True
     POLICY_PACK_FETCH_TIMEOUT_SECONDS: float = 30.0
     POLICY_PACK_SNAPSHOT_MAX_AGE_SECONDS: int = 86400
