@@ -37,6 +37,7 @@ export default function PolicyPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [refreshingSlug, setRefreshingSlug] = useState<string | null>(null);
+  const [refreshingAll, setRefreshingAll] = useState(false);
   const [applying, setApplying] = useState(false);
 
   const loadSyncStatus = useCallback(async () => {
@@ -89,6 +90,33 @@ export default function PolicyPage() {
       setError(e instanceof Error ? e.message : 'Failed to refresh pack list');
     } finally {
       setRefreshingSlug(null);
+    }
+  };
+
+  const refreshAllPacks = async () => {
+    if (packs.length === 0) {
+      return;
+    }
+    setRefreshingAll(true);
+    setError(null);
+    try {
+      for (const pack of packs) {
+        setRefreshingSlug(pack.slug);
+        const result = await policyApi.refreshPack(pack.slug);
+        setPacks((prev) =>
+          prev.map((p) =>
+            p.slug === pack.slug
+              ? { ...p, domain_count: result.domain_count, domain_list_source: 'snapshot' as const }
+              : p,
+          ),
+        );
+      }
+      setInfo('All pack lists downloaded from upstream sources.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to download pack lists');
+    } finally {
+      setRefreshingSlug(null);
+      setRefreshingAll(false);
     }
   };
 
@@ -166,57 +194,99 @@ export default function PolicyPage() {
       )}
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-          List packs (network-wide)
-        </Typography>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Lists are downloaded from curated upstream sources (large blocklists, like Social). Use
-          Refresh to update counts; toggling On queues an immediate DNS policy sync.
-        </Typography>
-        <Stack spacing={1}>
-          {packs.map((pack) => (
-            <Stack
-              key={pack.slug}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{ py: 0.5 }}
-            >
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  {pack.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {pack.description}
-                  {' · '}
-                  {pack.domain_list_source === 'snapshot'
-                    ? `${pack.domain_count.toLocaleString()} domains (downloaded)`
-                    : `${pack.domain_count} seed domains — click Refresh for full blocklist`}
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  size="small"
-                  variant="text"
-                  startIcon={<RefreshIcon />}
-                  disabled={refreshingSlug === pack.slug}
-                  onClick={() => refreshPackList(pack)}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+          spacing={1}
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            <Typography variant="subtitle1" fontWeight={600}>
+              List packs (network-wide)
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              Download full blocklists from upstream sources, then turn packs On to enforce via
+              dnsmasq.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={
+              refreshingAll ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />
+            }
+            disabled={refreshingAll || refreshingSlug !== null || packs.length === 0}
+            onClick={refreshAllPacks}
+            sx={{ flexShrink: 0, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          >
+            Download all lists
+          </Button>
+        </Stack>
+        <Stack spacing={1.5}>
+          {packs.map((pack) => {
+            const isRefreshing = refreshingSlug === pack.slug;
+            const packBusy = isRefreshing || refreshingAll || savingSlug === pack.slug;
+            return (
+              <Stack
+                key={pack.slug}
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                justifyContent="space-between"
+                spacing={1}
+                sx={{
+                  py: 1,
+                  px: 1,
+                  borderRadius: 1,
+                  bgcolor: 'action.hover',
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {pack.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {pack.description}
+                    {' · '}
+                    {pack.domain_list_source === 'snapshot'
+                      ? `${pack.domain_count.toLocaleString()} domains (downloaded)`
+                      : `${pack.domain_count} seed domains only — use Download list`}
+                  </Typography>
+                </Box>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                  sx={{ flexShrink: 0 }}
                 >
-                  Refresh
-                </Button>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={pack.enabled_globally}
-                      disabled={savingSlug === pack.slug}
-                      onChange={() => togglePack(pack)}
-                    />
-                  }
-                  label={pack.enabled_globally ? 'On' : 'Off'}
-                />
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    startIcon={
+                      isRefreshing ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />
+                    }
+                    disabled={packBusy}
+                    onClick={() => refreshPackList(pack)}
+                  >
+                    Download list
+                  </Button>
+                  <FormControlLabel
+                    sx={{ m: 0 }}
+                    control={
+                      <Switch
+                        checked={pack.enabled_globally}
+                        disabled={packBusy}
+                        onChange={() => togglePack(pack)}
+                      />
+                    }
+                    label={pack.enabled_globally ? 'On' : 'Off'}
+                  />
+                </Stack>
               </Stack>
-            </Stack>
-          ))}
+            );
+          })}
         </Stack>
       </Paper>
 
