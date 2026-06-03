@@ -32,19 +32,46 @@ import {
 } from '../utils/bandwidthColors';
 import { useTheme } from '@mui/material/styles';
 
-function BandwidthChips({ client }: { client: LiveClientRow }) {
+/** Live ↓/↑ rates from usage API — always shown when a sample exists (including 0 MiB/s). */
+function ClientBandwidthRates({ client }: { client: LiveClientRow }) {
+  const theme = useTheme();
+  const bw = client.bandwidth;
+  if (!bw) {
+    return null;
+  }
+  return (
+    <>
+      <Chip
+        size="small"
+        variant="outlined"
+        icon={<ArrowDownwardIcon sx={{ fontSize: '14px !important' }} />}
+        label={`↓ ${formatMibPerSec(bw.rx_mib_per_sec)} MiB/s`}
+        sx={{ height: 22, ...downloadChipSx(theme) }}
+      />
+      <Chip
+        size="small"
+        variant="outlined"
+        icon={<ArrowUpwardIcon sx={{ fontSize: '14px !important' }} />}
+        label={`↑ ${formatMibPerSec(bw.tx_mib_per_sec)} MiB/s`}
+        sx={{ height: 22, ...uploadChipSx(theme) }}
+      />
+    </>
+  );
+}
+
+function BandwidthDetail({ client }: { client: LiveClientRow }) {
   const theme = useTheme();
   const colors = getBandwidthColors(theme);
   const bw = client.bandwidth;
-  if (!bw || bw.total_mib_per_sec <= 0) {
+
+  if (!bw) {
     if (client.source === 'vpn_enroll') {
       return (
-        <Typography variant="caption" color="text.secondary">
-          No VPN traffic sample — use{' '}
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+          Waiting for usage — run netgarde-wg with{' '}
           <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace' }}>
             --stats-interval 5
-          </Typography>{' '}
-          on netgarde-wg
+          </Typography>
         </Typography>
       );
     }
@@ -57,26 +84,10 @@ function BandwidthChips({ client }: { client: LiveClientRow }) {
 
   return (
     <Stack spacing={0.75} sx={{ mt: 0.75, width: '100%' }}>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
-        <Chip
-          size="small"
-          variant="outlined"
-          icon={<ArrowDownwardIcon sx={{ fontSize: '14px !important' }} />}
-          label={`↓ ${formatMibPerSec(bw.rx_mib_per_sec)} MiB/s`}
-          sx={{ height: 24, ...downloadChipSx(theme) }}
-        />
-        <Chip
-          size="small"
-          variant="outlined"
-          icon={<ArrowUpwardIcon sx={{ fontSize: '14px !important' }} />}
-          label={`↑ ${formatMibPerSec(bw.tx_mib_per_sec)} MiB/s`}
-          sx={{ height: 24, ...uploadChipSx(theme) }}
-        />
-        <Typography variant="caption" color="text.secondary">
-          +{formatBytesCompact(bw.delta_rx_bytes)} ↓ / +{formatBytesCompact(bw.delta_tx_bytes)} ↑
-          last interval
-        </Typography>
-      </Stack>
+      <Typography variant="caption" color="text.secondary">
+        +{formatBytesCompact(bw.delta_rx_bytes)} ↓ / +{formatBytesCompact(bw.delta_tx_bytes)} ↑ in last
+        reporting interval
+      </Typography>
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="caption" sx={{ minWidth: 28, color: colors.download, fontWeight: 600 }}>
           ↓
@@ -140,6 +151,7 @@ function ClientRow({ client }: { client: LiveClientRow }) {
               variant="outlined"
               sx={{ height: 22, '& .MuiChip-icon': { color: 'success.main' } }}
             />
+            <ClientBandwidthRates client={client} />
           </Stack>
         }
         secondary={
@@ -147,7 +159,7 @@ function ClientRow({ client }: { client: LiveClientRow }) {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
               {subtitleParts.join(' · ')}
             </Typography>
-            <BandwidthChips client={client} />
+            <BandwidthDetail client={client} />
           </Box>
         }
       />
