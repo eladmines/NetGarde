@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -13,6 +13,12 @@ import Button from '@mui/material/Button';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { policyApi } from '../features/policy/config/api';
 import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
+import {
+  formatBlockedSiteCount,
+  packCountBySlug,
+  packBlockingSiteCount,
+  totalBlockingSiteCount,
+} from '../features/policy/utils/packCounts';
 import { formatShortDateTime } from '../shared/utils/dateUtils';
 
 const SYNC_POLL_MS = 8000;
@@ -37,7 +43,15 @@ export default function PolicyPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [refreshingSlug, setRefreshingSlug] = useState<string | null>(null);
+  const [refreshingAll, setRefreshingAll] = useState(false);
   const [applying, setApplying] = useState(false);
+
+  const countsBySlug = useMemo(() => packCountBySlug(packs), [packs]);
+  const totalBlocking = useMemo(() => totalBlockingSiteCount(packs), [packs]);
+  const activePackNames = useMemo(
+    () => packs.filter((p) => p.enabled_globally).map((p) => p.name),
+    [packs],
+  );
 
   const loadSyncStatus = useCallback(async () => {
     try {
@@ -80,7 +94,12 @@ export default function PolicyPage() {
       setPacks((prev) =>
         prev.map((p) =>
           p.slug === pack.slug
-            ? { ...p, domain_count: result.domain_count, domain_list_source: 'snapshot' as const }
+            ? {
+                ...p,
+                domain_count: result.domain_count,
+                blocked_sites_count: p.enabled_globally ? result.domain_count : 0,
+                domain_list_source: 'snapshot' as const,
+              }
             : p,
         ),
       );
@@ -92,12 +111,53 @@ export default function PolicyPage() {
     }
   };
 
+  const refreshAllPacks = async () => {
+    if (packs.length === 0) {
+      return;
+    }
+    setRefreshingAll(true);
+    setError(null);
+    try {
+      for (const pack of packs) {
+        setRefreshingSlug(pack.slug);
+        const result = await policyApi.refreshPack(pack.slug);
+        setPacks((prev) =>
+          prev.map((p) =>
+            p.slug === pack.slug
+              ? {
+                  ...p,
+                  domain_count: result.domain_count,
+                  blocked_sites_count: p.enabled_globally ? result.domain_count : 0,
+                  domain_list_source: 'snapshot' as const,
+                }
+              : p,
+          ),
+        );
+      }
+      setInfo('All pack lists downloaded from upstream sources.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to download pack lists');
+    } finally {
+      setRefreshingSlug(null);
+      setRefreshingAll(false);
+    }
+  };
+
   const togglePack = async (pack: PolicyPack) => {
     setSavingSlug(pack.slug);
     setInfo(null);
     try {
       const updated = await policyApi.updatePack(pack.slug, !pack.enabled_globally);
-      setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+      setPacks((prev) =>
+        prev.map((p) =>
+          p.slug === updated.slug
+            ? {
+                ...updated,
+                blocked_sites_count: updated.enabled_globally ? updated.domain_count : 0,
+              }
+            : p,
+        ),
+      );
       setInfo(
         `${updated.name} saved. Enforcement sync runs automatically (dns-sync + dnsmasq reload).`,
       );
@@ -166,57 +226,124 @@ export default function PolicyPage() {
       )}
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-          List packs (network-wide)
-        </Typography>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Lists are downloaded from curated upstream sources (large blocklists, like Social). Use
-          Refresh to update counts; toggling On queues an immediate DNS policy sync.
-        </Typography>
-        <Stack spacing={1}>
-          {packs.map((pack) => (
-            <Stack
-              key={pack.slug}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{ py: 0.5 }}
-            >
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  {pack.name}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+          spacing={1}
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            <Typography variant="subtitle1" fontWeight={600}>
+              List packs (network-wide)
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              Download full blocklists from upstream sources, then turn packs On to enforce via
+              dnsmasq.
+            </Typography>
+            {activePackNames.length > 0 && (
+              <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                Blocking {formatBlockedSiteCount(totalBlocking)} sites network-wide
+                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                  ({activePackNames.join(', ')})
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {pack.description}
-                  {' · '}
-                  {pack.domain_list_source === 'snapshot'
-                    ? `${pack.domain_count.toLocaleString()} domains (downloaded)`
-                    : `${pack.domain_count} seed domains — click Refresh for full blocklist`}
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  size="small"
-                  variant="text"
-                  startIcon={<RefreshIcon />}
-                  disabled={refreshingSlug === pack.slug}
-                  onClick={() => refreshPackList(pack)}
+              </Typography>
+            )}
+          </Box>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={
+              refreshingAll ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />
+            }
+            disabled={refreshingAll || refreshingSlug !== null || packs.length === 0}
+            onClick={refreshAllPacks}
+            sx={{ flexShrink: 0, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+          >
+            Download all lists
+          </Button>
+        </Stack>
+        <Stack spacing={1.5}>
+          {packs.map((pack) => {
+            const isRefreshing = refreshingSlug === pack.slug;
+            const packBusy = isRefreshing || refreshingAll || savingSlug === pack.slug;
+            return (
+              <Stack
+                key={pack.slug}
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                justifyContent="space-between"
+                spacing={1}
+                sx={{
+                  py: 1,
+                  px: 1,
+                  borderRadius: 1,
+                  bgcolor: 'action.hover',
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {pack.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {pack.description}
+                    {pack.domain_list_source === 'seed' ? ' · seed list only — download for full count' : ''}
+                  </Typography>
+                </Box>
+                <Stack alignItems="center" sx={{ minWidth: 120, px: 1 }}>
+                  <Chip
+                    label={formatBlockedSiteCount(pack.domain_count)}
+                    color={pack.domain_list_source === 'snapshot' ? 'primary' : 'default'}
+                    variant={pack.enabled_globally ? 'filled' : 'outlined'}
+                    sx={{ fontWeight: 700, fontSize: '0.95rem', height: 32 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, textAlign: 'center' }}>
+                    sites in list
+                  </Typography>
+                  {pack.enabled_globally && (
+                    <Typography
+                      variant="caption"
+                      color="success.main"
+                      sx={{ fontWeight: 600, textAlign: 'center' }}
+                    >
+                      {formatBlockedSiteCount(packBlockingSiteCount(pack))} blocked now
+                    </Typography>
+                  )}
+                </Stack>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                  sx={{ flexShrink: 0 }}
                 >
-                  Refresh
-                </Button>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={pack.enabled_globally}
-                      disabled={savingSlug === pack.slug}
-                      onChange={() => togglePack(pack)}
-                    />
-                  }
-                  label={pack.enabled_globally ? 'On' : 'Off'}
-                />
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    startIcon={
+                      isRefreshing ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />
+                    }
+                    disabled={packBusy}
+                    onClick={() => refreshPackList(pack)}
+                  >
+                    Download list
+                  </Button>
+                  <FormControlLabel
+                    sx={{ m: 0 }}
+                    control={
+                      <Switch
+                        checked={pack.enabled_globally}
+                        disabled={packBusy}
+                        onChange={() => togglePack(pack)}
+                      />
+                    }
+                    label={pack.enabled_globally ? 'On' : 'Off'}
+                  />
+                </Stack>
               </Stack>
-            </Stack>
-          ))}
+            );
+          })}
         </Stack>
       </Paper>
 
@@ -248,9 +375,12 @@ export default function PolicyPage() {
                 </Typography>
               )}
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                {profile.enabled_pack_slugs.map((slug) => (
-                  <Chip key={slug} label={slug} size="small" />
-                ))}
+                {profile.enabled_pack_slugs.map((slug) => {
+                  const n = countsBySlug[slug];
+                  const label =
+                    n != null ? `${slug}: ${formatBlockedSiteCount(n)} sites` : slug;
+                  return <Chip key={slug} label={label} size="small" variant="outlined" />;
+                })}
               </Stack>
               {profile.schedule_rules.length > 0 && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
