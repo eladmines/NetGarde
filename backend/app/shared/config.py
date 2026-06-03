@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     # Anomaly detection
     NEW_DOMAIN_ALERTS: bool = True
     BANDWIDTH_ALERT_MIB_PER_SEC: float = 50.0
+    USAGE_LIVE_MAX_AGE_SEC: int = 45
 
     # Device identity (issued at VPN enroll, used for /v1/usage and future device APIs)
     DEVICE_TOKEN_SECRET: str = ""

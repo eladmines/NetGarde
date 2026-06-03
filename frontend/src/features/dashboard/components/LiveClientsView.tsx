@@ -16,6 +16,9 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import DevicesIcon from '@mui/icons-material/Devices';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import LinearProgress from '@mui/material/LinearProgress';
 import { Link as RouterLink } from 'react-router-dom';
 import { clientProfilePath } from '../../devices/clientProfilePaths';
 import {
@@ -23,6 +26,73 @@ import {
   LiveClientRow,
   useLiveClients,
 } from '../hooks/useLiveClients';
+import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
+
+function BandwidthChips({ client }: { client: LiveClientRow }) {
+  const bw = client.bandwidth;
+  if (!bw || bw.total_mib_per_sec <= 0) {
+    if (client.source === 'vpn_enroll') {
+      return (
+        <Typography variant="caption" color="text.secondary">
+          No VPN traffic sample — use{' '}
+          <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace' }}>
+            --stats-interval 5
+          </Typography>{' '}
+          on netgarde-wg
+        </Typography>
+      );
+    }
+    return null;
+  }
+
+  const maxRate = Math.max(bw.rx_mib_per_sec, bw.tx_mib_per_sec, 0.01);
+  const downPct = Math.min(100, (bw.rx_mib_per_sec / maxRate) * 100);
+  const upPct = Math.min(100, (bw.tx_mib_per_sec / maxRate) * 100);
+
+  return (
+    <Stack spacing={0.75} sx={{ mt: 0.75, width: '100%' }}>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<ArrowDownwardIcon sx={{ fontSize: '14px !important' }} />}
+          label={`${formatMibPerSec(bw.rx_mib_per_sec)} MiB/s`}
+          sx={{ height: 24 }}
+        />
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<ArrowUpwardIcon sx={{ fontSize: '14px !important' }} />}
+          label={`${formatMibPerSec(bw.tx_mib_per_sec)} MiB/s`}
+          sx={{ height: 24 }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          +{formatBytesCompact(bw.delta_rx_bytes)} ↓ / +{formatBytesCompact(bw.delta_tx_bytes)} ↑
+          last interval
+        </Typography>
+      </Stack>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 28 }}>
+          ↓
+        </Typography>
+        <LinearProgress
+          variant="determinate"
+          value={downPct}
+          sx={{ flex: 1, height: 6, borderRadius: 1 }}
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 28 }}>
+          ↑
+        </Typography>
+        <LinearProgress
+          variant="determinate"
+          value={upPct}
+          color="secondary"
+          sx={{ flex: 1, height: 6, borderRadius: 1 }}
+        />
+      </Stack>
+    </Stack>
+  );
+}
 
 function ClientRow({ client }: { client: LiveClientRow }) {
   const title = client.hostname || client.client_ip;
@@ -68,9 +138,12 @@ function ClientRow({ client }: { client: LiveClientRow }) {
           </Stack>
         }
         secondary={
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
-            {subtitleParts.join(' · ')}
-          </Typography>
+          <Box component="span" sx={{ display: 'block' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
+              {subtitleParts.join(' · ')}
+            </Typography>
+            <BandwidthChips client={client} />
+          </Box>
         }
       />
     </ListItemButton>
@@ -78,7 +151,8 @@ function ClientRow({ client }: { client: LiveClientRow }) {
 }
 
 export default function LiveClientsView() {
-  const { clients, loading, error, enrolledCount, refetch } = useLiveClients();
+  const { clients, loading, error, usageError, enrolledCount, aggregateBandwidth, refetch } =
+    useLiveClients();
 
   if (loading && clients.length === 0) {
     return (
@@ -101,6 +175,8 @@ export default function LiveClientsView() {
             ? 'No clients connected'
             : `${clients.length} connected client${clients.length === 1 ? '' : 's'}`}
           {enrolledCount > 0 && ` · ${enrolledCount} VPN enrolled`}
+          {aggregateBandwidth.total_mib_per_sec > 0 &&
+            ` · ↓ ${formatMibPerSec(aggregateBandwidth.rx_mib_per_sec)} / ↑ ${formatMibPerSec(aggregateBandwidth.tx_mib_per_sec)} MiB/s total`}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <Tooltip title="Refresh">
@@ -113,6 +189,11 @@ export default function LiveClientsView() {
       {error && (
         <Alert severity="warning" sx={{ mx: 2, mt: 1 }}>
           {error}
+        </Alert>
+      )}
+      {usageError && (
+        <Alert severity="info" sx={{ mx: 2, mt: 1 }}>
+          Bandwidth: {usageError}
         </Alert>
       )}
 

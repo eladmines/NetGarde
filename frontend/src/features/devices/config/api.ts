@@ -8,6 +8,7 @@ import {
   BlockedClientsListResponse,
 } from '../types/device';
 import { DevicePolicyAssignment } from '../../policy/types/policy';
+import { DeviceUsageLiveResponse } from '../../dashboard/types/usageLive';
 
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 
@@ -29,6 +30,10 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const devicesApi = {
   list: () => apiFetch<Device[]>('/devices'),
+  listUsageLive: (maxAgeSec?: number) => {
+    const q = maxAgeSec != null ? `?max_age_sec=${maxAgeSec}` : '';
+    return apiFetch<DeviceUsageLiveResponse>(`/devices/usage/live${q}`);
+  },
   listBlockedClients: () => apiFetch<BlockedClientsListResponse>('/devices/blocked-clients'),
   getPolicyAssignment: (deviceId: number) =>
     apiFetch<DevicePolicyAssignment>(`/devices/${deviceId}/policy-assignment`),
