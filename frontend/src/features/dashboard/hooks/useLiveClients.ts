@@ -155,8 +155,8 @@ export function useLiveClients(): UseLiveClientsResult {
     const withActivity = withLiveActivity(buildRows(devices));
     const withBandwidth = attachBandwidth(withActivity, byDeviceId, byClientIp);
     return sortClients(filterLiveRegisteredClients(withBandwidth));
-    // dnsActivityTick: re-run when DNS WebSocket marks clients active (not in row data).
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional refresh trigger
+  // dnsActivityTick forces refresh when DNS live feed marks clients active.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [devices, byDeviceId, byClientIp, dnsActivityTick]);
 
   useEffect(
