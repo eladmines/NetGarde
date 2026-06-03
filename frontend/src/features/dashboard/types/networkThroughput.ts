@@ -6,6 +6,8 @@ export interface ServerNetworkThroughput {
 }
 
 export interface NetworkThroughputPoint extends ServerNetworkThroughput {
+  /** Unix ms — used for time axis and 60-minute window. */
   ts: number;
+  /** Legacy display label; chart uses `ts` with automatic formatting. */
   label: string;
 }
