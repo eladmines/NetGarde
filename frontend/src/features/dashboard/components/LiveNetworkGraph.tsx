@@ -4,6 +4,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { LineChart } from '@mui/x-charts/LineChart';
 import type { NetworkThroughputPoint, ServerNetworkThroughput } from '../types/networkThroughput';
 import { formatMibPerSec } from '../utils/formatBandwidth';
@@ -23,12 +26,16 @@ interface LiveNetworkGraphProps {
   serverThroughput: ServerNetworkThroughput;
   history: NetworkThroughputPoint[];
   usageError: string | null;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 export default function LiveNetworkGraph({
   serverThroughput,
   history,
   usageError,
+  onRefresh,
+  refreshing = false,
 }: LiveNetworkGraphProps) {
   const theme = useTheme();
 
@@ -46,21 +53,30 @@ export default function LiveNetworkGraph({
   const upColor = theme.palette.secondary.main;
 
   return (
-    <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-      <Stack
-        direction="row"
-        alignItems="baseline"
-        spacing={1}
-        flexWrap="wrap"
-        useFlexGap
-        sx={{ mb: 1 }}
-      >
-        <Typography variant="subtitle2" component="span">
-          Live network throughput
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          All VPN clients reporting to server
-        </Typography>
+    <Box sx={{ px: 2, py: 2 }}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+        <Stack
+          direction="row"
+          alignItems="baseline"
+          spacing={1}
+          flexWrap="wrap"
+          useFlexGap
+          sx={{ flex: 1 }}
+        >
+          <Typography variant="subtitle2" component="span">
+            Live network throughput
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            All VPN clients reporting to server
+          </Typography>
+        </Stack>
+        {onRefresh && (
+          <Tooltip title="Refresh">
+            <IconButton size="small" onClick={onRefresh} disabled={refreshing}>
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Stack>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
@@ -104,7 +120,7 @@ export default function LiveNetworkGraph({
         </Typography>
       ) : (
         <LineChart
-          height={200}
+          height={260}
           margin={{ left: 4, right: 12, top: 8, bottom: 0 }}
           grid={{ horizontal: true }}
           xAxis={[
