@@ -23,8 +23,18 @@ import { Link as RouterLink } from 'react-router-dom';
 import { clientProfilePath } from '../../devices/clientProfilePaths';
 import { formatClientSource, LiveClientRow, UseLiveClientsResult } from '../hooks/useLiveClients';
 import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
+import {
+  downloadChipSx,
+  downloadProgressSx,
+  getBandwidthColors,
+  uploadChipSx,
+  uploadProgressSx,
+} from '../utils/bandwidthColors';
+import { useTheme } from '@mui/material/styles';
 
 function BandwidthChips({ client }: { client: LiveClientRow }) {
+  const theme = useTheme();
+  const colors = getBandwidthColors(theme);
   const bw = client.bandwidth;
   if (!bw || bw.total_mib_per_sec <= 0) {
     if (client.source === 'vpn_enroll') {
@@ -52,15 +62,15 @@ function BandwidthChips({ client }: { client: LiveClientRow }) {
           size="small"
           variant="outlined"
           icon={<ArrowDownwardIcon sx={{ fontSize: '14px !important' }} />}
-          label={`${formatMibPerSec(bw.rx_mib_per_sec)} MiB/s`}
-          sx={{ height: 24 }}
+          label={`↓ ${formatMibPerSec(bw.rx_mib_per_sec)} MiB/s`}
+          sx={{ height: 24, ...downloadChipSx(theme) }}
         />
         <Chip
           size="small"
           variant="outlined"
           icon={<ArrowUpwardIcon sx={{ fontSize: '14px !important' }} />}
-          label={`${formatMibPerSec(bw.tx_mib_per_sec)} MiB/s`}
-          sx={{ height: 24 }}
+          label={`↑ ${formatMibPerSec(bw.tx_mib_per_sec)} MiB/s`}
+          sx={{ height: 24, ...uploadChipSx(theme) }}
         />
         <Typography variant="caption" color="text.secondary">
           +{formatBytesCompact(bw.delta_rx_bytes)} ↓ / +{formatBytesCompact(bw.delta_tx_bytes)} ↑
@@ -68,22 +78,21 @@ function BandwidthChips({ client }: { client: LiveClientRow }) {
         </Typography>
       </Stack>
       <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 28 }}>
+        <Typography variant="caption" sx={{ minWidth: 28, color: colors.download, fontWeight: 600 }}>
           ↓
         </Typography>
         <LinearProgress
           variant="determinate"
           value={downPct}
-          sx={{ flex: 1, height: 6, borderRadius: 1 }}
+          sx={{ flex: 1, ...downloadProgressSx(theme) }}
         />
-        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 28 }}>
+        <Typography variant="caption" sx={{ minWidth: 28, color: colors.upload, fontWeight: 600 }}>
           ↑
         </Typography>
         <LinearProgress
           variant="determinate"
           value={upPct}
-          color="secondary"
-          sx={{ flex: 1, height: 6, borderRadius: 1 }}
+          sx={{ flex: 1, ...uploadProgressSx(theme) }}
         />
       </Stack>
     </Stack>
