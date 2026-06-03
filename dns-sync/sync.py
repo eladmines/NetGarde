@@ -23,6 +23,7 @@ API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 POLICY_DNS_SYNC_ENDPOINT = os.getenv('POLICY_DNS_SYNC_ENDPOINT', '/policy/dns-sync')
 POLICY_SYNC_REPORT_ENDPOINT = os.getenv('POLICY_SYNC_REPORT_ENDPOINT', '/policy/sync-report')
 BLOCK_IP = os.getenv('BLOCK_IP', '0.0.0.0')
+BLOCK_IPV6_IP = os.getenv('BLOCK_IPV6_IP', '::')
 DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
 SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))
 DNSMASQ_RESTART_CMD = os.getenv('DNSMASQ_RESTART_CMD', 'killall -HUP dnsmasq')
@@ -63,22 +64,49 @@ def fetch_policy_dns_sync(api_url: str, endpoint: str) -> Optional[Dict[str, Any
         return None
 
 
-def domains_to_dnsmasq_lines(domains: List[str], block_ip: str) -> List[str]:
+def _normalize_blocked_domain(site: str) -> str:
+    domain = str(site).strip().lower()
+    domain = domain.replace('http://', '').replace('https://', '').replace('www.', '')
+    return domain.split('/')[0].split('?')[0]
+
+
+def block_domain_dnsmasq_lines(
+    domain: str,
+    block_ip: str,
+    block_ipv6_ip: str,
+) -> List[str]:
+    """IPv4 + IPv6 sinkhole lines (AAAA bypass fix for dual-stack clients)."""
+    lines = [f"address=/{domain}/{block_ip}"]
+    if block_ipv6_ip:
+        lines.append(f"address=/{domain}/{block_ipv6_ip}")
+    return lines
+
+
+def domains_to_dnsmasq_lines(
+    domains: List[str],
+    block_ip: str,
+    block_ipv6_ip: Optional[str] = None,
+) -> List[str]:
+    if block_ipv6_ip is None:
+        block_ipv6_ip = BLOCK_IPV6_IP
     entries = []
     seen = set()
     for site in domains:
-        domain = str(site).strip().lower()
+        domain = _normalize_blocked_domain(site)
         if not domain or domain in seen:
             continue
         seen.add(domain)
-        domain = domain.replace('http://', '').replace('https://', '').replace('www.', '')
-        domain = domain.split('/')[0].split('?')[0]
-        if domain:
-            entries.append(f"address=/{domain}/{block_ip}")
+        entries.extend(block_domain_dnsmasq_lines(domain, block_ip, block_ipv6_ip))
     return entries
 
 
-def convert_device_entry_to_dnsmasq(entry: Dict[str, Any], block_ip: str) -> List[str]:
+def convert_device_entry_to_dnsmasq(
+    entry: Dict[str, Any],
+    block_ip: str,
+    block_ipv6_ip: Optional[str] = None,
+) -> List[str]:
+    if block_ipv6_ip is None:
+        block_ipv6_ip = BLOCK_IPV6_IP
     mac = (entry.get('mac_address') or '').strip().lower()
     tag = entry.get('tag') or f"ng_device_{entry.get('device_id')}"
     if not mac:
@@ -100,8 +128,9 @@ def convert_device_entry_to_dnsmasq(entry: Dict[str, Any], block_ip: str) -> Lis
             d = str(domain).strip().lower()
             if not d:
                 continue
-            lines.append(f"tag:{tag}")
-            lines.append(f"address=/{d}/{block_ip}")
+            for addr_line in block_domain_dnsmasq_lines(d, block_ip, block_ipv6_ip):
+                lines.append(f"tag:{tag}")
+                lines.append(addr_line)
     return lines
 
 

@@ -27,10 +27,13 @@ BLOCK_IP=${BLOCK_IP:-${BLOCK_PAGE_IP:-0.0.0.0}}
 # Run the DNS sync container once (SYNC_INTERVAL=0 means run once and exit)
 # Note: We disable the internal reload since it can't access host dnsmasq
 # Use --no-deps to skip starting dependencies (backend should already be running)
+BLOCK_IPV6_IP=${BLOCK_IPV6_IP:-::}
+
 docker compose run --rm --no-deps \
   -e SYNC_INTERVAL=0 \
   -e DNSMASQ_RESTART_CMD="" \
   -e BLOCK_IP="$BLOCK_IP" \
+  -e BLOCK_IPV6_IP="$BLOCK_IPV6_IP" \
   dns-sync
 
 # Reload dnsmasq on the host after container completes
