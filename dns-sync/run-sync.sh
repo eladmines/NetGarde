@@ -18,13 +18,20 @@ fi
 
 # Get DNSMASQ_RESTART_CMD from environment or use default
 DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
-# Redirect blocked domains to this server by default (for block page)
-BLOCK_PAGE_IP=${BLOCK_PAGE_IP:-$(hostname -I | awk '{print $1}')}
+
+# Blocked domains: default 0.0.0.0 (DNS sinkhole). Do NOT use EC2 VPC IP (172.31.x.x):
+# WireGuard clients (10.0.0.x) cannot reach it. Set BLOCK_PAGE_IP=10.0.0.1 only if you
+# serve a block page on wg0.
+BLOCK_IP=${BLOCK_IP:-${BLOCK_PAGE_IP:-0.0.0.0}}
 
 # Run the DNS sync container once (SYNC_INTERVAL=0 means run once and exit)
 # Note: We disable the internal reload since it can't access host dnsmasq
 # Use --no-deps to skip starting dependencies (backend should already be running)
-docker compose run --rm --no-deps -e SYNC_INTERVAL=0 -e DNSMASQ_RESTART_CMD="" -e BLOCK_PAGE_IP="$BLOCK_PAGE_IP" dns-sync
+docker compose run --rm --no-deps \
+  -e SYNC_INTERVAL=0 \
+  -e DNSMASQ_RESTART_CMD="" \
+  -e BLOCK_IP="$BLOCK_IP" \
+  dns-sync
 
 # Reload dnsmasq on the host after container completes
 if [ $? -eq 0 ]; then
