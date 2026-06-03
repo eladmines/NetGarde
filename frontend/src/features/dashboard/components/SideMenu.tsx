@@ -119,7 +119,6 @@ export default function SideMenu() {
         <Avatar
           sizes="small"
           alt="Riley Carter"
-          src="/static/images/avatar/7.jpg"
           sx={{ width: open ? 36 : 32, height: open ? 36 : 32 }}
         />
         {open && (

@@ -6,7 +6,11 @@ from functools import lru_cache
 from typing import Dict, List, Set
 
 from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, REMOTE_PACK_SLUGS
-from app.features.policy.pack_fetch import load_remote_or_static_pack, refresh_remote_pack
+from app.features.policy.pack_fetch import (
+    count_cached_pack_domains,
+    load_remote_or_static_pack,
+    refresh_remote_pack,
+)
 
 
 def clear_pack_cache() -> None:
@@ -30,6 +34,11 @@ def refresh_pack(slug: str) -> int:
     count = len(refresh_remote_pack(slug, force=True))
     clear_pack_cache()
     return count
+
+
+def pack_domain_counts() -> Dict[str, int]:
+    """Counts for admin API — never triggers upstream fetch."""
+    return {slug: count_cached_pack_domains(slug) for slug in BUILTIN_PACK_SLUGS}
 
 
 def domains_for_packs(slugs: List[str]) -> Set[str]:

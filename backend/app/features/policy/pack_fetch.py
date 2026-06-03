@@ -151,10 +151,38 @@ def refresh_remote_pack(slug: str, *, force: bool = False) -> FrozenSet[str]:
         raise
 
 
+def load_cached_pack(slug: str) -> FrozenSet[str]:
+    """Load domains from on-disk snapshot or bundled static file (no network I/O)."""
+    snap = snapshot_path(slug)
+    if snap.is_file():
+        domains = _read_domains_file(snap)
+        if domains:
+            return frozenset(domains)
+    static = DATA_DIR / f"{slug}.txt"
+    if static.is_file():
+        return frozenset(_read_domains_file(static))
+    return frozenset()
+
+
+def count_cached_pack_domains(slug: str) -> int:
+    """Domain count for API display without loading full packs into memory."""
+    snap = snapshot_path(slug)
+    if snap.is_file():
+        return len(_read_domains_file(snap))
+    static = DATA_DIR / f"{slug}.txt"
+    if static.is_file():
+        return len(_read_domains_file(static))
+    return 0
+
+
 def load_remote_or_static_pack(slug: str) -> FrozenSet[str]:
+    """DNS sync path: prefer cache; refresh from network only if cache is empty."""
+    cached = load_cached_pack(slug)
+    if cached:
+        return cached
     if remote_pack_url(slug):
-        return refresh_remote_pack(slug, force=False)
-    path = DATA_DIR / f"{slug}.txt"
-    if not path.exists():
-        return frozenset()
-    return frozenset(_read_domains_file(path))
+        try:
+            return refresh_remote_pack(slug, force=False)
+        except Exception:
+            log.warning("pack %s refresh failed during load; using empty set", slug)
+    return frozenset()

@@ -8,7 +8,7 @@ from app.features.client_behavior.repositories.device_security_policy_repository
 )
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, REMOTE_PACK_SLUGS
-from app.features.policy.pack_loader import load_all_packs, refresh_pack
+from app.features.policy.pack_loader import load_all_packs, pack_domain_counts, refresh_pack
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.repositories.policy_sync_repository import PolicySyncRepository
 from app.features.policy.schemas.policy import (
@@ -32,7 +32,7 @@ class PolicyService:
         self.sync_repo = PolicySyncRepository(db)
 
     def list_packs(self) -> List[PolicyPackRead]:
-        counts = {slug: len(domains) for slug, domains in load_all_packs().items()}
+        counts = pack_domain_counts()
         return [
             PolicyPackRead(
                 id=p.id,
@@ -71,7 +71,7 @@ class PolicyService:
         if not pack:
             raise HTTPException(status_code=404, detail=f"Pack {slug} not found")
         self.db.commit()
-        counts = {s: len(d) for s, d in load_all_packs().items()}
+        counts = pack_domain_counts()
         return PolicyPackRead(
             id=pack.id,
             slug=pack.slug,
