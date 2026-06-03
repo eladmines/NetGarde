@@ -7,7 +7,7 @@ from app.features.client_behavior.repositories.device_security_policy_repository
     DeviceSecurityPolicyRepository,
 )
 from app.features.devices.repositories.device_repository import DeviceRepository
-from app.features.policy.pack_common import REMOTE_PACK_SLUGS
+from app.features.policy.pack_common import BUILTIN_PACK_SLUGS, REMOTE_PACK_SLUGS
 from app.features.policy.pack_loader import load_all_packs, refresh_pack
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.repositories.policy_sync_repository import PolicySyncRepository
@@ -47,10 +47,12 @@ class PolicyService:
 
     def refresh_pack_domains(self, slug: str) -> PolicyPackRefreshResponse:
         slug = slug.strip().lower()
+        if slug not in BUILTIN_PACK_SLUGS:
+            raise HTTPException(status_code=404, detail=f"Pack {slug} not found")
         if slug not in REMOTE_PACK_SLUGS:
             raise HTTPException(
                 status_code=400,
-                detail=f"Pack {slug} uses static data only; remote refresh not configured",
+                detail=f"Pack {slug} has no remote list configured",
             )
         try:
             count = refresh_pack(slug)

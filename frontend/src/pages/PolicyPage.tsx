@@ -36,6 +36,7 @@ export default function PolicyPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
+  const [refreshingSlug, setRefreshingSlug] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
 
   const loadSyncStatus = useCallback(async () => {
@@ -70,6 +71,24 @@ export default function PolicyPage() {
     const id = window.setInterval(loadSyncStatus, SYNC_POLL_MS);
     return () => window.clearInterval(id);
   }, [loadSyncStatus]);
+
+  const refreshPackList = async (pack: PolicyPack) => {
+    setRefreshingSlug(pack.slug);
+    setError(null);
+    try {
+      const result = await policyApi.refreshPack(pack.slug);
+      setPacks((prev) =>
+        prev.map((p) =>
+          p.slug === pack.slug ? { ...p, domain_count: result.domain_count } : p,
+        ),
+      );
+      setInfo(result.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to refresh pack list');
+    } finally {
+      setRefreshingSlug(null);
+    }
+  };
 
   const togglePack = async (pack: PolicyPack) => {
     setSavingSlug(pack.slug);
@@ -149,8 +168,8 @@ export default function PolicyPage() {
           List packs (network-wide)
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Enabled packs apply to every device, merged with each device&apos;s profile. Toggling queues
-          an immediate DNS policy sync on the server.
+          Lists are downloaded from curated upstream sources (large blocklists, like Social). Use
+          Refresh to update counts; toggling On queues an immediate DNS policy sync.
         </Typography>
         <Stack spacing={1}>
           {packs.map((pack) => (
@@ -169,16 +188,27 @@ export default function PolicyPage() {
                   {pack.description} · {pack.domain_count} domains
                 </Typography>
               </Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={pack.enabled_globally}
-                    disabled={savingSlug === pack.slug}
-                    onChange={() => togglePack(pack)}
-                  />
-                }
-                label={pack.enabled_globally ? 'On' : 'Off'}
-              />
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  size="small"
+                  variant="text"
+                  startIcon={<RefreshIcon />}
+                  disabled={refreshingSlug === pack.slug}
+                  onClick={() => refreshPackList(pack)}
+                >
+                  Refresh
+                </Button>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={pack.enabled_globally}
+                      disabled={savingSlug === pack.slug}
+                      onChange={() => togglePack(pack)}
+                    />
+                  }
+                  label={pack.enabled_globally ? 'On' : 'Off'}
+                />
+              </Stack>
             </Stack>
           ))}
         </Stack>

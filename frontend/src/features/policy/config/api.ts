@@ -26,6 +26,11 @@ export const policyApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled_globally }),
     }),
+  refreshPack: (slug: string) =>
+    apiFetch<{ slug: string; domain_count: number; message: string }>(
+      `/policy/packs/${slug}/refresh`,
+      { method: 'POST' },
+    ),
   listProfiles: () => apiFetch<PolicyProfile[]>('/policy/profiles'),
   getSyncStatus: () => apiFetch<PolicySyncStatus>('/policy/sync-status'),
   applyPolicy: () =>
