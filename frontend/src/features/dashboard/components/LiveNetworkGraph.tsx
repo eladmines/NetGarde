@@ -8,6 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { LineChart } from '@mui/x-charts/LineChart';
+import dayjs from 'dayjs';
 import type { NetworkThroughputPoint, ServerNetworkThroughput } from '../types/networkThroughput';
 import { formatMibPerSec } from '../utils/formatBandwidth';
 import {
@@ -15,6 +16,10 @@ import {
   getBandwidthColors,
   uploadChipSx,
 } from '../utils/bandwidthColors';
+import {
+  downsampleThroughputForChart,
+  THROUGHPUT_HISTORY_WINDOW_MS,
+} from '../utils/throughputHistory';
 
 function AreaGradient({ color, id }: { color: string; id: string }) {
   return (
@@ -25,6 +30,17 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
       </linearGradient>
     </defs>
   );
+}
+
+function formatTimeAxisTick(value: Date, windowMs: number): string {
+  const d = dayjs(value);
+  if (windowMs >= 24 * 60 * 60 * 1000) {
+    return d.format('MMM D HH:mm');
+  }
+  if (windowMs >= 2 * 60 * 60 * 1000) {
+    return d.format('HH:mm');
+  }
+  return d.format('HH:mm:ss');
 }
 
 interface LiveNetworkGraphProps {
@@ -44,15 +60,32 @@ export default function LiveNetworkGraph({
 }: LiveNetworkGraphProps) {
   const theme = useTheme();
 
+  const chartPoints = useMemo(
+    () => downsampleThroughputForChart(history),
+    [history],
+  );
+
+  const axisRange = useMemo(() => {
+    const end = chartPoints.length > 0 ? chartPoints[chartPoints.length - 1].ts : Date.now();
+    return {
+      min: new Date(end - THROUGHPUT_HISTORY_WINDOW_MS),
+      max: new Date(end),
+    };
+  }, [chartPoints]);
+
+  const timeAxisData = useMemo(
+    () => chartPoints.map((p) => new Date(p.ts)),
+    [chartPoints],
+  );
+
   const peakTotal = useMemo(
     () => history.reduce((max, p) => Math.max(max, p.total_mib_per_sec), 0),
     [history],
   );
 
-  const chartReady = history.length >= 2;
-  const labels = history.map((p) => p.label);
-  const downSeries = history.map((p) => p.rx_mib_per_sec);
-  const upSeries = history.map((p) => p.tx_mib_per_sec);
+  const chartReady = chartPoints.length >= 2;
+  const downSeries = chartPoints.map((p) => p.rx_mib_per_sec);
+  const upSeries = chartPoints.map((p) => p.tx_mib_per_sec);
 
   const { download: downColor, upload: upColor } = getBandwidthColors(theme);
 
@@ -71,7 +104,7 @@ export default function LiveNetworkGraph({
             Live network throughput
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            All VPN clients reporting to server
+            Last 60 minutes · all VPN clients reporting to server
           </Typography>
         </Stack>
         {onRefresh && (
@@ -118,7 +151,7 @@ export default function LiveNetworkGraph({
         </Typography>
       ) : !chartReady ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-          Collecting samples… Run netgarde-wg with{' '}
+          Collecting samples for the last 60 minutes… Run netgarde-wg with{' '}
           <Typography component="span" variant="body2" sx={{ fontFamily: 'monospace' }}>
             --stats-interval 5
           </Typography>{' '}
@@ -126,8 +159,8 @@ export default function LiveNetworkGraph({
         </Typography>
       ) : (
         <LineChart
-          height={260}
-          margin={{ left: 4, right: 12, top: 8, bottom: 24 }}
+          height={280}
+          margin={{ left: 4, right: 16, top: 8, bottom: 36 }}
           grid={{ horizontal: true }}
           slotProps={{
             legend: {
@@ -136,14 +169,18 @@ export default function LiveNetworkGraph({
           }}
           xAxis={[
             {
-              scaleType: 'point',
-              data: labels,
-              tickInterval: (_value, index) => index === 0 || index === labels.length - 1,
+              scaleType: 'time',
+              data: timeAxisData,
+              min: axisRange.min,
+              max: axisRange.max,
+              tickNumber: 8,
+              valueFormatter: (value) =>
+                formatTimeAxisTick(value as Date, THROUGHPUT_HISTORY_WINDOW_MS),
             },
           ]}
           yAxis={[
             {
-              width: 44,
+              width: 48,
               label: 'MiB/s',
             },
           ]}

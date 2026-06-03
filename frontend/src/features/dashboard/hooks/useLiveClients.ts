@@ -10,6 +10,11 @@ import {
   NetworkThroughputPoint,
   ServerNetworkThroughput,
 } from '../types/networkThroughput';
+import {
+  loadStoredThroughputHistory,
+  pruneThroughputHistory,
+  saveStoredThroughputHistory,
+} from '../utils/throughputHistory';
 
 export interface LiveClientRow {
   client_ip: string;
@@ -25,15 +30,6 @@ export interface LiveClientRow {
 
 const POLL_MS = 12_000;
 const USAGE_POLL_MS = 4_000;
-const THROUGHPUT_HISTORY_MAX = 45;
-
-function formatTimeLabel(d: Date): string {
-  return d.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-}
 
 /** Sum all VPN usage samples = total traffic through the server (all reporting peers). */
 export function aggregateServerUsage(items: DeviceUsageLiveItem[]): ServerNetworkThroughput {
@@ -170,7 +166,9 @@ export function useLiveClients(): UseLiveClientsResult {
     total_mib_per_sec: 0,
     reporting_clients: 0,
   });
-  const [throughputHistory, setThroughputHistory] = useState<NetworkThroughputPoint[]>([]);
+  const [throughputHistory, setThroughputHistory] = useState<NetworkThroughputPoint[]>(
+    () => loadStoredThroughputHistory(),
+  );
 
   const recomputeClients = useCallback(() => {
     const base = sortClients(
@@ -211,18 +209,13 @@ export function useLiveClients(): UseLiveClientsResult {
       setUsageByIp(maps.byClientIp);
       const server = aggregateServerUsage(resp.items);
       setServerThroughput(server);
-      const now = new Date();
+      const now = Date.now();
       const point: NetworkThroughputPoint = {
         ...server,
-        ts: now.getTime(),
-        label: formatTimeLabel(now),
+        ts: now,
+        label: '',
       };
-      setThroughputHistory((prev) => {
-        const next = [...prev, point];
-        return next.length > THROUGHPUT_HISTORY_MAX
-          ? next.slice(-THROUGHPUT_HISTORY_MAX)
-          : next;
-      });
+      setThroughputHistory((prev) => pruneThroughputHistory([...prev, point], now));
       setUsageError(null);
     } catch (e) {
       setUsageError(e instanceof Error ? e.message : 'Failed to load bandwidth');
@@ -234,6 +227,10 @@ export function useLiveClients(): UseLiveClientsResult {
     const id = setInterval(fetchUsage, USAGE_POLL_MS);
     return () => clearInterval(id);
   }, [fetchUsage]);
+
+  useEffect(() => {
+    saveStoredThroughputHistory(throughputHistory);
+  }, [throughputHistory]);
 
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
 
