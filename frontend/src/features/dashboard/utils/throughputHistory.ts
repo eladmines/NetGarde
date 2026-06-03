@@ -16,6 +16,14 @@ export function pruneThroughputHistory(
   return points.filter((p) => p.ts >= cutoff);
 }
 
+/** Highest single-series rate in the window (chart plots ↓ and ↑ separately, not total). */
+export function peakSeriesRate(points: NetworkThroughputPoint[]): number {
+  return points.reduce(
+    (max, p) => Math.max(max, p.rx_mib_per_sec, p.tx_mib_per_sec),
+    0,
+  );
+}
+
 export function downsampleThroughputForChart(
   points: NetworkThroughputPoint[],
   maxPoints = THROUGHPUT_CHART_MAX_POINTS,
