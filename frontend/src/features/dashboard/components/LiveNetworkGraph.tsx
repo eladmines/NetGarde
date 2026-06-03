@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -19,6 +19,7 @@ import {
 import {
   downsampleThroughputForChart,
   peakSeriesRate,
+  THROUGHPUT_CHART_MAX_POINTS,
   THROUGHPUT_HISTORY_WINDOW_MS,
 } from '../utils/throughputHistory';
 
@@ -71,10 +72,10 @@ export default function LiveNetworkGraph({
     return () => clearInterval(id);
   }, []);
 
-  const chartPoints = useMemo(
-    () => downsampleThroughputForChart(history),
-    [history],
-  );
+  const chartPoints = useMemo(() => {
+    const sorted = [...history].sort((a, b) => a.ts - b.ts);
+    return downsampleThroughputForChart(sorted, THROUGHPUT_CHART_MAX_POINTS, nowMs);
+  }, [history, nowMs]);
 
   const axisRange = useMemo(
     () => ({
@@ -91,16 +92,14 @@ export default function LiveNetworkGraph({
 
   const peakSeries = useMemo(() => peakSeriesRate(history), [history]);
 
-  // Y scale only grows during this page view so past spikes (e.g. 22:20) keep the same height.
-  const [yAxisMax, setYAxisMax] = useState(Y_AXIS_MIN);
-  useEffect(() => {
-    if (history.length === 0) {
-      setYAxisMax(Y_AXIS_MIN);
-      return;
-    }
-    const next = Math.max(peakSeries * Y_AXIS_HEADROOM, Y_AXIS_MIN);
-    setYAxisMax((prev) => (next > prev ? next : prev));
-  }, [history.length, peakSeries]);
+  // Session max updates synchronously so MUI never paints one frame with a shrunken Y domain.
+  const sessionPeakRef = useRef(0);
+  if (history.length === 0) {
+    sessionPeakRef.current = 0;
+  } else if (peakSeries > sessionPeakRef.current) {
+    sessionPeakRef.current = peakSeries;
+  }
+  const yAxisMax = Math.max(sessionPeakRef.current * Y_AXIS_HEADROOM, Y_AXIS_MIN);
 
   const chartReady = chartPoints.length >= 2;
   const downSeries = chartPoints.map((p) => p.rx_mib_per_sec);
@@ -183,6 +182,7 @@ export default function LiveNetworkGraph({
       ) : (
         <LineChart
           height={280}
+          skipAnimation
           margin={{ left: 4, right: 16, top: 8, bottom: 36 }}
           grid={{ horizontal: true }}
           slotProps={{
@@ -207,6 +207,7 @@ export default function LiveNetworkGraph({
               label: 'MiB/s',
               min: 0,
               max: yAxisMax,
+              domainLimit: 'strict',
             },
           ]}
           series={[
