@@ -21,13 +21,8 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import LinearProgress from '@mui/material/LinearProgress';
 import { Link as RouterLink } from 'react-router-dom';
 import { clientProfilePath } from '../../devices/clientProfilePaths';
-import {
-  formatClientSource,
-  LiveClientRow,
-  useLiveClients,
-} from '../hooks/useLiveClients';
+import { formatClientSource, LiveClientRow, UseLiveClientsResult } from '../hooks/useLiveClients';
 import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
-import LiveNetworkGraph from './LiveNetworkGraph';
 
 function BandwidthChips({ client }: { client: LiveClientRow }) {
   const bw = client.bandwidth;
@@ -151,17 +146,12 @@ function ClientRow({ client }: { client: LiveClientRow }) {
   );
 }
 
-export default function LiveClientsView() {
-  const {
-    clients,
-    loading,
-    error,
-    usageError,
-    enrolledCount,
-    serverThroughput,
-    throughputHistory,
-    refetch,
-  } = useLiveClients();
+export interface LiveClientsViewProps {
+  live: UseLiveClientsResult;
+}
+
+export default function LiveClientsView({ live }: LiveClientsViewProps) {
+  const { clients, loading, error, usageError, enrolledCount, serverThroughput, refetch } = live;
 
   if (loading && clients.length === 0) {
     return (
@@ -172,7 +162,7 @@ export default function LiveClientsView() {
   }
 
   return (
-    <Paper variant="outlined" sx={{ maxHeight: 720, display: 'flex', flexDirection: 'column' }}>
+    <Paper variant="outlined" sx={{ maxHeight: 500, display: 'flex', flexDirection: 'column' }}>
       <Stack
         direction="row"
         alignItems="center"
@@ -200,21 +190,12 @@ export default function LiveClientsView() {
           {error}
         </Alert>
       )}
-      <LiveNetworkGraph
-        serverThroughput={serverThroughput}
-        history={throughputHistory}
-        usageError={usageError}
-      />
 
       {usageError && (
         <Alert severity="info" sx={{ mx: 2, mt: 1 }}>
           Bandwidth: {usageError}
         </Alert>
       )}
-
-      <Typography variant="subtitle2" sx={{ px: 2, pt: 1, pb: 0.5 }}>
-        Connected clients
-      </Typography>
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {clients.length === 0 ? (

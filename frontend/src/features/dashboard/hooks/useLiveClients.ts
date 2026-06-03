@@ -140,7 +140,23 @@ function withLiveActivity(rows: LiveClientRow[]): LiveClientRow[] {
   }));
 }
 
-export function useLiveClients() {
+export interface UseLiveClientsResult {
+  clients: LiveClientRow[];
+  loading: boolean;
+  error: string | null;
+  usageError: string | null;
+  enrolledCount: number;
+  liveClientsBandwidth: {
+    rx_mib_per_sec: number;
+    tx_mib_per_sec: number;
+    total_mib_per_sec: number;
+  };
+  serverThroughput: ServerNetworkThroughput;
+  throughputHistory: NetworkThroughputPoint[];
+  refetch: () => Promise<void>;
+}
+
+export function useLiveClients(): UseLiveClientsResult {
   const [devices, setDevices] = useState<Device[]>([]);
   const [usageByDevice, setUsageByDevice] = useState<Map<number, ClientBandwidth>>(new Map());
   const [usageByIp, setUsageByIp] = useState<Map<string, ClientBandwidth>>(new Map());
