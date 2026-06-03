@@ -1,6 +1,9 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+import hmac
+import logging
+
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpSyncRequest
@@ -25,13 +28,18 @@ from app.features.devices.controllers.device_controller import (
 )
 from app.features.devices.dependencies import get_device_service
 from app.features.devices.services.device_service_interface import IDeviceService
+from app.shared.database import SessionLocal
 from app.shared.dependencies import get_db
+from app.features.vpn.schemas.usage_history import UsageHistoryResponse, UsageWsSnapshot
 from app.features.vpn.schemas.usage_live import DeviceUsageLiveResponse
 from app.features.vpn.services.usage_service import UsageService
 from app.shared.admin_auth import verify_admin_api_token
+from app.shared.config import settings
+from app.shared.usage_ws_manager import usage_ws_manager
 from app.shared.service_auth import verify_dns_ingest_service
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
+logger = logging.getLogger(__name__)
 
 
 def get_client_behavior_service(db: Session = Depends(get_db)) -> ClientBehaviorApiService:
@@ -69,6 +77,58 @@ def list_live_device_usage(
 ):
     """Latest per-device VPN throughput from netgarde-wg /v1/usage reports."""
     return UsageService(db).list_live_bandwidth(max_age_sec=max_age_sec)
+
+
+@router.get("/usage/history", response_model=UsageHistoryResponse)
+def list_usage_history(
+    minutes: Optional[int] = Query(default=None, ge=1, le=24 * 60),
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
+    """Server aggregate throughput time series (Redis rolling window)."""
+    return UsageService(db).list_usage_history(minutes=minutes)
+
+
+@router.websocket("/usage/ws")
+async def device_usage_websocket(websocket: WebSocket):
+    """
+    Real-time VPN usage for the dashboard (snapshot on connect, updates on each sample).
+    Admin token via ?token= when ADMIN_API_TOKEN is set.
+    """
+    expected = settings.ADMIN_API_TOKEN.strip()
+    if expected:
+        token = websocket.query_params.get("token", "").strip()
+        if not token:
+            await websocket.close(code=4401)
+            return
+        if not hmac.compare_digest(token, expected):
+            await websocket.close(code=4403)
+            return
+
+    await usage_ws_manager.connect(websocket)
+    db = SessionLocal()
+    try:
+        service = UsageService(db)
+        history = service.list_usage_history()
+        live = service.list_live_bandwidth()
+        snapshot = UsageWsSnapshot(history=history, live=live)
+        await websocket.send_text(snapshot.model_dump_json())
+    except Exception as exc:
+        logger.warning("Usage WebSocket snapshot failed: %s", exc)
+    finally:
+        db.close()
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        usage_ws_manager.disconnect(websocket)
+        logger.info("Usage WebSocket client disconnected normally")
+    except Exception as e:
+        usage_ws_manager.disconnect(websocket)
+        logger.warning("Usage WebSocket connection error: %s", e)
 
 
 @router.put("/{device_id}")

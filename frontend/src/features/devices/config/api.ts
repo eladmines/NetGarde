@@ -8,6 +8,7 @@ import {
   BlockedClientsListResponse,
 } from '../types/device';
 import { DevicePolicyAssignment } from '../../policy/types/policy';
+import { UsageHistoryResponse } from '../../dashboard/types/usageHistory';
 import { DeviceUsageLiveResponse } from '../../dashboard/types/usageLive';
 
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
@@ -34,6 +35,8 @@ export const devicesApi = {
     const q = maxAgeSec != null ? `?max_age_sec=${maxAgeSec}` : '';
     return apiFetch<DeviceUsageLiveResponse>(`/devices/usage/live${q}`);
   },
+  listUsageHistory: (minutes = 60) =>
+    apiFetch<UsageHistoryResponse>(`/devices/usage/history?minutes=${minutes}`),
   listBlockedClients: () => apiFetch<BlockedClientsListResponse>('/devices/blocked-clients'),
   getPolicyAssignment: (deviceId: number) =>
     apiFetch<DevicePolicyAssignment>(`/devices/${deviceId}/policy-assignment`),

@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: netgarde-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
   block-page:
     build:
       context: ./block-page
@@ -34,6 +47,13 @@ services:
       WG_AGENT_URL: ${WG_AGENT_URL:-http://172.17.0.1:9109}
       # Required: set WG_AGENT_TOKEN in repo-root `.env` (see `.env.production.example`) or export it in your shell.
       WG_AGENT_TOKEN: ${WG_AGENT_TOKEN:?WG_AGENT_TOKEN is required (set in .env or environment)}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      USAGE_REDIS_ENABLED: ${USAGE_REDIS_ENABLED:-true}
+      USAGE_HISTORY_MINUTES: ${USAGE_HISTORY_MINUTES:-60}
+      USAGE_PERSIST_SAMPLES: ${USAGE_PERSIST_SAMPLES:-false}
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

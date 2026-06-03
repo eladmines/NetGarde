@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { devicesApi } from '../../devices/config/api';
 import { Device } from '../../devices/types/device';
 import {
@@ -6,15 +6,8 @@ import {
   subscribeDnsClientActivity,
 } from '../../dns-queries/dnsClientActivity';
 import { ClientBandwidth, DeviceUsageLiveItem } from '../types/usageLive';
-import {
-  NetworkThroughputPoint,
-  ServerNetworkThroughput,
-} from '../types/networkThroughput';
-import {
-  loadStoredThroughputHistory,
-  pruneThroughputHistory,
-  saveStoredThroughputHistory,
-} from '../utils/throughputHistory';
+import { ServerNetworkThroughput } from '../types/networkThroughput';
+import { useUsageRealtime } from './useUsageRealtime';
 
 export interface LiveClientRow {
   client_ip: string;
@@ -29,20 +22,6 @@ export interface LiveClientRow {
 }
 
 const POLL_MS = 12_000;
-const USAGE_POLL_MS = 4_000;
-
-/** Sum all VPN usage samples = total traffic through the server (all reporting peers). */
-export function aggregateServerUsage(items: DeviceUsageLiveItem[]): ServerNetworkThroughput {
-  return items.reduce(
-    (acc, item) => ({
-      rx_mib_per_sec: acc.rx_mib_per_sec + item.rx_mib_per_sec,
-      tx_mib_per_sec: acc.tx_mib_per_sec + item.tx_mib_per_sec,
-      total_mib_per_sec: acc.total_mib_per_sec + item.total_mib_per_sec,
-      reporting_clients: acc.reporting_clients + 1,
-    }),
-    { rx_mib_per_sec: 0, tx_mib_per_sec: 0, total_mib_per_sec: 0, reporting_clients: 0 },
-  );
-}
 
 function sourceLabel(source: string | null): string {
   switch (source) {
@@ -75,15 +54,13 @@ function buildRows(devices: Device[]): LiveClientRow[] {
   }));
 }
 
-function buildUsageMaps(
-  items: Awaited<ReturnType<typeof devicesApi.listUsageLive>>['items'],
-): {
+function buildUsageMaps(items: DeviceUsageLiveItem[]): {
   byDeviceId: Map<number, ClientBandwidth>;
   byClientIp: Map<string, ClientBandwidth>;
 } {
   const byDeviceId = new Map<number, ClientBandwidth>();
   const byClientIp = new Map<string, ClientBandwidth>();
-  const toBw = (item: (typeof items)[number]): ClientBandwidth => ({
+  const toBw = (item: DeviceUsageLiveItem): ClientBandwidth => ({
     rx_mib_per_sec: item.rx_mib_per_sec,
     tx_mib_per_sec: item.tx_mib_per_sec,
     total_mib_per_sec: item.total_mib_per_sec,
@@ -151,39 +128,41 @@ export interface UseLiveClientsResult {
     total_mib_per_sec: number;
   };
   serverThroughput: ServerNetworkThroughput;
-  throughputHistory: NetworkThroughputPoint[];
+  throughputHistory: ReturnType<typeof useUsageRealtime>['throughputHistory'];
   refetch: () => Promise<void>;
 }
 
 export function useLiveClients(): UseLiveClientsResult {
   const [devices, setDevices] = useState<Device[]>([]);
-  const [usageByDevice, setUsageByDevice] = useState<Map<number, ClientBandwidth>>(new Map());
-  const [usageByIp, setUsageByIp] = useState<Map<string, ClientBandwidth>>(new Map());
-  const [clients, setClients] = useState<LiveClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usageError, setUsageError] = useState<string | null>(null);
-  const [serverThroughput, setServerThroughput] = useState<ServerNetworkThroughput>({
-    rx_mib_per_sec: 0,
-    tx_mib_per_sec: 0,
-    total_mib_per_sec: 0,
-    reporting_clients: 0,
-  });
-  const [throughputHistory, setThroughputHistory] = useState<NetworkThroughputPoint[]>(
-    () => loadStoredThroughputHistory(),
+  const [dnsActivityTick, setDnsActivityTick] = useState(0);
+
+  const {
+    liveItems,
+    serverThroughput,
+    throughputHistory,
+    usageError,
+    refetchUsage,
+  } = useUsageRealtime();
+
+  const { byDeviceId, byClientIp } = useMemo(
+    () => buildUsageMaps(liveItems),
+    [liveItems],
   );
 
-  const recomputeClients = useCallback(() => {
+  const clients = useMemo(() => {
     const withActivity = withLiveActivity(buildRows(devices));
-    const withBandwidth = attachBandwidth(withActivity, usageByDevice, usageByIp);
-    setClients(sortClients(filterLiveRegisteredClients(withBandwidth)));
-  }, [devices, usageByDevice, usageByIp]);
+    const withBandwidth = attachBandwidth(withActivity, byDeviceId, byClientIp);
+    return sortClients(filterLiveRegisteredClients(withBandwidth));
+    // dnsActivityTick: re-run when DNS WebSocket marks clients active (not in row data).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional refresh trigger
+  }, [devices, byDeviceId, byClientIp, dnsActivityTick]);
 
-  useEffect(() => {
-    recomputeClients();
-  }, [recomputeClients]);
-
-  useEffect(() => subscribeDnsClientActivity(recomputeClients), [recomputeClients]);
+  useEffect(
+    () => subscribeDnsClientActivity(() => setDnsActivityTick((t) => t + 1)),
+    [],
+  );
 
   const fetchAll = useCallback(async () => {
     setError(null);
@@ -203,40 +182,8 @@ export function useLiveClients(): UseLiveClientsResult {
     return () => clearInterval(id);
   }, [fetchAll]);
 
-  const fetchUsage = useCallback(async () => {
-    try {
-      const resp = await devicesApi.listUsageLive();
-      const maps = buildUsageMaps(resp.items);
-      setUsageByDevice(maps.byDeviceId);
-      setUsageByIp(maps.byClientIp);
-      const server = aggregateServerUsage(resp.items);
-      setServerThroughput(server);
-      const now = Date.now();
-      const point: NetworkThroughputPoint = {
-        ...server,
-        ts: now,
-        label: '',
-      };
-      setThroughputHistory((prev) => pruneThroughputHistory([...prev, point], now));
-      setUsageError(null);
-    } catch (e) {
-      setUsageError(e instanceof Error ? e.message : 'Failed to load bandwidth');
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUsage();
-    const id = setInterval(fetchUsage, USAGE_POLL_MS);
-    return () => clearInterval(id);
-  }, [fetchUsage]);
-
-  useEffect(() => {
-    saveStoredThroughputHistory(throughputHistory);
-  }, [throughputHistory]);
-
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
 
-  /** Live DNS clients only (subset of server throughput). */
   const liveClientsBandwidth = clients.reduce(
     (acc, c) => {
       if (!c.bandwidth) {
@@ -252,8 +199,8 @@ export function useLiveClients(): UseLiveClientsResult {
   );
 
   const refetch = useCallback(async () => {
-    await Promise.all([fetchAll(), fetchUsage()]);
-  }, [fetchAll, fetchUsage]);
+    await Promise.all([fetchAll(), refetchUsage()]);
+  }, [fetchAll, refetchUsage]);
 
   return {
     clients,
