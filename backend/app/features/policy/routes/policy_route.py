@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.features.policy.schemas.policy import (
@@ -6,6 +6,7 @@ from app.features.policy.schemas.policy import (
     DevicePolicyAssignmentRead,
     PolicyApplyResponse,
     PolicyDnsSyncResponse,
+    PolicyPackDomainsPage,
     PolicyPackRead,
     PolicyPackRefreshResponse,
     PolicyPackUpdate,
@@ -33,6 +34,19 @@ def list_policy_packs(
     service: PolicyService = Depends(get_policy_service),
 ):
     return service.list_packs()
+
+
+@router.get("/packs/{slug}/domains", response_model=PolicyPackDomainsPage)
+def list_policy_pack_domains(
+    slug: str,
+    q: str = Query(default="", max_length=255),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    """Paginated blocked-domain list for a pack (snapshot or seed file on server)."""
+    return service.list_pack_domains(slug, q=q, skip=skip, limit=limit)
 
 
 @router.post("/packs/{slug}/refresh", response_model=PolicyPackRefreshResponse)

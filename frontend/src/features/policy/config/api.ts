@@ -1,6 +1,13 @@
 import { getAdminAuthHeaders } from '../../../shared/utils/authHeaders';
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
-import { DevicePolicyAssignment, PolicyApplyResult, PolicyPack, PolicyProfile, PolicySyncStatus } from '../types/policy';
+import {
+  DevicePolicyAssignment,
+  PolicyApplyResult,
+  PolicyPack,
+  PolicyPackDomainsPage,
+  PolicyProfile,
+  PolicySyncStatus,
+} from '../types/policy';
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -26,6 +33,25 @@ export const policyApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled_globally }),
     }),
+  listPackDomains: (
+    slug: string,
+    params: { q?: string; skip?: number; limit?: number } = {},
+  ) => {
+    const sp = new URLSearchParams();
+    if (params.q) {
+      sp.set('q', params.q);
+    }
+    if (params.skip != null) {
+      sp.set('skip', String(params.skip));
+    }
+    if (params.limit != null) {
+      sp.set('limit', String(params.limit));
+    }
+    const qs = sp.toString();
+    return apiFetch<PolicyPackDomainsPage>(
+      `/policy/packs/${slug}/domains${qs ? `?${qs}` : ''}`,
+    );
+  },
   refreshPack: (slug: string) =>
     apiFetch<{ slug: string; domain_count: number; message: string }>(
       `/policy/packs/${slug}/refresh`,

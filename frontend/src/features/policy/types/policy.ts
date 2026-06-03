@@ -5,9 +5,18 @@ export interface PolicyPack {
   description: string | null;
   enabled_globally: boolean;
   domain_count: number;
-  /** Sites actively blocked when this pack is On network-wide */
   blocked_sites_count?: number;
   domain_list_source?: 'snapshot' | 'seed' | 'empty';
+}
+
+export interface PolicyPackDomainsPage {
+  slug: string;
+  domains: string[];
+  total: number;
+  skip: number;
+  limit: number;
+  domain_list_source: string;
+  query: string;
 }
 
 export interface PolicyProfile {
@@ -32,15 +41,6 @@ export interface ScheduleRule {
   pack_slugs: string[];
 }
 
-export interface DevicePolicyAssignment {
-  device_id: number;
-  policy_profile_id: number | null;
-  policy_profile_slug: string | null;
-  policy_profile_name: string | null;
-  in_quarantine: boolean;
-  quarantine_expires_at: string | null;
-}
-
 export interface PolicySyncStatus {
   last_sync_at: string | null;
   last_success: boolean | null;
@@ -50,4 +50,13 @@ export interface PolicySyncStatus {
 export interface PolicyApplyResult {
   queued: boolean;
   message: string;
+}
+
+export interface DevicePolicyAssignment {
+  device_id: number;
+  policy_profile_id: number | null;
+  policy_profile_slug: string | null;
+  policy_profile_name: string | null;
+  in_quarantine: boolean;
+  quarantine_expires_at: string | null;
 }

@@ -11,6 +11,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Button from '@mui/material/Button';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import PolicyPackDomainsDialog from '../features/policy/components/PolicyPackDomainsDialog';
 import { policyApi } from '../features/policy/config/api';
 import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
 import {
@@ -42,8 +44,7 @@ export default function PolicyPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
-  const [refreshingSlug, setRefreshingSlug] = useState<string | null>(null);
-  const [refreshingAll, setRefreshingAll] = useState(false);
+  const [viewPack, setViewPack] = useState<PolicyPack | null>(null);
   const [applying, setApplying] = useState(false);
 
   const countsBySlug = useMemo(() => packCountBySlug(packs), [packs]);
@@ -86,61 +87,8 @@ export default function PolicyPage() {
     return () => window.clearInterval(id);
   }, [loadSyncStatus]);
 
-  const refreshPackList = async (pack: PolicyPack) => {
-    setRefreshingSlug(pack.slug);
-    setError(null);
-    try {
-      const result = await policyApi.refreshPack(pack.slug);
-      setPacks((prev) =>
-        prev.map((p) =>
-          p.slug === pack.slug
-            ? {
-                ...p,
-                domain_count: result.domain_count,
-                blocked_sites_count: p.enabled_globally ? result.domain_count : 0,
-                domain_list_source: 'snapshot' as const,
-              }
-            : p,
-        ),
-      );
-      setInfo(result.message);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to refresh pack list');
-    } finally {
-      setRefreshingSlug(null);
-    }
-  };
-
-  const refreshAllPacks = async () => {
-    if (packs.length === 0) {
-      return;
-    }
-    setRefreshingAll(true);
-    setError(null);
-    try {
-      for (const pack of packs) {
-        setRefreshingSlug(pack.slug);
-        const result = await policyApi.refreshPack(pack.slug);
-        setPacks((prev) =>
-          prev.map((p) =>
-            p.slug === pack.slug
-              ? {
-                  ...p,
-                  domain_count: result.domain_count,
-                  blocked_sites_count: p.enabled_globally ? result.domain_count : 0,
-                  domain_list_source: 'snapshot' as const,
-                }
-              : p,
-          ),
-        );
-      }
-      setInfo('All pack lists downloaded from upstream sources.');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to download pack lists');
-    } finally {
-      setRefreshingSlug(null);
-      setRefreshingAll(false);
-    }
+  const handlePackUpdated = (updated: PolicyPack) => {
+    setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
   };
 
   const togglePack = async (pack: PolicyPack) => {
@@ -238,8 +186,7 @@ export default function PolicyPage() {
               List packs (network-wide)
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-              Download full blocklists from upstream sources, then turn packs On to enforce via
-              dnsmasq.
+              View each category to see exact blocked domains. Turn packs On to enforce via dnsmasq.
             </Typography>
             {activePackNames.length > 0 && (
               <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
@@ -250,23 +197,10 @@ export default function PolicyPage() {
               </Typography>
             )}
           </Box>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={
-              refreshingAll ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />
-            }
-            disabled={refreshingAll || refreshingSlug !== null || packs.length === 0}
-            onClick={refreshAllPacks}
-            sx={{ flexShrink: 0, alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
-          >
-            Download all lists
-          </Button>
         </Stack>
         <Stack spacing={1.5}>
           {packs.map((pack) => {
-            const isRefreshing = refreshingSlug === pack.slug;
-            const packBusy = isRefreshing || refreshingAll || savingSlug === pack.slug;
+            const packBusy = savingSlug === pack.slug;
             return (
               <Stack
                 key={pack.slug}
@@ -287,7 +221,7 @@ export default function PolicyPage() {
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {pack.description}
-                    {pack.domain_list_source === 'seed' ? ' · seed list only — download for full count' : ''}
+                    {pack.domain_list_source === 'seed' ? ' · seed list — update from upstream in viewer' : ''}
                   </Typography>
                 </Box>
                 <Stack alignItems="center" sx={{ minWidth: 120, px: 1 }}>
@@ -321,13 +255,11 @@ export default function PolicyPage() {
                     size="small"
                     variant="outlined"
                     color="primary"
-                    startIcon={
-                      isRefreshing ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />
-                    }
+                    startIcon={<VisibilityIcon />}
                     disabled={packBusy}
-                    onClick={() => refreshPackList(pack)}
+                    onClick={() => setViewPack(pack)}
                   >
-                    Download list
+                    View list
                   </Button>
                   <FormControlLabel
                     sx={{ m: 0 }}
@@ -346,6 +278,13 @@ export default function PolicyPage() {
           })}
         </Stack>
       </Paper>
+
+      <PolicyPackDomainsDialog
+        pack={viewPack}
+        open={viewPack !== null}
+        onClose={() => setViewPack(null)}
+        onPackUpdated={handlePackUpdated}
+      />
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>

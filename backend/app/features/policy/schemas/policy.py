@@ -29,6 +29,16 @@ class PolicyPackRefreshResponse(BaseModel):
     message: str
 
 
+class PolicyPackDomainsPage(BaseModel):
+    slug: str
+    domains: List[str]
+    total: int
+    skip: int
+    limit: int
+    domain_list_source: str
+    query: str = ""
+
+
 class PolicyProfileRead(BaseModel):
     id: int
     slug: str
