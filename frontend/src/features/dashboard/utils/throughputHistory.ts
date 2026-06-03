@@ -5,8 +5,8 @@ export const THROUGHPUT_HISTORY_WINDOW_MS = 60 * 60 * 1000;
 
 export const THROUGHPUT_HISTORY_STORAGE_KEY = 'netgarde:throughput-history';
 
-/** Cap rendered points so the chart stays responsive over a full hour. */
-export const THROUGHPUT_CHART_MAX_POINTS = 400;
+/** ~1 sample / 5s for 60 min; bucket downsampling only above this. */
+export const THROUGHPUT_CHART_MAX_POINTS = 720;
 
 export function pruneThroughputHistory(
   points: NetworkThroughputPoint[],
@@ -24,23 +24,38 @@ export function peakSeriesRate(points: NetworkThroughputPoint[]): number {
   );
 }
 
+function peakOfPoint(p: NetworkThroughputPoint): number {
+  return Math.max(p.rx_mib_per_sec, p.tx_mib_per_sec);
+}
+
+/** Fixed time buckets so adding samples does not skip past spikes (e.g. 22:20). */
 export function downsampleThroughputForChart(
   points: NetworkThroughputPoint[],
   maxPoints = THROUGHPUT_CHART_MAX_POINTS,
+  windowEndMs = Date.now(),
 ): NetworkThroughputPoint[] {
   if (points.length <= maxPoints) {
-    return points;
+    return [...points].sort((a, b) => a.ts - b.ts);
   }
-  const step = Math.ceil(points.length / maxPoints);
-  const sampled: NetworkThroughputPoint[] = [];
-  for (let i = 0; i < points.length; i += step) {
-    sampled.push(points[i]);
+
+  const sorted = [...points].sort((a, b) => a.ts - b.ts);
+  const bucketMs = Math.ceil(THROUGHPUT_HISTORY_WINDOW_MS / maxPoints);
+  const windowStart = windowEndMs - THROUGHPUT_HISTORY_WINDOW_MS;
+  const buckets = new Map<number, NetworkThroughputPoint>();
+
+  for (const p of sorted) {
+    if (p.ts < windowStart || p.ts > windowEndMs) {
+      continue;
+    }
+    // Epoch-aligned slots so bucket assignment does not drift as the window scrolls.
+    const slot = Math.floor(p.ts / bucketMs);
+    const existing = buckets.get(slot);
+    if (!existing || peakOfPoint(p) > peakOfPoint(existing)) {
+      buckets.set(slot, p);
+    }
   }
-  const last = points[points.length - 1];
-  if (sampled[sampled.length - 1]?.ts !== last.ts) {
-    sampled.push(last);
-  }
-  return sampled;
+
+  return [...buckets.values()].sort((a, b) => a.ts - b.ts);
 }
 
 export function loadStoredThroughputHistory(): NetworkThroughputPoint[] {
