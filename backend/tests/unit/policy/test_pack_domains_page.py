@@ -5,7 +5,11 @@ def test_list_pack_domains_page_search_and_pagination(tmp_path, monkeypatch):
     from app.features.policy import pack_fetch
 
     monkeypatch.setattr(pack_fetch, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(pack_fetch, "SNAPSHOT_DIR", tmp_path / "snapshots")
+    monkeypatch.setattr(
+        pack_fetch.settings,
+        "POLICY_PACK_SNAPSHOT_DIR",
+        str(tmp_path / "snapshots"),
+    )
     write_snapshot("social", {"alpha.com", "beta.com", "gamma.net"})
 
     page1, total, source = list_pack_domains_page("social", skip=0, limit=2)

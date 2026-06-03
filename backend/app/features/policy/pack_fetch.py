@@ -15,7 +15,13 @@ from app.shared.config import settings
 
 log = logging.getLogger(__name__)
 
-SNAPSHOT_DIR = DATA_DIR / "snapshots"
+
+def get_snapshot_dir() -> Path:
+    """Directory for fetched pack lists (must be writable by the API process)."""
+    configured = settings.POLICY_PACK_SNAPSHOT_DIR.strip()
+    if configured:
+        return Path(configured)
+    return DATA_DIR / "snapshots"
 
 # StevenBlack extension data lives under per-source subfolders (e.g. sinfonietta/).
 _STEVENBLACK = "https://raw.githubusercontent.com/StevenBlack/hosts/master"
@@ -69,7 +75,7 @@ def parse_pack_text(text: str) -> Set[str]:
 
 
 def snapshot_path(slug: str) -> Path:
-    return SNAPSHOT_DIR / f"{slug}.txt"
+    return get_snapshot_dir() / f"{slug}.txt"
 
 
 def _read_domains_file(path: Path) -> Set[str]:
@@ -85,7 +91,8 @@ def _read_domains_file(path: Path) -> Set[str]:
 
 
 def write_snapshot(slug: str, domains: Set[str]) -> Path:
-    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    snap_dir = get_snapshot_dir()
+    snap_dir.mkdir(parents=True, exist_ok=True)
     path = snapshot_path(slug)
     body = "\n".join(sorted(domains)) + ("\n" if domains else "")
     path.write_text(body, encoding="utf-8")
