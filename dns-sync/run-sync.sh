@@ -48,6 +48,11 @@ if [ $? -eq 0 ]; then
             exit 1
         }
     fi
+    if [[ -x "$PROJECT_DIR/scripts/refresh-block-page-after-sync.sh" ]]; then
+        echo "Refreshing block-page TLS SANs for HTTPS..."
+        bash "$PROJECT_DIR/scripts/refresh-block-page-after-sync.sh" || \
+            echo "warning: block-page TLS refresh failed (HTTPS may use fallback cert)"
+    fi
 fi
 
 exit $?

@@ -18,6 +18,13 @@ if ! ip -4 -o addr show dev "$WG_IF" | grep -q "inet ${BLOCK_PAGE_IP}/"; then
   echo "warning: ${BLOCK_PAGE_IP} not on $WG_IF; block-page may still work if port 80 is open on all interfaces"
 fi
 
+echo "Generating TLS (CA + SANs for blocked domains)..."
+if [[ -f /etc/dnsmasq.d/blocked-domains.conf ]]; then
+  sudo bash "$REPO_ROOT/scripts/block-page-tls/generate-certs.sh" /etc/dnsmasq.d/blocked-domains.conf
+else
+  sudo bash "$REPO_ROOT/scripts/block-page-tls/generate-certs.sh"
+fi
+
 echo "Building and starting block-page (HTTP + HTTPS)..."
 docker compose build block-page
 docker compose up -d block-page
@@ -40,3 +47,7 @@ else
 fi
 
 echo "Set BLOCK_IP=${BLOCK_PAGE_IP} in .env and run ./dns-sync/run-sync.sh"
+echo ""
+echo "For HTTPS block page on Mac, trust the CA once:"
+echo "  scp ubuntu@SERVER:/etc/netgarde/block-page-tls/ca.crt ."
+echo "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ca.crt"
