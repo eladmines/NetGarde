@@ -266,7 +266,16 @@ export default function DnsAlertsView() {
 
   return (
     <>
-      <Paper variant="outlined" sx={{ height: '100%', minHeight: 280, display: 'flex', flexDirection: 'column' }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          height: '100%',
+          minHeight: 280,
+          maxHeight: 420,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5 }}>
           <Stack direction="row" spacing={1} alignItems="center">
             <WarningAmberIcon color="warning" fontSize="small" />
@@ -280,7 +289,7 @@ export default function DnsAlertsView() {
           </Tooltip>
         </Stack>
         <Divider />
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
+        <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={28} />

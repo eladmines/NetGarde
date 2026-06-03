@@ -89,7 +89,16 @@ export default function BlockedAttemptsView() {
   }, [fetchBlockedAttempts]);
 
   return (
-    <Paper variant="outlined" sx={{ maxHeight: 420, display: 'flex', flexDirection: 'column' }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        height: '100%',
+        minHeight: 280,
+        maxHeight: 420,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Stack
         direction="row"
         alignItems="center"
@@ -111,7 +120,7 @@ export default function BlockedAttemptsView() {
         </Tooltip>
       </Stack>
 
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
         {loading && items.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 220 }}>
             <CircularProgress />
