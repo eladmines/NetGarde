@@ -12,7 +12,7 @@ This container periodically calls `GET /policy/dns-sync` and writes global + per
 
 - `API_BASE_URL` (default: `http://localhost:8000`): Base URL of the NetGarde API
 - `POLICY_DNS_SYNC_ENDPOINT` (default: `/policy/dns-sync`): Merged policy DNS sync API
-- `BLOCK_IP` (default: `0.0.0.0`): IP address to redirect blocked domains to
+- `BLOCK_IP` (default: `0.0.0.0`): IP address returned for blocked domains. Use **`0.0.0.0`** for WireGuard clients (`10.0.0.x`). Do **not** use the EC2 VPC address (`172.31.x.x` from `hostname -I`) — VPN clients cannot reach it and blocking appears broken.
 - `DNS_CONFIG_PATH` (default: `/etc/dnsmasq.d/custom.conf`): Path to dnsmasq configuration file
 - `SYNC_INTERVAL` (default: `3600`): Sync interval in seconds (0 = run once and exit)
 - `PAGE_SIZE` (default: `100`): Number of items per page when fetching from API

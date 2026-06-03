@@ -18,6 +18,10 @@ fi
 
 DNS_INGEST_TOKEN="$(read_env DNS_INGEST_TOKEN)"
 ADMIN_API_TOKEN="$(read_env ADMIN_API_TOKEN)"
+BLOCK_IP="$(read_env BLOCK_IP)"
+if [ -z "$BLOCK_IP" ]; then
+  BLOCK_IP="0.0.0.0"
+fi
 
 # --- netgarde-log-watcher (DNS → POST /dns-queries/bulk) ---
 if systemctl list-unit-files netgarde-log-watcher.service >/dev/null 2>&1; then
@@ -45,5 +49,10 @@ for key in WG_AGENT_URL WG_AGENT_TOKEN DNS_INGEST_TOKEN ADMIN_API_TOKEN; do
     echo "${key}=${val}" >>"$COMPOSE_ENV"
   fi
 done
+if grep -q "^BLOCK_IP=" "$COMPOSE_ENV" 2>/dev/null; then
+  sed -i.bak "s|^BLOCK_IP=.*|BLOCK_IP=${BLOCK_IP}|" "$COMPOSE_ENV" && rm -f "${COMPOSE_ENV}.bak"
+else
+  echo "BLOCK_IP=${BLOCK_IP}" >>"$COMPOSE_ENV"
+fi
 chmod 600 "$COMPOSE_ENV" 2>/dev/null || true
-echo "Updated ${COMPOSE_ENV} for docker compose"
+echo "Updated ${COMPOSE_ENV} for docker compose (BLOCK_IP=${BLOCK_IP})"

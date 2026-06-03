@@ -376,13 +376,12 @@ jobs:
             # Export DB_URL for docker compose
             export DB_URL="$DB_URL"
             
-            # Compute local server IP to use as blocked-domain redirect target
-            BLOCK_PAGE_IP=$(hostname -I | awk '{print $1}')
-            if [ -z "$BLOCK_PAGE_IP" ]; then
-              BLOCK_PAGE_IP="0.0.0.0"
-            fi
-            export BLOCK_PAGE_IP="$BLOCK_PAGE_IP"
-            echo "Using BLOCK_PAGE_IP=$BLOCK_PAGE_IP for blocked-domain redirect"
+            # DNS sinkhole for blocked domains (VPN clients cannot reach VPC 172.31.x.x)
+            export BLOCK_IP="${BLOCK_IP:-0.0.0.0}"
+            echo "Using BLOCK_IP=$BLOCK_IP for blocked-domain redirect"
+            grep -q '^BLOCK_IP=' "$HOME/netgarde/.env" 2>/dev/null && \
+              sed -i.bak "s|^BLOCK_IP=.*|BLOCK_IP=$BLOCK_IP|" "$HOME/netgarde/.env" && rm -f "$HOME/netgarde/.env.bak" || \
+              echo "BLOCK_IP=$BLOCK_IP" >> "$HOME/netgarde/.env"
 
             # Install WireGuard host agent (applies wg set for /v1/enroll)
             if command -v wg >/dev/null 2>&1; then
