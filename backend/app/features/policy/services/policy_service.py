@@ -47,6 +47,7 @@ class PolicyService:
                 description=p.description,
                 enabled_globally=p.enabled_globally,
                 domain_count=counts.get(p.slug, 0),
+                blocked_sites_count=counts.get(p.slug, 0) if p.enabled_globally else 0,
                 domain_list_source=sources.get(p.slug, "empty"),
             )
             for p in self.repo.list_packs()
@@ -87,6 +88,7 @@ class PolicyService:
             description=pack.description,
             enabled_globally=pack.enabled_globally,
             domain_count=counts.get(pack.slug, 0),
+            blocked_sites_count=counts.get(pack.slug, 0) if pack.enabled_globally else 0,
             domain_list_source=sources.get(pack.slug, "empty"),
         )
 

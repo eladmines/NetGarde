@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -13,6 +13,12 @@ import Button from '@mui/material/Button';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { policyApi } from '../features/policy/config/api';
 import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
+import {
+  formatBlockedSiteCount,
+  packCountBySlug,
+  packBlockingSiteCount,
+  totalBlockingSiteCount,
+} from '../features/policy/utils/packCounts';
 import { formatShortDateTime } from '../shared/utils/dateUtils';
 
 const SYNC_POLL_MS = 8000;
@@ -39,6 +45,13 @@ export default function PolicyPage() {
   const [refreshingSlug, setRefreshingSlug] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [applying, setApplying] = useState(false);
+
+  const countsBySlug = useMemo(() => packCountBySlug(packs), [packs]);
+  const totalBlocking = useMemo(() => totalBlockingSiteCount(packs), [packs]);
+  const activePackNames = useMemo(
+    () => packs.filter((p) => p.enabled_globally).map((p) => p.name),
+    [packs],
+  );
 
   const loadSyncStatus = useCallback(async () => {
     try {
@@ -81,7 +94,12 @@ export default function PolicyPage() {
       setPacks((prev) =>
         prev.map((p) =>
           p.slug === pack.slug
-            ? { ...p, domain_count: result.domain_count, domain_list_source: 'snapshot' as const }
+            ? {
+                ...p,
+                domain_count: result.domain_count,
+                blocked_sites_count: p.enabled_globally ? result.domain_count : 0,
+                domain_list_source: 'snapshot' as const,
+              }
             : p,
         ),
       );
@@ -106,7 +124,12 @@ export default function PolicyPage() {
         setPacks((prev) =>
           prev.map((p) =>
             p.slug === pack.slug
-              ? { ...p, domain_count: result.domain_count, domain_list_source: 'snapshot' as const }
+              ? {
+                  ...p,
+                  domain_count: result.domain_count,
+                  blocked_sites_count: p.enabled_globally ? result.domain_count : 0,
+                  domain_list_source: 'snapshot' as const,
+                }
               : p,
           ),
         );
@@ -125,7 +148,16 @@ export default function PolicyPage() {
     setInfo(null);
     try {
       const updated = await policyApi.updatePack(pack.slug, !pack.enabled_globally);
-      setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+      setPacks((prev) =>
+        prev.map((p) =>
+          p.slug === updated.slug
+            ? {
+                ...updated,
+                blocked_sites_count: updated.enabled_globally ? updated.domain_count : 0,
+              }
+            : p,
+        ),
+      );
       setInfo(
         `${updated.name} saved. Enforcement sync runs automatically (dns-sync + dnsmasq reload).`,
       );
@@ -209,6 +241,14 @@ export default function PolicyPage() {
               Download full blocklists from upstream sources, then turn packs On to enforce via
               dnsmasq.
             </Typography>
+            {activePackNames.length > 0 && (
+              <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                Blocking {formatBlockedSiteCount(totalBlocking)} sites network-wide
+                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                  ({activePackNames.join(', ')})
+                </Typography>
+              </Typography>
+            )}
           </Box>
           <Button
             variant="contained"
@@ -247,12 +287,29 @@ export default function PolicyPage() {
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {pack.description}
-                    {' · '}
-                    {pack.domain_list_source === 'snapshot'
-                      ? `${pack.domain_count.toLocaleString()} domains (downloaded)`
-                      : `${pack.domain_count} seed domains only — use Download list`}
+                    {pack.domain_list_source === 'seed' ? ' · seed list only — download for full count' : ''}
                   </Typography>
                 </Box>
+                <Stack alignItems="center" sx={{ minWidth: 120, px: 1 }}>
+                  <Chip
+                    label={formatBlockedSiteCount(pack.domain_count)}
+                    color={pack.domain_list_source === 'snapshot' ? 'primary' : 'default'}
+                    variant={pack.enabled_globally ? 'filled' : 'outlined'}
+                    sx={{ fontWeight: 700, fontSize: '0.95rem', height: 32 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, textAlign: 'center' }}>
+                    sites in list
+                  </Typography>
+                  {pack.enabled_globally && (
+                    <Typography
+                      variant="caption"
+                      color="success.main"
+                      sx={{ fontWeight: 600, textAlign: 'center' }}
+                    >
+                      {formatBlockedSiteCount(packBlockingSiteCount(pack))} blocked now
+                    </Typography>
+                  )}
+                </Stack>
                 <Stack
                   direction="row"
                   spacing={1}
@@ -318,9 +375,12 @@ export default function PolicyPage() {
                 </Typography>
               )}
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                {profile.enabled_pack_slugs.map((slug) => (
-                  <Chip key={slug} label={slug} size="small" />
-                ))}
+                {profile.enabled_pack_slugs.map((slug) => {
+                  const n = countsBySlug[slug];
+                  const label =
+                    n != null ? `${slug}: ${formatBlockedSiteCount(n)} sites` : slug;
+                  return <Chip key={slug} label={label} size="small" variant="outlined" />;
+                })}
               </Stack>
               {profile.schedule_rules.length > 0 && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>

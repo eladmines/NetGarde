@@ -11,8 +11,11 @@ class PolicyPackRead(BaseModel):
     description: Optional[str] = None
     enabled_globally: bool
     domain_count: int = 0
-    """snapshot = downloaded upstream list; seed = bundled fallback until Refresh."""
+    """Unique domains in the pack list (snapshot or seed file)."""
+    blocked_sites_count: int = 0
+    """Domains actively blocked network-wide when enabled_globally (equals domain_count if on)."""
     domain_list_source: str = "seed"
+    """snapshot = downloaded upstream list; seed = bundled fallback until Refresh."""
     model_config = ConfigDict(from_attributes=True)
 
 
