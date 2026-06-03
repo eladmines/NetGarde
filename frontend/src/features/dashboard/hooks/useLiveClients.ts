@@ -116,9 +116,12 @@ function attachBandwidth(
   });
 }
 
-/** Registered devices with DNS activity in the live feed window. */
+/** Registered devices with recent DNS activity or an active VPN usage sample. */
 function filterLiveRegisteredClients(rows: LiveClientRow[]): LiveClientRow[] {
-  return rows.filter((row) => row.device_id != null && row.is_active_now);
+  return rows.filter(
+    (row) =>
+      row.device_id != null && (row.is_active_now || row.bandwidth != null),
+  );
 }
 
 function sortClients(rows: LiveClientRow[]): LiveClientRow[] {
@@ -171,10 +174,9 @@ export function useLiveClients(): UseLiveClientsResult {
   );
 
   const recomputeClients = useCallback(() => {
-    const base = sortClients(
-      filterLiveRegisteredClients(withLiveActivity(buildRows(devices))),
-    );
-    setClients(attachBandwidth(base, usageByDevice, usageByIp));
+    const withActivity = withLiveActivity(buildRows(devices));
+    const withBandwidth = attachBandwidth(withActivity, usageByDevice, usageByIp);
+    setClients(sortClients(filterLiveRegisteredClients(withBandwidth)));
   }, [devices, usageByDevice, usageByIp]);
 
   useEffect(() => {
