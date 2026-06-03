@@ -1,15 +1,23 @@
 import type { Theme } from '@mui/material/styles';
 import type { SxProps } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
-import { brand } from './themePrimitives';
-
-/** Azure-style accent in light mode; primary in dark mode. */
+/** Azure-style accent in light mode only. */
 export const NAV_ACCENT_LIGHT = '#0078d4';
 
 export const NAVBAR_HEIGHT = 48;
 
+/** Top bar surface — matches sidebar in dark mode (neutral, not blue). */
 export function navbarBackground(theme: Theme): string {
-  return theme.palette.mode === 'dark' ? brand[900] : NAV_ACCENT_LIGHT;
+  const palette = (theme.vars || theme).palette;
+  return theme.palette.mode === 'dark'
+    ? palette.background.default
+    : NAV_ACCENT_LIGHT;
+}
+
+export function navbarBorderColor(theme: Theme): string {
+  return theme.palette.mode === 'dark'
+    ? theme.palette.divider
+    : alpha(theme.palette.common.white, 0.1);
 }
 
 export function navAccentColor(theme: Theme): string {
