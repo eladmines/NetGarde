@@ -14,6 +14,7 @@ export interface NetworkOverview {
   generated_at: string;
   period_minutes: number;
   bullets: string[];
+  summary?: string | null;
   stats: NetworkOverviewStats;
   source: NetworkOverviewSource;
   llm_model: string | null;

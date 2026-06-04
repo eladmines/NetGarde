@@ -19,7 +19,8 @@ class NetworkOverviewStats(BaseModel):
 class NetworkOverviewRead(BaseModel):
     generated_at: datetime
     period_minutes: int = Field(ge=1, le=24 * 60)
-    bullets: list[str]
+    bullets: list[str] = Field(default_factory=list)
+    summary: Optional[str] = None
     stats: NetworkOverviewStats
     source: OverviewSource = "template"
     llm_model: Optional[str] = None

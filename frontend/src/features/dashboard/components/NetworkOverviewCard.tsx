@@ -22,6 +22,9 @@ export default function NetworkOverviewCard() {
 
   const stats = data?.stats;
   const isAi = data?.source === 'llm';
+  const reviewText =
+    data?.summary?.trim() ||
+    (isAi && (data?.bullets?.length ?? 0) > 0 ? data!.bullets.join(' ') : '');
   const wantsAi = data?.review_mode === 'ollama' || data?.review_mode === 'openai';
   const showFallbackHint = wantsAi && !isAi && !loading;
 
@@ -117,6 +120,10 @@ export default function NetworkOverviewCard() {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <CircularProgress size={28} />
         </Box>
+      ) : reviewText ? (
+        <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.65 }}>
+          {reviewText}
+        </Typography>
       ) : (
         <List dense disablePadding>
           {(data?.bullets ?? []).map((bullet, index) => (

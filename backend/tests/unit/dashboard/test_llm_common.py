@@ -6,6 +6,7 @@ from app.features.dashboard.services.llm_common import (
     bullets_look_like_metric_dump,
     compact_snapshot_for_llm,
     parse_bullets_from_content,
+    parse_summary_from_content,
 )
 
 
@@ -15,7 +16,21 @@ def test_detect_metric_dump_bullets():
     )
 
 
-def test_parse_json_bullets_object():
+def test_parse_json_summary_object():
+    raw = json.dumps(
+        {
+            "summary": (
+                "Traffic is quiet with one device online. "
+                "Many sites were blocked in the last hour."
+            )
+        }
+    )
+    summary = parse_summary_from_content(raw)
+    assert "Traffic" in summary
+    assert "blocked" in summary
+
+
+def test_parse_json_bullets_joined_to_summary():
     raw = json.dumps(
         {
             "bullets": [
@@ -24,9 +39,10 @@ def test_parse_json_bullets_object():
             ]
         }
     )
-    bullets = parse_bullets_from_content(raw)
-    assert len(bullets) == 2
-    assert "Traffic" in bullets[0]
+    summary = parse_summary_from_content(raw)
+    assert "Traffic" in summary
+    assert "blocked" in summary
+    assert summary.count(".") >= 1
 
 
 def test_metric_dump_lines_raise():

@@ -1,7 +1,7 @@
 from app.features.dashboard.services.llm_common import (
     build_review_prompt,
-    bullets_look_like_metric_dump,
-    parse_bullets_from_content,
+    parse_summary_from_content,
+    text_looks_like_metric_dump,
 )
 from app.features.dashboard.services.ollama_connectivity import ensure_model_available, resolve_ollama_base_url
 from app.shared.config import settings
@@ -44,7 +44,7 @@ def _chat(base: str, snapshot: dict, *, strict: bool) -> str:
     return content
 
 
-def summarize_network_review(snapshot: dict) -> list[str]:
+def summarize_network_review(snapshot: dict) -> str:
     base = resolve_ollama_base_url()
     ensure_model_available(base)
 
@@ -54,10 +54,10 @@ def summarize_network_review(snapshot: dict) -> list[str]:
     for strict in (False, True):
         try:
             content = _chat(base, snapshot, strict=strict)
-            bullets = parse_bullets_from_content(content)
-            if bullets_look_like_metric_dump(bullets):
+            summary = parse_summary_from_content(content)
+            if text_looks_like_metric_dump(summary):
                 raise ValueError("model returned metric labels instead of a summary")
-            return bullets
+            return summary
         except httpx.TimeoutException as exc:
             raise RuntimeError(
                 f"Ollama timed out after {int(settings.LLM_TIMEOUT_SEC)}s on CPU "
