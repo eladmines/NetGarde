@@ -34,15 +34,22 @@ import {
 import { DnsAlert } from '../../dns-queries/types/dnsQuery';
 import BaselineSummary from './BaselineSummary';
 import DeviceCountriesSection from './DeviceCountriesSection';
+import DeviceLoginLocationSection from './DeviceLoginLocationSection';
 import { countryLabel } from '../utils/countryDisplay';
+import { DeviceLoginGeoSummary } from '../types/device';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
 
 interface ClientProfileDetailProps {
   device: Device;
   countrySummary?: DeviceCountrySummary | null;
+  loginGeoSummary?: DeviceLoginGeoSummary | null;
 }
 
-export default function ClientProfileDetail({ device, countrySummary }: ClientProfileDetailProps) {
+export default function ClientProfileDetail({
+  device,
+  countrySummary,
+  loginGeoSummary,
+}: ClientProfileDetailProps) {
   const [profile, setProfile] = useState<BehaviorProfile | null>(null);
   const [policy, setPolicy] = useState<DeviceSecurityPolicy | null>(null);
   const [blocks, setBlocks] = useState<ClientBlockedDomain[]>([]);
@@ -160,6 +167,12 @@ export default function ClientProfileDetail({ device, countrySummary }: ClientPr
             <Typography variant="caption" color="text.secondary">
               Source: {device.source}
             </Typography>
+            {loginGeoSummary?.country_code && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Last VPN login from:{' '}
+                {countryLabel(loginGeoSummary.country_code, loginGeoSummary.country_name)}
+              </Typography>
+            )}
             {countrySummary?.primary_country_code && (
               <Typography variant="caption" color="text.secondary" display="block">
                 Primary DNS region:{' '}
@@ -242,6 +255,8 @@ export default function ClientProfileDetail({ device, countrySummary }: ClientPr
                 </Typography>
               )}
             </Box>
+
+            <DeviceLoginLocationSection deviceId={device.id} />
 
             <DeviceCountriesSection deviceId={device.id} />
 

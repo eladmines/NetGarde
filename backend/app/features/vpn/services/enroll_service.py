@@ -76,7 +76,7 @@ class EnrollService:
         if by_key is not None and by_key.device_id != device_id:
             raise ValueError("public_key already registered to another device")
 
-    def enroll(self, payload: EnrollRequest) -> dict:
+    def enroll(self, payload: EnrollRequest, *, connect_ip: str | None = None) -> dict:
         device_id = payload.device_id.strip()
         public_key = payload.public_key.strip()
 
@@ -113,6 +113,17 @@ class EnrollService:
                 mac_address=payload.mac_address,
             )
         )
+
+        if dev:
+            from app.features.devices.services.device_login_geo_service import DeviceLoginGeoService
+
+            DeviceLoginGeoService(self.db).record_vpn_enroll(
+                device_id=dev.id,
+                peer_id=peer.id,
+                connect_ip=connect_ip,
+                client_reported_ip=payload.client_public_ip,
+                client_ip_label=lease.ip,
+            )
 
         # Persist allocation before touching host WireGuard state.
         self.db.commit()

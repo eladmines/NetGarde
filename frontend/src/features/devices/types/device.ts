@@ -53,6 +53,35 @@ export interface DeviceCountrySummaryList {
   period_hours: number;
 }
 
+export interface DeviceLoginGeoObservation {
+  device_id: number;
+  public_ip: string;
+  country_code: string | null;
+  country_name: string | null;
+  region_name?: string | null;
+  city?: string | null;
+  observed_at: string;
+  source: string;
+}
+
+export interface DeviceLoginGeo {
+  device_id: number;
+  latest: DeviceLoginGeoObservation | null;
+  history: DeviceLoginGeoObservation[];
+}
+
+export interface DeviceLoginGeoSummary {
+  device_id: number;
+  country_code: string | null;
+  country_name: string | null;
+  public_ip: string | null;
+  observed_at: string | null;
+}
+
+export interface DeviceLoginGeoSummaryList {
+  items: DeviceLoginGeoSummary[];
+}
+
 export interface BehaviorProfile {
   device_id: number;
   profile_ready: boolean;

@@ -32,7 +32,12 @@ from app.features.devices.schemas.device_country import (
     DeviceCountryBreakdownRead,
     DeviceCountrySummaryList,
 )
+from app.features.devices.schemas.device_login_geo import (
+    DeviceLoginGeoRead,
+    DeviceLoginGeoSummaryList,
+)
 from app.features.devices.services.device_country_service import DeviceCountryService
+from app.features.devices.services.device_login_geo_service import DeviceLoginGeoService
 from app.features.devices.services.device_service_interface import IDeviceService
 from app.shared.database import SessionLocal
 from app.shared.dependencies import get_db
@@ -58,6 +63,10 @@ def get_policy_service(db: Session = Depends(get_db)) -> PolicyService:
 
 def get_device_country_service(db: Session = Depends(get_db)) -> DeviceCountryService:
     return DeviceCountryService(db)
+
+
+def get_device_login_geo_service(db: Session = Depends(get_db)) -> DeviceLoginGeoService:
+    return DeviceLoginGeoService(db)
 
 
 @router.post("")
@@ -212,6 +221,25 @@ def list_device_countries_summary_endpoint(
 ):
     """Primary inferred country per device from DNS domain TLDs (last N hours)."""
     return service.list_summaries(period_hours=period_hours)
+
+
+@router.get("/login-locations/summary", response_model=DeviceLoginGeoSummaryList)
+def list_device_login_locations_summary_endpoint(
+    _: None = Depends(verify_admin_api_token),
+    service: DeviceLoginGeoService = Depends(get_device_login_geo_service),
+):
+    """Latest VPN login location per device (GeoIP from public IP at enroll)."""
+    return service.list_summaries()
+
+
+@router.get("/{device_id}/login-location", response_model=DeviceLoginGeoRead)
+def get_device_login_location_endpoint(
+    device_id: int,
+    _: None = Depends(verify_admin_api_token),
+    service: DeviceLoginGeoService = Depends(get_device_login_geo_service),
+):
+    """Physical location at last VPN enroll(s) for this device."""
+    return service.get_device_login_geo(device_id)
 
 
 @router.post("/recompute-behavior-baselines", response_model=BehaviorRecomputeResult)

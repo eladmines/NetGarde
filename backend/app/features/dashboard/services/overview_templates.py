@@ -9,6 +9,7 @@ _ALERT_TYPE_LABELS: dict[str, str] = {
     "bandwidth_spike": "bandwidth spikes",
     "behavior_anomaly": "behavior anomalies",
     "new_country_region": "new country regions",
+    "new_vpn_login_country": "VPN logins from new countries",
 }
 
 

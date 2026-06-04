@@ -6,6 +6,8 @@ import {
   BehaviorReview,
   DeviceCountryBreakdown,
   DeviceCountrySummaryList,
+  DeviceLoginGeo,
+  DeviceLoginGeoSummaryList,
   DeviceSecurityPolicy,
   ClientBlockedDomain,
   BlockedClientsListResponse,
@@ -57,6 +59,10 @@ export const devicesApi = {
     ),
   listCountrySummaries: (periodHours = 168) =>
     apiFetch<DeviceCountrySummaryList>(`/devices/countries/summary?period_hours=${periodHours}`),
+  getLoginLocation: (deviceId: number) =>
+    apiFetch<DeviceLoginGeo>(`/devices/${deviceId}/login-location`),
+  listLoginLocationSummaries: () =>
+    apiFetch<DeviceLoginGeoSummaryList>('/devices/login-locations/summary'),
   getBehaviorReview: (deviceId: number, refresh = false) => {
     const q = refresh ? '?refresh=true' : '';
     return apiFetch<BehaviorReview>(`/devices/${deviceId}/behavior-review${q}`);

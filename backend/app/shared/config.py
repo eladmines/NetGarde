@@ -72,6 +72,14 @@ class Settings(BaseSettings):
     DEVICE_COUNTRY_ALERT_ENABLED: bool = True
     DEVICE_COUNTRY_ALERT_COOLDOWN_HOURS: int = 24
 
+    # Physical location at VPN enroll (public IP GeoIP — not DNS domain country)
+    DEVICE_LOGIN_GEO_ENABLED: bool = True
+    DEVICE_LOGIN_GEO_ALERT_ENABLED: bool = True
+    DEVICE_LOGIN_GEO_ALERT_COOLDOWN_HOURS: int = 24
+    GEOIP_ENABLED: bool = True
+    GEOIP_PROVIDER: str = "ip_api"
+    GEOIP_TIMEOUT_SEC: float = 3.0
+
     # Policy packs: fetch upstream hosts lists into on-disk snapshots (all built-in packs).
     # Writable dir in Docker production (see docker-compose policy-pack-snapshots volume).
     POLICY_PACK_SNAPSHOT_DIR: str = ""
