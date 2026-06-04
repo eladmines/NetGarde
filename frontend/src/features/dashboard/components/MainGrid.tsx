@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
 import Copyright from '../internals/components/Copyright';
 import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
@@ -10,6 +12,8 @@ import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
 import NetworkOverviewCard from './NetworkOverviewCard';
 import { useLiveClients } from '../hooks/useLiveClients';
+
+const ClientWorldMap = lazy(() => import('./ClientWorldMap'));
 
 export default function MainGrid() {
   const live = useLiveClients();
@@ -21,6 +25,20 @@ export default function MainGrid() {
       </Typography>
 
       <NetworkOverviewCard />
+
+      <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 12 }}>
+          <Suspense
+            fallback={
+              <Paper variant="outlined" sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress size={28} />
+              </Paper>
+            }
+          >
+            <ClientWorldMap clients={live.clients} loading={live.loading} />
+          </Suspense>
+        </Grid>
+      </Grid>
 
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12 }}>
