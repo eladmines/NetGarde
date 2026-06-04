@@ -9,6 +9,12 @@ import { ClientBandwidth, DeviceUsageLiveItem } from '../types/usageLive';
 import { ServerNetworkThroughput } from '../types/networkThroughput';
 import { useUsageRealtime } from './useUsageRealtime';
 
+export interface LiveCountryItem {
+  country_code: string;
+  country_name: string | null;
+  client_count: number;
+}
+
 export interface LiveClientRow {
   client_ip: string;
   hostname: string | null;
@@ -130,8 +136,46 @@ function withLiveActivity(rows: LiveClientRow[]): LiveClientRow[] {
   }));
 }
 
+function buildLiveCountries(clients: LiveClientRow[]): LiveCountryItem[] {
+  const counts = new Map<string, { name: string | null; count: number }>();
+  let unknown = 0;
+  for (const c of clients) {
+    const code = c.vpn_login_country_code?.trim().toUpperCase();
+    if (!code) {
+      unknown += 1;
+      continue;
+    }
+    const prev = counts.get(code);
+    if (prev) {
+      prev.count += 1;
+      if (!prev.name && c.vpn_login_country_name) {
+        prev.name = c.vpn_login_country_name;
+      }
+    } else {
+      counts.set(code, { name: c.vpn_login_country_name, count: 1 });
+    }
+  }
+  const items: LiveCountryItem[] = [...counts.entries()].map(([country_code, v]) => ({
+    country_code,
+    country_name: v.name,
+    client_count: v.count,
+  }));
+  items.sort(
+    (a, b) => b.client_count - a.client_count || a.country_code.localeCompare(b.country_code),
+  );
+  if (unknown > 0) {
+    items.push({
+      country_code: 'UNKNOWN',
+      country_name: 'Unknown login location',
+      client_count: unknown,
+    });
+  }
+  return items;
+}
+
 export interface UseLiveClientsResult {
   clients: LiveClientRow[];
+  liveCountries: LiveCountryItem[];
   loading: boolean;
   error: string | null;
   usageError: string | null;
@@ -215,6 +259,8 @@ export function useLiveClients(): UseLiveClientsResult {
     return () => clearInterval(id);
   }, [fetchAll]);
 
+  const liveCountries = useMemo(() => buildLiveCountries(clients), [clients]);
+
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
 
   const liveClientsBandwidth = clients.reduce(
@@ -237,6 +283,7 @@ export function useLiveClients(): UseLiveClientsResult {
 
   return {
     clients,
+    liveCountries,
     loading,
     error,
     usageError,
