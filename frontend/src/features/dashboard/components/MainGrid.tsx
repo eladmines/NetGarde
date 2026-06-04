@@ -8,6 +8,7 @@ import LiveClientsView from './LiveClientsView';
 import LiveNetworkGraph from './LiveNetworkGraph';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
+import NetworkOverviewCard from './NetworkOverviewCard';
 import { useLiveClients } from '../hooks/useLiveClients';
 
 export default function MainGrid() {
@@ -18,6 +19,8 @@ export default function MainGrid() {
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Overview
       </Typography>
+
+      <NetworkOverviewCard />
 
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12 }}>
