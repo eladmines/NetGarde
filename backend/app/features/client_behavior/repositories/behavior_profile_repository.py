@@ -53,7 +53,6 @@ class BehaviorProfileRepository:
         profile = self.get_or_create(device_id)
         profile.last_score = score
         profile.last_scored_at = datetime.now(timezone.utc)
-        profile.updated_at = datetime.now(timezone.utc)
 
     def parse_baseline(self, profile: ClientBehaviorProfile) -> Dict[str, Any]:
         if not profile.baseline_json:
