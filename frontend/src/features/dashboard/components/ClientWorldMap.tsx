@@ -81,9 +81,15 @@ function buildMarkers(clients: LiveClientRow[]): MapMarker[] {
 interface ClientWorldMapProps {
   clients: LiveClientRow[];
   loading?: boolean;
+  /** When false, page supplies the title (e.g. Client map route). */
+  showHeader?: boolean;
 }
 
-export default function ClientWorldMap({ clients, loading = false }: ClientWorldMapProps) {
+export default function ClientWorldMap({
+  clients,
+  loading = false,
+  showHeader = true,
+}: ClientWorldMapProps) {
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -113,29 +119,42 @@ export default function ClientWorldMap({ clients, loading = false }: ClientWorld
 
   return (
     <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-        <PublicIcon color="primary" fontSize="small" />
-        <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }}>
-          Clients on the map
-        </Typography>
-        <Chip
-          size="small"
-          variant="outlined"
-          label={`${placedCount} located`}
-          sx={{ height: 24 }}
-        />
-        {unknownCount > 0 && (
-          <Chip
-            size="small"
-            variant="outlined"
-            label={`${unknownCount} no VPN geo`}
-            sx={{ height: 24 }}
-          />
-        )}
-      </Stack>
-      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-        VPN login country (GeoIP at enroll). Hover a flag for the client; green ring = active now.
-      </Typography>
+      {showHeader && (
+        <>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <PublicIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }}>
+              Client map
+            </Typography>
+            <Chip
+              size="small"
+              variant="outlined"
+              label={`${placedCount} located`}
+              sx={{ height: 24 }}
+            />
+            {unknownCount > 0 && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`${unknownCount} no VPN geo`}
+                sx={{ height: 24 }}
+              />
+            )}
+          </Stack>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+            VPN login country (GeoIP at enroll). Hover a flag for the client; green ring = active now.
+          </Typography>
+        </>
+      )}
+      {!showHeader && (
+        <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mb: 1.5 }}>
+          <Chip size="small" variant="outlined" label={`${placedCount} located`} />
+          {unknownCount > 0 && (
+            <Chip size="small" variant="outlined" label={`${unknownCount} no VPN geo`} />
+          )}
+          <Chip size="small" variant="outlined" label={`${clients.length} clients`} />
+        </Stack>
+      )}
 
       <Box
         sx={{

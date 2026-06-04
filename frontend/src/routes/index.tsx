@@ -4,6 +4,7 @@ import DashboardPage from '../pages/DashboardPage';
 import PolicyPage from '../pages/PolicyPage';
 import CountryAccessPage from '../pages/CountryAccessPage';
 import ClientProfilesPage from '../pages/ClientProfilesPage';
+import ClientMapPage from '../pages/ClientMapPage';
 
 export const routes: RouteObject[] = [
   {
@@ -35,6 +36,14 @@ export const routes: RouteObject[] = [
     element: (
       <Layout>
         <ClientProfilesPage />
+      </Layout>
+    ),
+  },
+  {
+    path: '/client-map',
+    element: (
+      <Layout>
+        <ClientMapPage />
       </Layout>
     ),
   },

@@ -20,6 +20,7 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import HistoryIcon from '@mui/icons-material/History';
 import SecurityIcon from '@mui/icons-material/Security';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import MapIcon from '@mui/icons-material/Map';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
@@ -42,6 +43,7 @@ const manageNetworkItems = [
 
 const analyticsItems = [
   { text: 'Client profiles', icon: <DevicesOtherIcon />, path: '/client-profiles', iconClass: 'clientProfilesIcon' },
+  { text: 'Client map', icon: <MapIcon />, path: '/client-map', iconClass: 'clientMapIcon' },
   { text: 'Reports', icon: <AnalyticsIcon />, path: '/reports', iconClass: 'reportsIcon' },
   { text: 'Activity Logs', icon: <HistoryIcon />, path: '/activity-logs', iconClass: 'activityLogsIcon' },
 ];
