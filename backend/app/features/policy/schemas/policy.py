@@ -78,6 +78,22 @@ class AssignPolicyProfileRequest(BaseModel):
     policy_profile_slug: str
 
 
+class ForbiddenCountryRuleRead(BaseModel):
+    user_country: str
+    user_country_name: str
+    blocked_countries: List[str]
+    blocked_country_names: List[str] = Field(default_factory=list)
+
+
+class ForbiddenCountryPolicyRead(BaseModel):
+    enabled: bool
+    user_country_source: str = "vpn_login_geo"
+    rules: List[ForbiddenCountryRuleRead] = Field(default_factory=list)
+    vpn_login_block_enabled: bool = False
+    blocked_vpn_login_countries: List[str] = Field(default_factory=list)
+    blocked_vpn_login_country_names: List[str] = Field(default_factory=list)
+
+
 class PolicyDeviceDnsEntry(BaseModel):
     device_id: int
     mac_address: str
@@ -85,6 +101,10 @@ class PolicyDeviceDnsEntry(BaseModel):
     block_domains: List[str]
     allowlist_only: bool = False
     allowlist_domains: List[str] = Field(default_factory=list)
+    block_country_tlds: List[str] = Field(
+        default_factory=list,
+        description="dnsmasq suffix patterns (e.g. .ir) for forbidden-country ccTLD blocking",
+    )
 
 
 class PolicyDnsSyncResponse(BaseModel):

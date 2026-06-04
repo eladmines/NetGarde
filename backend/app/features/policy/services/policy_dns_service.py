@@ -15,6 +15,7 @@ from app.features.policy.pack_loader import domains_for_packs
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.schedule import active_schedule_pack_slugs
 from app.features.policy.schemas.policy import PolicyDeviceDnsEntry, PolicyDnsSyncResponse
+from app.features.policy.services.forbidden_country_service import ForbiddenCountryService
 
 
 class PolicyDnsService:
@@ -22,6 +23,7 @@ class PolicyDnsService:
         self.db = db
         self.policy_repo = PolicyRepository(db)
         self.block_repo = ClientBlockedDomainRepository(db)
+        self.forbidden_country = ForbiddenCountryService(db)
 
     def build_dns_sync(self) -> PolicyDnsSyncResponse:
         """Build dnsmasq rules: global_domains apply to all VPN/LAN DNS clients."""
@@ -72,6 +74,8 @@ class PolicyDnsService:
             for block in self.block_repo.list_active_for_device(device.id):
                 domains.add(block.domain.lower())
 
+            country_tlds = self.forbidden_country.dnsmasq_tld_patterns_for_device(device.id)
+
             entries.append(
                 PolicyDeviceDnsEntry(
                     device_id=device.id,
@@ -80,6 +84,7 @@ class PolicyDnsService:
                     block_domains=sorted(domains),
                     allowlist_only=False,
                     allowlist_domains=[],
+                    block_country_tlds=country_tlds,
                 )
             )
 

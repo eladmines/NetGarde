@@ -40,6 +40,7 @@ const TYPE_LABEL: Record<string, string> = {
   bandwidth_spike: 'Bandwidth',
   behavior_anomaly: 'Behavior',
   new_country_region: 'New region',
+  forbidden_country_access: 'Forbidden country',
 };
 
 function lookupDomainForAlert(alert: DnsAlert): string | null {

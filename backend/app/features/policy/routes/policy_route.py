@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.features.policy.forbidden_country_rules import parse_forbidden_country_rules
 from app.features.policy.schemas.policy import (
     AssignPolicyProfileRequest,
     DevicePolicyAssignmentRead,
+    ForbiddenCountryPolicyRead,
+    ForbiddenCountryRuleRead,
     PolicyApplyResponse,
     PolicyDnsSyncResponse,
     PolicyPackDomainsPage,
@@ -17,8 +20,11 @@ from app.features.policy.schemas.policy import (
 )
 from app.features.policy.services.policy_dns_service import PolicyDnsService
 from app.features.policy.services.policy_service import PolicyService
+from app.features.policy.services.vpn_login_geo_block_service import VpnLoginGeoBlockService
 from app.shared.admin_auth import verify_admin_api_token
+from app.shared.config import settings
 from app.shared.dependencies import get_db
+from app.shared.domain_country import country_display_name
 from app.shared.service_auth import verify_dns_ingest_service
 
 router = APIRouter(prefix="/policy", tags=["Policy"])
@@ -85,6 +91,32 @@ def update_policy_profile(
     service: PolicyService = Depends(get_policy_service),
 ):
     return service.update_profile(profile_id, body)
+
+
+@router.get("/forbidden-countries", response_model=ForbiddenCountryPolicyRead)
+def get_forbidden_country_policy(
+    _: None = Depends(verify_admin_api_token),
+):
+    """How forbidden-country blocking selects the user country and which pairs are active."""
+    rules = []
+    for rule in parse_forbidden_country_rules():
+        rules.append(
+            ForbiddenCountryRuleRead(
+                user_country=rule.user_country,
+                user_country_name=country_display_name(rule.user_country),
+                blocked_countries=list(rule.blocked_countries),
+                blocked_country_names=[country_display_name(c) for c in rule.blocked_countries],
+            )
+        )
+    blocked_login = VpnLoginGeoBlockService.blocked_login_countries()
+    return ForbiddenCountryPolicyRead(
+        enabled=bool(getattr(settings, "FORBIDDEN_COUNTRY_ENABLED", True)),
+        user_country_source="vpn_login_geo",
+        rules=rules,
+        vpn_login_block_enabled=VpnLoginGeoBlockService.is_enabled(),
+        blocked_vpn_login_countries=blocked_login,
+        blocked_vpn_login_country_names=[country_display_name(c) for c in blocked_login],
+    )
 
 
 @router.get("/dns-sync", response_model=PolicyDnsSyncResponse)

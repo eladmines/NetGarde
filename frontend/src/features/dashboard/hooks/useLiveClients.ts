@@ -15,8 +15,9 @@ export interface LiveClientRow {
   mac_address: string | null;
   source: string | null;
   device_id: number | null;
-  primary_country_code: string | null;
-  primary_country_name: string | null;
+  /** Country from public IP at last VPN enroll (GeoIP). */
+  vpn_login_country_code: string | null;
+  vpn_login_country_name: string | null;
   /** DNS activity in the last few minutes (WebSocket feed). */
   is_active_now: boolean;
   /** Latest VPN tunnel throughput from /devices/usage/live. */
@@ -46,18 +47,21 @@ export function formatClientSource(source: string | null): string {
 
 function buildRows(
   devices: Device[],
-  countryByDevice: Map<number, { primary_country_code: string | null; primary_country_name: string | null }>,
+  loginGeoByDevice: Map<
+    number,
+    { country_code: string | null; country_name: string | null }
+  >,
 ): LiveClientRow[] {
   return devices.map((device) => {
-    const country = countryByDevice.get(device.id);
+    const loginGeo = loginGeoByDevice.get(device.id);
     return {
       client_ip: device.client_ip,
       hostname: device.hostname,
       mac_address: device.mac_address,
       source: device.source,
       device_id: device.id,
-      primary_country_code: country?.primary_country_code ?? null,
-      primary_country_name: country?.primary_country_name ?? null,
+      vpn_login_country_code: loginGeo?.country_code ?? null,
+      vpn_login_country_name: loginGeo?.country_name ?? null,
       is_active_now: false,
       bandwidth: null,
     };
@@ -147,8 +151,8 @@ export function useLiveClients(): UseLiveClientsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dnsActivityTick, setDnsActivityTick] = useState(0);
-  const [countryByDevice, setCountryByDevice] = useState<
-    Map<number, { primary_country_code: string | null; primary_country_name: string | null }>
+  const [loginGeoByDevice, setLoginGeoByDevice] = useState<
+    Map<number, { country_code: string | null; country_name: string | null }>
   >(new Map());
 
   const {
@@ -165,12 +169,12 @@ export function useLiveClients(): UseLiveClientsResult {
   );
 
   const clients = useMemo(() => {
-    const withActivity = withLiveActivity(buildRows(devices, countryByDevice));
+    const withActivity = withLiveActivity(buildRows(devices, loginGeoByDevice));
     const withBandwidth = attachBandwidth(withActivity, byDeviceId, byClientIp);
     return sortClients(filterLiveRegisteredClients(withBandwidth));
   // dnsActivityTick forces refresh when DNS live feed marks clients active.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devices, countryByDevice, byDeviceId, byClientIp, dnsActivityTick]);
+  }, [devices, loginGeoByDevice, byDeviceId, byClientIp, dnsActivityTick]);
 
   useEffect(
     () => subscribeDnsClientActivity(() => setDnsActivityTick((t) => t + 1)),
@@ -180,22 +184,24 @@ export function useLiveClients(): UseLiveClientsResult {
   const fetchAll = useCallback(async () => {
     setError(null);
     try {
-      const [deviceList, countryRes] = await Promise.all([
+      const [deviceList, loginGeoRes] = await Promise.all([
         devicesApi.list(),
-        devicesApi.listCountrySummaries(168).catch(() => ({ items: [], period_hours: 168 })),
+        devicesApi.listLoginLocationSummaries().catch(() => ({ items: [] })),
       ]);
       setDevices(deviceList);
-      const cmap = new Map<
+      const geoMap = new Map<
         number,
-        { primary_country_code: string | null; primary_country_name: string | null }
+        { country_code: string | null; country_name: string | null }
       >();
-      for (const item of countryRes.items) {
-        cmap.set(item.device_id, {
-          primary_country_code: item.primary_country_code,
-          primary_country_name: item.primary_country_name,
-        });
+      for (const item of loginGeoRes.items) {
+        if (item.country_code) {
+          geoMap.set(item.device_id, {
+            country_code: item.country_code,
+            country_name: item.country_name,
+          });
+        }
       }
-      setCountryByDevice(cmap);
+      setLoginGeoByDevice(geoMap);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load clients');
     } finally {

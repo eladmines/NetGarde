@@ -107,7 +107,25 @@ COUNTRY_NAMES: dict[str, str] = {
     "FI": "Finland",
     "NO": "Norway",
     "DK": "Denmark",
+    "IR": "Iran",
+    "SY": "Syria",
+    "KP": "North Korea",
 }
+
+
+def dnsmasq_tld_patterns_for_country(iso_code: str) -> list[str]:
+    """dnsmasq `address=/<pattern>/` suffixes that sinkhole a country's ccTLD / public suffixes."""
+    code = (iso_code or "").strip().upper()
+    if len(code) != 2:
+        return []
+    patterns: set[str] = set()
+    tld = code.lower()
+    if tld in _CCTLD_CODES:
+        patterns.add(f".{tld}")
+    for suffix, cc in _PUBLIC_SUFFIX_COUNTRY.items():
+        if cc == code:
+            patterns.add(f".{suffix}")
+    return sorted(patterns, key=len, reverse=True)
 
 
 def country_code_for_domain(domain: str) -> str:

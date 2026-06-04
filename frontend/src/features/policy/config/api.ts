@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 import {
   DevicePolicyAssignment,
   PolicyApplyResult,
+  ForbiddenCountryPolicy,
   PolicyPack,
   PolicyPackDomainsPage,
   PolicyProfile,
@@ -58,6 +59,7 @@ export const policyApi = {
       { method: 'POST' },
     ),
   listProfiles: () => apiFetch<PolicyProfile[]>('/policy/profiles'),
+  getForbiddenCountries: () => apiFetch<ForbiddenCountryPolicy>('/policy/forbidden-countries'),
   getSyncStatus: () => apiFetch<PolicySyncStatus>('/policy/sync-status'),
   applyPolicy: () =>
     apiFetch<PolicyApplyResult>('/policy/apply', {

@@ -22,7 +22,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { Link as RouterLink } from 'react-router-dom';
 import { clientProfilePath } from '../../devices/clientProfilePaths';
 import { formatClientSource, LiveClientRow, UseLiveClientsResult } from '../hooks/useLiveClients';
-import { countryLabel } from '../../devices/utils/countryDisplay';
+import { countryFlagEmoji, countryLabel } from '../../devices/utils/countryDisplay';
 import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
 import {
   downloadChipSx,
@@ -116,11 +116,6 @@ function ClientRow({ client }: { client: LiveClientRow }) {
   const subtitleParts = [client.client_ip];
   if (client.mac_address) subtitleParts.push(client.mac_address);
   if (client.source) subtitleParts.push(formatClientSource(client.source));
-  if (client.primary_country_code) {
-    subtitleParts.push(
-      countryLabel(client.primary_country_code, client.primary_country_name),
-    );
-  }
 
   if (client.device_id == null) {
     return null;
@@ -146,6 +141,26 @@ function ClientRow({ client }: { client: LiveClientRow }) {
       <ListItemText
         primary={
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            {client.vpn_login_country_code && (
+              <Tooltip
+                title={countryLabel(
+                  client.vpn_login_country_code,
+                  client.vpn_login_country_name,
+                )}
+                arrow
+              >
+                <Typography
+                  component="span"
+                  aria-label={countryLabel(
+                    client.vpn_login_country_code,
+                    client.vpn_login_country_name,
+                  )}
+                  sx={{ fontSize: '1.25rem', lineHeight: 1 }}
+                >
+                  {countryFlagEmoji(client.vpn_login_country_code)}
+                </Typography>
+              </Tooltip>
+            )}
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
               {title}
             </Typography>
@@ -165,6 +180,15 @@ function ClientRow({ client }: { client: LiveClientRow }) {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
               {subtitleParts.join(' · ')}
             </Typography>
+            {client.vpn_login_country_code && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Last VPN login from:{' '}
+                {countryLabel(
+                  client.vpn_login_country_code,
+                  client.vpn_login_country_name,
+                )}
+              </Typography>
+            )}
             <BandwidthDetail client={client} />
           </Box>
         }

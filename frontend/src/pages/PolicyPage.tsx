@@ -14,7 +14,13 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PolicyPackDomainsDialog from '../features/policy/components/PolicyPackDomainsDialog';
 import { policyApi } from '../features/policy/config/api';
-import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
+import {
+  ForbiddenCountryPolicy,
+  PolicyPack,
+  PolicyProfile,
+  PolicySyncStatus,
+} from '../features/policy/types/policy';
+import { countryLabel } from '../features/devices/utils/countryDisplay';
 import { formatShortDateTime } from '../shared/utils/dateUtils';
 
 const SYNC_POLL_MS = 8000;
@@ -40,6 +46,7 @@ export default function PolicyPage() {
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [viewPack, setViewPack] = useState<PolicyPack | null>(null);
   const [applying, setApplying] = useState(false);
+  const [forbiddenPolicy, setForbiddenPolicy] = useState<ForbiddenCountryPolicy | null>(null);
 
   const loadSyncStatus = useCallback(async () => {
     try {
@@ -54,9 +61,14 @@ export default function PolicyPage() {
     setLoading(true);
     setError(null);
     try {
-      const [p, pr] = await Promise.all([policyApi.listPacks(), policyApi.listProfiles()]);
+      const [p, pr, fc] = await Promise.all([
+        policyApi.listPacks(),
+        policyApi.listProfiles(),
+        policyApi.getForbiddenCountries().catch(() => null),
+      ]);
       setPacks(p);
       setProfiles(pr);
+      setForbiddenPolicy(fc);
       await loadSyncStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load policy');
@@ -149,6 +161,67 @@ export default function PolicyPage() {
         <Alert severity="info" sx={{ mb: 2 }} onClose={() => setInfo(null)}>
           {info}
         </Alert>
+      )}
+
+      {forbiddenPolicy &&
+        (forbiddenPolicy.vpn_login_block_enabled &&
+          forbiddenPolicy.blocked_vpn_login_countries.length > 0 ||
+          (forbiddenPolicy.enabled && forbiddenPolicy.rules.length > 0)) && (
+        <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
+            Geo policy
+          </Typography>
+          {forbiddenPolicy.vpn_login_block_enabled &&
+            forbiddenPolicy.blocked_vpn_login_countries.length > 0 && (
+              <Alert severity="warning" sx={{ mb: 1.5 }}>
+                VPN enroll is <strong>denied</strong> from:{' '}
+                {forbiddenPolicy.blocked_vpn_login_countries.map((code, i) => (
+                  <span key={code}>
+                    {i > 0 ? ', ' : ''}
+                    {countryLabel(code, forbiddenPolicy.blocked_vpn_login_country_names[i])}
+                  </span>
+                ))}
+                . Login country is detected from public IP at enroll (GeoIP).
+              </Alert>
+            )}
+          {forbiddenPolicy.enabled && forbiddenPolicy.rules.length > 0 && (
+            <>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+                For allowed login countries: block destination ccTLDs in dnsmasq when login
+                country matches (e.g. IL clients cannot resolve .ir).
+              </Typography>
+              <Stack spacing={1}>
+                {forbiddenPolicy.rules.map((rule) => (
+                  <Box key={rule.user_country}>
+                    <Typography variant="body2">
+                      When login country is{' '}
+                      <strong>
+                        {countryLabel(rule.user_country, rule.user_country_name)}
+                      </strong>
+                      , block DNS regions:{' '}
+                      {rule.blocked_countries.map((code, i) => (
+                        <span key={code}>
+                          {i > 0 ? ', ' : ''}
+                          {countryLabel(code, rule.blocked_country_names[i])}
+                        </span>
+                      ))}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </>
+          )}
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+            Env:{' '}
+            <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace' }}>
+              BLOCKED_VPN_LOGIN_COUNTRIES
+            </Typography>
+            ,{' '}
+            <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace' }}>
+              FORBIDDEN_COUNTRY_RULES
+            </Typography>
+          </Typography>
+        </Paper>
       )}
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
