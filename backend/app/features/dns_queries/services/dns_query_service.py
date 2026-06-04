@@ -10,6 +10,7 @@ from app.features.dns_queries.dns_persist import filter_queries_to_persist, shou
 from app.features.dns_queries.dns_ingest_stats import ingest_stats
 from app.features.dns_queries.services.dns_anomaly_service import DnsAnomalyService
 from app.features.client_behavior.services.client_behavior_aggregator import ClientBehaviorAggregator
+from app.features.policy.services.forbidden_country_service import ForbiddenCountryService
 from app.features.client_behavior.services.behavior_scoring_service import BehaviorScoringService
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.shared.config import settings
@@ -37,8 +38,9 @@ class DnsQueryService:
         ingest_stats.record([dns_query_data])
         DnsAnomalyService(db).process_queries([dns_query_data])
         ClientBehaviorAggregator(db).process_queries([dns_query_data])
+        forbidden_alerts = ForbiddenCountryService(db).process_queries([dns_query_data])
         behavior_alerts = BehaviorScoringService(db).process_queries([dns_query_data])
-        if behavior_alerts:
+        if forbidden_alerts or behavior_alerts:
             db.commit()
 
         if not should_persist_query(dns_query_data):
@@ -69,6 +71,7 @@ class DnsQueryService:
         ingest_stats.record(queries)
         alerts_created = DnsAnomalyService(db).process_queries(queries)
         ClientBehaviorAggregator(db).process_queries(queries)
+        alerts_created += ForbiddenCountryService(db).process_queries(queries)
         alerts_created += BehaviorScoringService(db).process_queries(queries)
         db.commit()
 

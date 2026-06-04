@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.features.policy.schemas.policy import (
     AssignPolicyProfileRequest,
+    CountryChoice,
     DevicePolicyAssignmentRead,
+    ForbiddenCountryPolicyRead,
+    GeoCountryPolicyUpdate,
     PolicyApplyResponse,
     PolicyDnsSyncResponse,
     PolicyPackDomainsPage,
@@ -15,6 +18,7 @@ from app.features.policy.schemas.policy import (
     PolicySyncReport,
     PolicySyncStatusRead,
 )
+from app.features.policy.services.geo_country_policy_service import GeoCountryPolicyService
 from app.features.policy.services.policy_dns_service import PolicyDnsService
 from app.features.policy.services.policy_service import PolicyService
 from app.shared.admin_auth import verify_admin_api_token
@@ -85,6 +89,32 @@ def update_policy_profile(
     service: PolicyService = Depends(get_policy_service),
 ):
     return service.update_profile(profile_id, body)
+
+
+@router.get("/geo-countries/choices", response_model=list[CountryChoice])
+def list_geo_country_choices(
+    _: None = Depends(verify_admin_api_token),
+):
+    return GeoCountryPolicyService.list_country_choices()
+
+
+@router.get("/forbidden-countries", response_model=ForbiddenCountryPolicyRead)
+def get_forbidden_country_policy(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
+    """Effective geo country policy (database overrides env when rules are saved in UI)."""
+    return GeoCountryPolicyService(db).get_policy_read()
+
+
+@router.put("/forbidden-countries", response_model=ForbiddenCountryPolicyRead)
+def update_forbidden_country_policy(
+    body: GeoCountryPolicyUpdate,
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
+    """Save manual country blocks; applies after policy DNS sync."""
+    return GeoCountryPolicyService(db).save_policy(body)
 
 
 @router.get("/dns-sync", response_model=PolicyDnsSyncResponse)

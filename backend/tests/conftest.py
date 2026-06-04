@@ -28,6 +28,10 @@ from app.features.client_behavior.models.client_blocked_domain import ClientBloc
 from app.features.client_behavior.models.device_security_policy import DeviceSecurityPolicy  # noqa: F401
 from app.features.policy.models.policy_pack import PolicyPack  # noqa: F401
 from app.features.policy.models.policy_profile import PolicyProfile  # noqa: F401
+from app.features.policy.models.geo_country_block import (  # noqa: F401
+    GeoCountryBlock,
+    GeoCountryPolicyConfig,
+)
 from app.features.policy.models.device_quarantine import DeviceQuarantine  # noqa: F401
 from app.features.policy.models.policy_sync_status import PolicySyncStatus  # noqa: F401
 

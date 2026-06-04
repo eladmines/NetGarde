@@ -124,6 +124,15 @@ def convert_device_entry_to_dnsmasq(
             lines.append(f"tag:{tag}")
             lines.append(f"address=/{d}/#")
     else:
+        for pattern in entry.get('block_country_tlds') or []:
+            p = str(pattern).strip().lower()
+            if not p:
+                continue
+            if not p.startswith('.'):
+                p = f'.{p}'
+            for addr_line in block_domain_dnsmasq_lines(p, block_ip, block_ipv6_ip):
+                lines.append(f"tag:{tag}")
+                lines.append(addr_line)
         for domain in entry.get('block_domains') or []:
             d = str(domain).strip().lower()
             if not d:

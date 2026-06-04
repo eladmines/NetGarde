@@ -21,8 +21,14 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import LinearProgress from '@mui/material/LinearProgress';
 import { Link as RouterLink } from 'react-router-dom';
 import { clientProfilePath } from '../../devices/clientProfilePaths';
-import { formatClientSource, LiveClientRow, UseLiveClientsResult } from '../hooks/useLiveClients';
-import { countryLabel } from '../../devices/utils/countryDisplay';
+import PublicIcon from '@mui/icons-material/Public';
+import {
+  formatClientSource,
+  LiveClientRow,
+  LiveCountryItem,
+  UseLiveClientsResult,
+} from '../hooks/useLiveClients';
+import { countryFlagEmoji, countryLabel } from '../../devices/utils/countryDisplay';
 import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
 import {
   downloadChipSx,
@@ -111,16 +117,42 @@ function BandwidthDetail({ client }: { client: LiveClientRow }) {
   );
 }
 
+function LiveCountriesList({ countries }: { countries: LiveCountryItem[] }) {
+  if (countries.length === 0) {
+    return null;
+  }
+  return (
+    <Box sx={{ px: 2, py: 1.25, borderBottom: 1, borderColor: 'divider', bgcolor: 'action.hover' }}>
+      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.75 }}>
+        <PublicIcon sx={{ fontSize: 16 }} color="primary" />
+        <Typography variant="caption" fontWeight={600} color="text.secondary">
+          Live countries (VPN login)
+        </Typography>
+      </Stack>
+      <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>
+        {countries.map((c) => (
+          <Chip
+            key={c.country_code}
+            size="small"
+            variant="outlined"
+            label={`${c.country_name || c.country_code} (${c.client_count})`}
+            icon={
+              c.country_code !== 'UNKNOWN' ? (
+                <span aria-hidden>{countryFlagEmoji(c.country_code)}</span>
+              ) : undefined
+            }
+          />
+        ))}
+      </Stack>
+    </Box>
+  );
+}
+
 function ClientRow({ client }: { client: LiveClientRow }) {
   const title = client.hostname || client.client_ip;
   const subtitleParts = [client.client_ip];
   if (client.mac_address) subtitleParts.push(client.mac_address);
   if (client.source) subtitleParts.push(formatClientSource(client.source));
-  if (client.primary_country_code) {
-    subtitleParts.push(
-      countryLabel(client.primary_country_code, client.primary_country_name),
-    );
-  }
 
   if (client.device_id == null) {
     return null;
@@ -146,6 +178,26 @@ function ClientRow({ client }: { client: LiveClientRow }) {
       <ListItemText
         primary={
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            {client.vpn_login_country_code && (
+              <Tooltip
+                title={countryLabel(
+                  client.vpn_login_country_code,
+                  client.vpn_login_country_name,
+                )}
+                arrow
+              >
+                <Typography
+                  component="span"
+                  aria-label={countryLabel(
+                    client.vpn_login_country_code,
+                    client.vpn_login_country_name,
+                  )}
+                  sx={{ fontSize: '1.25rem', lineHeight: 1 }}
+                >
+                  {countryFlagEmoji(client.vpn_login_country_code)}
+                </Typography>
+              </Tooltip>
+            )}
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
               {title}
             </Typography>
@@ -165,6 +217,15 @@ function ClientRow({ client }: { client: LiveClientRow }) {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
               {subtitleParts.join(' · ')}
             </Typography>
+            {client.vpn_login_country_code && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Last VPN login from:{' '}
+                {countryLabel(
+                  client.vpn_login_country_code,
+                  client.vpn_login_country_name,
+                )}
+              </Typography>
+            )}
             <BandwidthDetail client={client} />
           </Box>
         }
@@ -178,7 +239,16 @@ export interface LiveClientsViewProps {
 }
 
 export default function LiveClientsView({ live }: LiveClientsViewProps) {
-  const { clients, loading, error, usageError, enrolledCount, serverThroughput, refetch } = live;
+  const {
+    clients,
+    liveCountries,
+    loading,
+    error,
+    usageError,
+    enrolledCount,
+    serverThroughput,
+    refetch,
+  } = live;
 
   if (loading && clients.length === 0) {
     return (
@@ -223,6 +293,8 @@ export default function LiveClientsView({ live }: LiveClientsViewProps) {
           Bandwidth: {usageError}
         </Alert>
       )}
+
+      {clients.length > 0 && <LiveCountriesList countries={liveCountries} />}
 
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {clients.length === 0 ? (

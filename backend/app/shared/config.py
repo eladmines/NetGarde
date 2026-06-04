@@ -80,6 +80,15 @@ class Settings(BaseSettings):
     GEOIP_PROVIDER: str = "ip_api"
     GEOIP_TIMEOUT_SEC: float = 3.0
 
+    # When VPN login country matches user_country, block destination ccTLDs (dnsmasq + alerts).
+    # JSON list, e.g. [{"user_country":"IL","blocked_countries":["IR","SY","KP"]}]
+    FORBIDDEN_COUNTRY_ENABLED: bool = True
+    FORBIDDEN_COUNTRY_RULES: str = '[{"user_country":"IL","blocked_countries":["IR"]}]'
+
+    # Reject VPN enroll when login GeoIP is in these countries (comma or JSON list), e.g. IR
+    VPN_LOGIN_GEO_BLOCK_ENABLED: bool = True
+    BLOCKED_VPN_LOGIN_COUNTRIES: str = "IR"
+
     # Policy packs: fetch upstream hosts lists into on-disk snapshots (all built-in packs).
     # Writable dir in Docker production (see docker-compose policy-pack-snapshots volume).
     POLICY_PACK_SNAPSHOT_DIR: str = ""

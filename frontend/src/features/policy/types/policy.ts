@@ -19,6 +19,40 @@ export interface PolicyPackDomainsPage {
   query: string;
 }
 
+export interface ForbiddenCountryRule {
+  user_country: string;
+  user_country_name: string;
+  blocked_countries: string[];
+  blocked_country_names: string[];
+}
+
+export interface CountryChoice {
+  code: string;
+  name: string;
+}
+
+export interface DestinationCountryRuleUpdate {
+  user_country: string;
+  blocked_countries: string[];
+}
+
+export interface GeoCountryPolicyUpdate {
+  vpn_login_block_enabled: boolean;
+  destination_rules_enabled: boolean;
+  vpn_login_denied_countries: string[];
+  destination_rules: DestinationCountryRuleUpdate[];
+}
+
+export interface ForbiddenCountryPolicy {
+  enabled: boolean;
+  user_country_source: string;
+  rules: ForbiddenCountryRule[];
+  vpn_login_block_enabled: boolean;
+  blocked_vpn_login_countries: string[];
+  blocked_vpn_login_country_names: string[];
+  managed_in_database: boolean;
+}
+
 export interface PolicyProfile {
   id: number;
   slug: string;

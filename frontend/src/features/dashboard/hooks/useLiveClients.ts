@@ -9,14 +9,21 @@ import { ClientBandwidth, DeviceUsageLiveItem } from '../types/usageLive';
 import { ServerNetworkThroughput } from '../types/networkThroughput';
 import { useUsageRealtime } from './useUsageRealtime';
 
+export interface LiveCountryItem {
+  country_code: string;
+  country_name: string | null;
+  client_count: number;
+}
+
 export interface LiveClientRow {
   client_ip: string;
   hostname: string | null;
   mac_address: string | null;
   source: string | null;
   device_id: number | null;
-  primary_country_code: string | null;
-  primary_country_name: string | null;
+  /** Country from public IP at last VPN enroll (GeoIP). */
+  vpn_login_country_code: string | null;
+  vpn_login_country_name: string | null;
   /** DNS activity in the last few minutes (WebSocket feed). */
   is_active_now: boolean;
   /** Latest VPN tunnel throughput from /devices/usage/live. */
@@ -46,18 +53,21 @@ export function formatClientSource(source: string | null): string {
 
 function buildRows(
   devices: Device[],
-  countryByDevice: Map<number, { primary_country_code: string | null; primary_country_name: string | null }>,
+  loginGeoByDevice: Map<
+    number,
+    { country_code: string | null; country_name: string | null }
+  >,
 ): LiveClientRow[] {
   return devices.map((device) => {
-    const country = countryByDevice.get(device.id);
+    const loginGeo = loginGeoByDevice.get(device.id);
     return {
       client_ip: device.client_ip,
       hostname: device.hostname,
       mac_address: device.mac_address,
       source: device.source,
       device_id: device.id,
-      primary_country_code: country?.primary_country_code ?? null,
-      primary_country_name: country?.primary_country_name ?? null,
+      vpn_login_country_code: loginGeo?.country_code ?? null,
+      vpn_login_country_name: loginGeo?.country_name ?? null,
       is_active_now: false,
       bandwidth: null,
     };
@@ -126,8 +136,46 @@ function withLiveActivity(rows: LiveClientRow[]): LiveClientRow[] {
   }));
 }
 
+function buildLiveCountries(clients: LiveClientRow[]): LiveCountryItem[] {
+  const counts = new Map<string, { name: string | null; count: number }>();
+  let unknown = 0;
+  for (const c of clients) {
+    const code = c.vpn_login_country_code?.trim().toUpperCase();
+    if (!code) {
+      unknown += 1;
+      continue;
+    }
+    const prev = counts.get(code);
+    if (prev) {
+      prev.count += 1;
+      if (!prev.name && c.vpn_login_country_name) {
+        prev.name = c.vpn_login_country_name;
+      }
+    } else {
+      counts.set(code, { name: c.vpn_login_country_name, count: 1 });
+    }
+  }
+  const items: LiveCountryItem[] = [...counts.entries()].map(([country_code, v]) => ({
+    country_code,
+    country_name: v.name,
+    client_count: v.count,
+  }));
+  items.sort(
+    (a, b) => b.client_count - a.client_count || a.country_code.localeCompare(b.country_code),
+  );
+  if (unknown > 0) {
+    items.push({
+      country_code: 'UNKNOWN',
+      country_name: 'Unknown login location',
+      client_count: unknown,
+    });
+  }
+  return items;
+}
+
 export interface UseLiveClientsResult {
   clients: LiveClientRow[];
+  liveCountries: LiveCountryItem[];
   loading: boolean;
   error: string | null;
   usageError: string | null;
@@ -147,8 +195,8 @@ export function useLiveClients(): UseLiveClientsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dnsActivityTick, setDnsActivityTick] = useState(0);
-  const [countryByDevice, setCountryByDevice] = useState<
-    Map<number, { primary_country_code: string | null; primary_country_name: string | null }>
+  const [loginGeoByDevice, setLoginGeoByDevice] = useState<
+    Map<number, { country_code: string | null; country_name: string | null }>
   >(new Map());
 
   const {
@@ -165,12 +213,12 @@ export function useLiveClients(): UseLiveClientsResult {
   );
 
   const clients = useMemo(() => {
-    const withActivity = withLiveActivity(buildRows(devices, countryByDevice));
+    const withActivity = withLiveActivity(buildRows(devices, loginGeoByDevice));
     const withBandwidth = attachBandwidth(withActivity, byDeviceId, byClientIp);
     return sortClients(filterLiveRegisteredClients(withBandwidth));
   // dnsActivityTick forces refresh when DNS live feed marks clients active.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devices, countryByDevice, byDeviceId, byClientIp, dnsActivityTick]);
+  }, [devices, loginGeoByDevice, byDeviceId, byClientIp, dnsActivityTick]);
 
   useEffect(
     () => subscribeDnsClientActivity(() => setDnsActivityTick((t) => t + 1)),
@@ -180,22 +228,24 @@ export function useLiveClients(): UseLiveClientsResult {
   const fetchAll = useCallback(async () => {
     setError(null);
     try {
-      const [deviceList, countryRes] = await Promise.all([
+      const [deviceList, loginGeoRes] = await Promise.all([
         devicesApi.list(),
-        devicesApi.listCountrySummaries(168).catch(() => ({ items: [], period_hours: 168 })),
+        devicesApi.listLoginLocationSummaries().catch(() => ({ items: [] })),
       ]);
       setDevices(deviceList);
-      const cmap = new Map<
+      const geoMap = new Map<
         number,
-        { primary_country_code: string | null; primary_country_name: string | null }
+        { country_code: string | null; country_name: string | null }
       >();
-      for (const item of countryRes.items) {
-        cmap.set(item.device_id, {
-          primary_country_code: item.primary_country_code,
-          primary_country_name: item.primary_country_name,
-        });
+      for (const item of loginGeoRes.items) {
+        if (item.country_code) {
+          geoMap.set(item.device_id, {
+            country_code: item.country_code,
+            country_name: item.country_name,
+          });
+        }
       }
-      setCountryByDevice(cmap);
+      setLoginGeoByDevice(geoMap);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load clients');
     } finally {
@@ -208,6 +258,8 @@ export function useLiveClients(): UseLiveClientsResult {
     const id = setInterval(fetchAll, POLL_MS);
     return () => clearInterval(id);
   }, [fetchAll]);
+
+  const liveCountries = useMemo(() => buildLiveCountries(clients), [clients]);
 
   const enrolledCount = clients.filter((c) => c.source === 'vpn_enroll').length;
 
@@ -231,6 +283,7 @@ export function useLiveClients(): UseLiveClientsResult {
 
   return {
     clients,
+    liveCountries,
     loading,
     error,
     usageError,

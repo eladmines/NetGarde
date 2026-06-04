@@ -41,8 +41,11 @@ export default function MainGrid() {
 
       <Grid container spacing={2} columns={12}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
+          <Typography component="h2" variant="h6" sx={{ mb: 0.5 }}>
             Live Clients
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+            Connected clients and VPN login countries (GeoIP at enroll).
           </Typography>
           <LiveClientsView live={live} />
         </Grid>

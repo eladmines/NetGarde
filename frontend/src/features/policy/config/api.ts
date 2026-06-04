@@ -3,6 +3,9 @@ import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 import {
   DevicePolicyAssignment,
   PolicyApplyResult,
+  CountryChoice,
+  ForbiddenCountryPolicy,
+  GeoCountryPolicyUpdate,
   PolicyPack,
   PolicyPackDomainsPage,
   PolicyProfile,
@@ -58,6 +61,14 @@ export const policyApi = {
       { method: 'POST' },
     ),
   listProfiles: () => apiFetch<PolicyProfile[]>('/policy/profiles'),
+  listGeoCountryChoices: () => apiFetch<CountryChoice[]>('/policy/geo-countries/choices'),
+  getForbiddenCountries: () => apiFetch<ForbiddenCountryPolicy>('/policy/forbidden-countries'),
+  updateForbiddenCountries: (body: GeoCountryPolicyUpdate) =>
+    apiFetch<ForbiddenCountryPolicy>('/policy/forbidden-countries', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
   getSyncStatus: () => apiFetch<PolicySyncStatus>('/policy/sync-status'),
   applyPolicy: () =>
     apiFetch<PolicyApplyResult>('/policy/apply', {

@@ -15,6 +15,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import PolicyPackDomainsDialog from '../features/policy/components/PolicyPackDomainsDialog';
 import { policyApi } from '../features/policy/config/api';
 import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
+import GeoCountryPolicyEditor from '../features/policy/components/GeoCountryPolicyEditor';
 import { formatShortDateTime } from '../shared/utils/dateUtils';
 
 const SYNC_POLL_MS = 8000;
@@ -150,6 +151,8 @@ export default function PolicyPage() {
           {info}
         </Alert>
       )}
+
+      <GeoCountryPolicyEditor />
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Stack
