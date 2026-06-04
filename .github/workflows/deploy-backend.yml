@@ -423,12 +423,17 @@ jobs:
             echo "Building block-page container..."
             docker compose -f docker-compose.yml build block-page || echo "Warning: block-page build failed, but continuing..."
             
-            # Run migrations with DB_URL explicitly passed to the container
+            # Free disk after a failed Ollama pull (optional ai profile is not used in CI deploy)
+            echo "Docker disk usage before deploy:"
+            df -h / /var/lib/docker 2>/dev/null || df -h /
+            docker image prune -f || true
+
+            # Run migrations without pulling optional services (Ollama uses compose profile "ai")
             # Note: alembic/env.py will handle escaping % characters for ConfigParser
             echo "Running database migrations..."
-            docker compose -f docker-compose.yml run --rm -e DB_URL="$DB_URL" backend alembic upgrade head
+            docker compose -f docker-compose.yml run --rm --no-deps -e DB_URL="$DB_URL" backend alembic upgrade head
             
-            # Start all services and remove orphaned containers (like old postgres containers)
+            # Start core services only (Ollama: sudo bash scripts/ec2-setup-ollama.sh when disk allows)
             echo "Starting services..."
             docker compose -f docker-compose.yml up -d --remove-orphans
 
@@ -463,4 +468,5 @@ jobs:
             echo "Listener service status:"
             sudo systemctl --no-pager --full status netgarde-blocked-sites-listener || true
 
-            
+            echo "AI review: template mode by default. For local Ollama after freeing disk:"
+            echo "  sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh"
