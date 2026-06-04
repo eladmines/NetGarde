@@ -202,7 +202,7 @@ export default function ClientWorldMap({
                   r={18}
                   fill={theme.palette.background.paper}
                   stroke={hasActive ? theme.palette.success.main : theme.palette.primary.main}
-                  strokeWidth={hasActive ? 2.5 : 1.5}
+                  strokeWidth={hasActive ? 1.75 : 1.5}
                 />
                 <text
                   textAnchor="middle"
