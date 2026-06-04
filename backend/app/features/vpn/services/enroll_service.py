@@ -80,9 +80,9 @@ class EnrollService:
         device_id = payload.device_id.strip()
         public_key = payload.public_key.strip()
 
-        from app.features.policy.services.vpn_login_geo_block_service import VpnLoginGeoBlockService
+        from app.features.policy.services.geo_country_policy_service import GeoCountryPolicyService
 
-        VpnLoginGeoBlockService().assert_enroll_allowed(
+        GeoCountryPolicyService(self.db).assert_vpn_enroll_allowed(
             connect_ip=connect_ip,
             client_reported_ip=payload.client_public_ip,
         )

@@ -85,6 +85,23 @@ class ForbiddenCountryRuleRead(BaseModel):
     blocked_country_names: List[str] = Field(default_factory=list)
 
 
+class CountryChoice(BaseModel):
+    code: str
+    name: str
+
+
+class DestinationCountryRuleUpdate(BaseModel):
+    user_country: str = Field(min_length=2, max_length=2)
+    blocked_countries: List[str] = Field(default_factory=list)
+
+
+class GeoCountryPolicyUpdate(BaseModel):
+    vpn_login_block_enabled: bool = True
+    destination_rules_enabled: bool = True
+    vpn_login_denied_countries: List[str] = Field(default_factory=list)
+    destination_rules: List[DestinationCountryRuleUpdate] = Field(default_factory=list)
+
+
 class ForbiddenCountryPolicyRead(BaseModel):
     enabled: bool
     user_country_source: str = "vpn_login_geo"
@@ -92,6 +109,7 @@ class ForbiddenCountryPolicyRead(BaseModel):
     vpn_login_block_enabled: bool = False
     blocked_vpn_login_countries: List[str] = Field(default_factory=list)
     blocked_vpn_login_country_names: List[str] = Field(default_factory=list)
+    managed_in_database: bool = False
 
 
 class PolicyDeviceDnsEntry(BaseModel):

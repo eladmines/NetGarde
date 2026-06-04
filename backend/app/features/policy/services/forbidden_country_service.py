@@ -16,8 +16,8 @@ from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertR
 from app.features.policy.forbidden_country_rules import (
     ForbiddenCountryRule,
     blocked_countries_for_user,
-    parse_forbidden_country_rules,
 )
+from app.features.policy.services.geo_country_policy_service import GeoCountryPolicyService
 from app.shared.config import settings
 from app.shared.domain_country import dnsmasq_tld_patterns_for_country
 from app.shared.domain_country import country_code_for_domain, country_display_name
@@ -41,17 +41,17 @@ class ForbiddenCountryService:
 
     def __init__(self, db: Session):
         self.db = db
+        self.geo_policy = GeoCountryPolicyService(db)
         self.login_geo = DeviceLoginGeoRepository(db)
         self.device_repo = DeviceRepository(db)
         self.block_repo = ClientBlockedDomainRepository(db)
         self.alert_repo = DnsAlertRepository(db)
 
-    @staticmethod
-    def is_enabled() -> bool:
-        return bool(getattr(settings, "FORBIDDEN_COUNTRY_ENABLED", True))
+    def is_enabled(self) -> bool:
+        return self.geo_policy.destination_rules_enabled()
 
     def list_rules(self) -> List[ForbiddenCountryRule]:
-        return parse_forbidden_country_rules()
+        return self.geo_policy.destination_rules()
 
     def get_user_country(self, device_id: int) -> Optional[str]:
         """Recommended selector: last VPN enroll GeoIP country (ISO alpha-2)."""

@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.features.policy.forbidden_country_rules import parse_forbidden_country_rules
 from app.features.policy.schemas.policy import (
     AssignPolicyProfileRequest,
+    CountryChoice,
     DevicePolicyAssignmentRead,
     ForbiddenCountryPolicyRead,
-    ForbiddenCountryRuleRead,
+    GeoCountryPolicyUpdate,
     PolicyApplyResponse,
     PolicyDnsSyncResponse,
     PolicyPackDomainsPage,
@@ -18,13 +18,11 @@ from app.features.policy.schemas.policy import (
     PolicySyncReport,
     PolicySyncStatusRead,
 )
+from app.features.policy.services.geo_country_policy_service import GeoCountryPolicyService
 from app.features.policy.services.policy_dns_service import PolicyDnsService
 from app.features.policy.services.policy_service import PolicyService
-from app.features.policy.services.vpn_login_geo_block_service import VpnLoginGeoBlockService
 from app.shared.admin_auth import verify_admin_api_token
-from app.shared.config import settings
 from app.shared.dependencies import get_db
-from app.shared.domain_country import country_display_name
 from app.shared.service_auth import verify_dns_ingest_service
 
 router = APIRouter(prefix="/policy", tags=["Policy"])
@@ -93,30 +91,30 @@ def update_policy_profile(
     return service.update_profile(profile_id, body)
 
 
-@router.get("/forbidden-countries", response_model=ForbiddenCountryPolicyRead)
-def get_forbidden_country_policy(
+@router.get("/geo-countries/choices", response_model=list[CountryChoice])
+def list_geo_country_choices(
     _: None = Depends(verify_admin_api_token),
 ):
-    """How forbidden-country blocking selects the user country and which pairs are active."""
-    rules = []
-    for rule in parse_forbidden_country_rules():
-        rules.append(
-            ForbiddenCountryRuleRead(
-                user_country=rule.user_country,
-                user_country_name=country_display_name(rule.user_country),
-                blocked_countries=list(rule.blocked_countries),
-                blocked_country_names=[country_display_name(c) for c in rule.blocked_countries],
-            )
-        )
-    blocked_login = VpnLoginGeoBlockService.blocked_login_countries()
-    return ForbiddenCountryPolicyRead(
-        enabled=bool(getattr(settings, "FORBIDDEN_COUNTRY_ENABLED", True)),
-        user_country_source="vpn_login_geo",
-        rules=rules,
-        vpn_login_block_enabled=VpnLoginGeoBlockService.is_enabled(),
-        blocked_vpn_login_countries=blocked_login,
-        blocked_vpn_login_country_names=[country_display_name(c) for c in blocked_login],
-    )
+    return GeoCountryPolicyService.list_country_choices()
+
+
+@router.get("/forbidden-countries", response_model=ForbiddenCountryPolicyRead)
+def get_forbidden_country_policy(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
+    """Effective geo country policy (database overrides env when rules are saved in UI)."""
+    return GeoCountryPolicyService(db).get_policy_read()
+
+
+@router.put("/forbidden-countries", response_model=ForbiddenCountryPolicyRead)
+def update_forbidden_country_policy(
+    body: GeoCountryPolicyUpdate,
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_admin_api_token),
+):
+    """Save manual country blocks; applies after policy DNS sync."""
+    return GeoCountryPolicyService(db).save_policy(body)
 
 
 @router.get("/dns-sync", response_model=PolicyDnsSyncResponse)
