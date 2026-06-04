@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, UniqueConstraint
 from app.shared.database import Base
 
 
@@ -14,6 +14,7 @@ class ClientBehaviorRollup(Base):
     unique_roots = Column(Integer, nullable=False, default=0)
     new_roots = Column(Integer, nullable=False, default=0)
     hour_utc = Column(Integer, nullable=False)
+    country_counts_json = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime(timezone=True),

@@ -6,6 +6,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.features.client_behavior.models.client_behavior_rollup import ClientBehaviorRollup
+from app.features.client_behavior.repositories.behavior_rollup_country import (
+    dumps_country_counts,
+    merge_country_counts,
+    parse_country_counts,
+)
+from app.shared.domain_country import country_code_for_domain
 from app.shared.domain_utils import extract_root_domain
 
 
@@ -29,7 +35,9 @@ class BehaviorRollupRepository:
         if not queries:
             return
 
-        buckets: Dict[datetime, Dict[str, int]] = defaultdict(lambda: {"count": 0, "roots": set(), "new": 0})
+        buckets: Dict[datetime, Dict] = defaultdict(
+            lambda: {"count": 0, "roots": set(), "new": 0, "countries": defaultdict(int)}
+        )
         device_known = {r for did, r in known_roots if did == device_id}
 
         for ts, domain in queries:
@@ -37,6 +45,8 @@ class BehaviorRollupRepository:
             root = extract_root_domain(domain)
             buckets[window]["count"] += 1
             buckets[window]["roots"].add(root)
+            cc = country_code_for_domain(domain)
+            buckets[window]["countries"][cc] += 1
             if root and (device_id, root) not in known_roots:
                 buckets[window]["new"] += 1
                 device_known.add(root)
@@ -53,10 +63,16 @@ class BehaviorRollupRepository:
                 .first()
             )
             unique_count = len(data["roots"])
+            delta_countries = dict(data["countries"])
             if existing:
                 existing.query_count += data["count"]
                 existing.unique_roots = max(existing.unique_roots, unique_count)
                 existing.new_roots += data["new"]
+                merged = merge_country_counts(
+                    parse_country_counts(existing.country_counts_json),
+                    delta_countries,
+                )
+                existing.country_counts_json = dumps_country_counts(merged)
                 existing.updated_at = now
             else:
                 self.db.add(
@@ -67,6 +83,7 @@ class BehaviorRollupRepository:
                         unique_roots=unique_count,
                         new_roots=data["new"],
                         hour_utc=window_start.hour,
+                        country_counts_json=dumps_country_counts(delta_countries),
                         created_at=now,
                         updated_at=now,
                     )

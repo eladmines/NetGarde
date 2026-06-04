@@ -22,6 +22,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { Link as RouterLink } from 'react-router-dom';
 import { clientProfilePath } from '../../devices/clientProfilePaths';
 import { formatClientSource, LiveClientRow, UseLiveClientsResult } from '../hooks/useLiveClients';
+import { countryLabel } from '../../devices/utils/countryDisplay';
 import { formatBytesCompact, formatMibPerSec } from '../utils/formatBandwidth';
 import {
   downloadChipSx,
@@ -115,6 +116,11 @@ function ClientRow({ client }: { client: LiveClientRow }) {
   const subtitleParts = [client.client_ip];
   if (client.mac_address) subtitleParts.push(client.mac_address);
   if (client.source) subtitleParts.push(formatClientSource(client.source));
+  if (client.primary_country_code) {
+    subtitleParts.push(
+      countryLabel(client.primary_country_code, client.primary_country_name),
+    );
+  }
 
   if (client.device_id == null) {
     return null;

@@ -31,16 +31,27 @@ import {
   ClientBlockedDomain,
   Device,
   DeviceSecurityPolicy,
+  DeviceCountrySummary,
 } from '../types/device';
 import { DnsAlert } from '../../dns-queries/types/dnsQuery';
 import BaselineSummary from './BaselineSummary';
+import DeviceCountriesSection from './DeviceCountriesSection';
+import DeviceLoginLocationSection from './DeviceLoginLocationSection';
+import { countryLabel } from '../utils/countryDisplay';
+import { DeviceLoginGeoSummary } from '../types/device';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
 
 interface ClientProfileDetailProps {
   device: Device;
+  countrySummary?: DeviceCountrySummary | null;
+  loginGeoSummary?: DeviceLoginGeoSummary | null;
 }
 
-export default function ClientProfileDetail({ device }: ClientProfileDetailProps) {
+export default function ClientProfileDetail({
+  device,
+  countrySummary,
+  loginGeoSummary,
+}: ClientProfileDetailProps) {
   const [profile, setProfile] = useState<BehaviorProfile | null>(null);
   const [policy, setPolicy] = useState<DeviceSecurityPolicy | null>(null);
   const [blocks, setBlocks] = useState<ClientBlockedDomain[]>([]);
@@ -158,6 +169,21 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
             <Typography variant="caption" color="text.secondary">
               Source: {device.source}
             </Typography>
+            {loginGeoSummary?.country_code && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Last VPN login from:{' '}
+                {countryLabel(loginGeoSummary.country_code, loginGeoSummary.country_name)}
+              </Typography>
+            )}
+            {countrySummary?.primary_country_code && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Primary DNS region:{' '}
+                {countryLabel(
+                  countrySummary.primary_country_code,
+                  countrySummary.primary_country_name,
+                )}
+              </Typography>
+            )}
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <Stack direction="row" alignItems="center" spacing={0.25}>
@@ -263,6 +289,10 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
                 </Typography>
               )}
             </Box>
+
+            <DeviceLoginLocationSection deviceId={device.id} />
+
+            <DeviceCountriesSection deviceId={device.id} />
 
             <Box>
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
