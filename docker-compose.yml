@@ -1,5 +1,8 @@
 services:
+  # Optional local LLM (~3GB+ image + model). Enable with: COMPOSE_PROFILES=ai docker compose up -d
+  # See scripts/ec2-setup-ollama.sh
   ollama:
+    profiles: ["ai"]
     image: ollama/ollama:latest
     container_name: netgarde-ollama
     volumes:
@@ -59,7 +62,7 @@ services:
       USAGE_HISTORY_MINUTES: ${USAGE_HISTORY_MINUTES:-60}
       USAGE_PERSIST_SAMPLES: ${USAGE_PERSIST_SAMPLES:-false}
       POLICY_PACK_SNAPSHOT_DIR: /var/lib/netgarde/policy-snapshots
-      NETWORK_REVIEW_MODE: ${NETWORK_REVIEW_MODE:-ollama}
+      NETWORK_REVIEW_MODE: ${NETWORK_REVIEW_MODE:-template}
       NETWORK_REVIEW_CACHE_TTL_SEC: ${NETWORK_REVIEW_CACHE_TTL_SEC:-90}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
@@ -70,8 +73,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      ollama:
-        condition: service_started
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
