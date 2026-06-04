@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from app.features.client_behavior.behavior_whitelist import is_whitelisted_root
+from app.features.client_behavior.services.behavior_review_templates import explain_alert_message
 from app.features.client_behavior.repositories.behavior_profile_repository import BehaviorProfileRepository
 from app.features.client_behavior.repositories.behavior_rollup_repository import BehaviorRollupRepository
 from app.features.client_behavior.repositories.client_blocked_domain_repository import ClientBlockedDomainRepository
@@ -98,9 +99,14 @@ class BehaviorScoringService:
         events = 0
         if not recent_alert:
             client_ip = entries[0][0]
-            message = f"Behavior score {score}: " + "; ".join(reasons)
+            technical = f"Behavior score {score}: " + "; ".join(reasons)
             if top_domain:
-                message += f" (top domain: {top_domain})"
+                technical += f" (top domain: {top_domain})"
+            mode = settings.BEHAVIOR_REVIEW_MODE.strip().lower()
+            if mode == "template":
+                message = explain_alert_message(technical, domain=top_domain)
+            else:
+                message = technical
 
             self.alert_repo.create(
                 timestamp=datetime.now(timezone.utc),
@@ -112,6 +118,9 @@ class BehaviorScoringService:
                 message=message,
                 device_id=device_id,
             )
+            from app.features.client_behavior.services.behavior_review_cache import delete_cached_review
+
+            delete_cached_review(device_id)
             events = 1
 
         blocks_added = self._apply_auto_blocks_if_needed(device_id, score, entries)

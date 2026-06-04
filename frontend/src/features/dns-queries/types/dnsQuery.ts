@@ -64,6 +64,7 @@ export interface DnsAlert {
   domain: string | null;
   root_domain: string | null;
   message: string | null;
+  parent_summary?: string | null;
   created_at: string | null;
 }
 

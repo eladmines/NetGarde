@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpSyncRequest
 from app.features.client_behavior.schemas.behavior import (
     BehaviorProfileRead,
+    BehaviorReviewRead,
     BehaviorRecomputeResult,
     BlockedClientsListResponse,
     ClientBlockSyncResponse,
@@ -229,6 +230,16 @@ def get_behavior_profile_endpoint(
     behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
 ):
     return behavior.get_behavior_profile(device_id)
+
+
+@router.get("/{device_id}/behavior-review", response_model=BehaviorReviewRead)
+def get_behavior_review_endpoint(
+    device_id: int,
+    refresh: bool = Query(default=False),
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    return behavior.get_behavior_review(device_id, refresh=refresh)
 
 
 @router.get("/{device_id}/behavior-events")

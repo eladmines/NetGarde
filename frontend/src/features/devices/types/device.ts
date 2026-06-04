@@ -9,6 +9,18 @@ export interface Device {
   updated_at?: string | null;
 }
 
+export type BehaviorReviewSource = 'template' | 'llm';
+
+export interface BehaviorReview {
+  device_id: number;
+  generated_at: string;
+  summary: string;
+  source: BehaviorReviewSource;
+  review_mode: string;
+  llm_model?: string | null;
+  llm_error?: string | null;
+}
+
 export interface BehaviorProfile {
   device_id: number;
   profile_ready: boolean;

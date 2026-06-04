@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     BEHAVIOR_AUTO_BLOCK_TTL_HOURS: int = 24
     BEHAVIOR_AUTO_BLOCK_DOMAINS_PER_EVENT: int = 5
     BEHAVIOR_MAX_BLOCKS_PER_DAY: int = 10
+    # Parent-facing behavior text (template | openai | ollama)
+    BEHAVIOR_REVIEW_MODE: str = "template"
+    BEHAVIOR_REVIEW_CACHE_TTL_SEC: int = 300
 
     # Policy packs: fetch upstream hosts lists into on-disk snapshots (all built-in packs).
     # Writable dir in Docker production (see docker-compose policy-pack-snapshots volume).

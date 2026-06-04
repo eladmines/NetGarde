@@ -17,11 +17,15 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import { devicesApi } from '../config/api';
 import { policyApi } from '../../policy/config/api';
 import { DevicePolicyAssignment, PolicyProfile } from '../../policy/types/policy';
 import {
   BehaviorProfile,
+  BehaviorReview,
   ClientBlockedDomain,
   Device,
   DeviceSecurityPolicy,
@@ -44,6 +48,9 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [review, setReview] = useState<BehaviorReview | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +80,28 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadReview = useCallback(
+    async (refresh = false) => {
+      setReviewLoading(true);
+      setReviewError(null);
+      try {
+        const r = await devicesApi.getBehaviorReview(device.id, refresh);
+        setReview(r);
+      } catch (e) {
+        setReviewError(e instanceof Error ? e.message : 'Failed to load behavior explanation');
+      } finally {
+        setReviewLoading(false);
+      }
+    },
+    [device.id],
+  );
+
+  useEffect(() => {
+    if (!loading && profile?.profile_ready) {
+      loadReview();
+    }
+  }, [loading, profile?.profile_ready, loadReview]);
 
   const toggleAutoBlock = async () => {
     if (!policy) return;
@@ -201,6 +230,60 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
               )}
             </Box>
 
+            <Box>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <AutoAwesomeOutlinedIcon color="primary" fontSize="small" />
+                <Typography variant="subtitle1" sx={{ flex: 1 }}>
+                  What this means
+                </Typography>
+                {review?.source === 'llm' && review.llm_model && (
+                  <Chip size="small" label={review.llm_model} variant="outlined" color="primary" />
+                )}
+                {review && review.source !== 'llm' && review.review_mode !== 'template' && (
+                  <Chip size="small" label="Rules-based fallback" variant="outlined" color="warning" />
+                )}
+                <Tooltip title="Regenerate explanation">
+                  <span>
+                    <Button
+                      size="small"
+                      startIcon={
+                        reviewLoading ? <CircularProgress size={14} /> : <RefreshIcon fontSize="small" />
+                      }
+                      onClick={() => loadReview(true)}
+                      disabled={reviewLoading}
+                    >
+                      Refresh
+                    </Button>
+                  </span>
+                </Tooltip>
+              </Stack>
+              {reviewLoading && !review && (
+                <Typography variant="body2" color="text.secondary">
+                  Generating explanation… On CPU this can take up to 2 minutes.
+                </Typography>
+              )}
+              {reviewError && (
+                <Alert severity="warning" sx={{ mb: 1 }}>
+                  {reviewError}
+                </Alert>
+              )}
+              {review?.llm_error && (
+                <Alert severity="warning" sx={{ mb: 1 }}>
+                  AI error: {review.llm_error}
+                </Alert>
+              )}
+              {review?.summary && (
+                <Typography variant="body2" sx={{ lineHeight: 1.65 }}>
+                  {review.summary}
+                </Typography>
+              )}
+              {!reviewLoading && !review?.summary && profile.profile_ready && (
+                <Typography variant="body2" color="text.secondary">
+                  No explanation available yet.
+                </Typography>
+              )}
+            </Box>
+
             {policy && (
               <Box>
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>
@@ -272,7 +355,8 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
                           secondary={
                             <>
                               {formatShortDateTime(ev.timestamp)}
-                              {ev.message ? ` — ${ev.message}` : ''}
+                              <br />
+                              {ev.parent_summary || ev.message || '—'}
                             </>
                           }
                         />

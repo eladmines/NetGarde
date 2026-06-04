@@ -13,6 +13,7 @@ class DnsAlertResponse(BaseModel):
     domain: Optional[str] = None
     root_domain: Optional[str] = None
     message: Optional[str] = None
+    parent_summary: Optional[str] = None
     created_at: Optional[datetime] = None
 
     class Config:
