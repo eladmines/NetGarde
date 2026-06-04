@@ -1,8 +1,8 @@
-from app.features.dashboard.services.llm_common import build_review_prompt, parse_bullets_from_content
+from app.features.dashboard.services.llm_common import build_review_prompt, parse_summary_from_content
 from app.shared.config import settings
 
 
-def summarize_network_review(snapshot: dict) -> list[str]:
+def summarize_network_review(snapshot: dict) -> str:
     api_key = settings.OPENAI_API_KEY.strip()
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is not set")
@@ -31,4 +31,4 @@ def summarize_network_review(snapshot: dict) -> list[str]:
         data = response.json()
 
     content = data["choices"][0]["message"]["content"]
-    return parse_bullets_from_content(content)
+    return parse_summary_from_content(content)

@@ -8,11 +8,13 @@ from app.features.dashboard.services.openai_llm_client import summarize_network_
 
 def test_openai_summarize_parses_response():
     snapshot = {"period_minutes": 60, "alerts": {"total": 1, "by_type": {}}}
-    bullets_json = json.dumps(["Network is quiet.", "One alert in the last hour."])
+    summary_json = json.dumps(
+        {"summary": "Network is quiet. One alert in the last hour."}
+    )
     mock_response = MagicMock()
     mock_response.raise_for_status = MagicMock()
     mock_response.json.return_value = {
-        "choices": [{"message": {"content": bullets_json}}],
+        "choices": [{"message": {"content": summary_json}}],
     }
     mock_client = MagicMock()
     mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -28,7 +30,7 @@ def test_openai_summarize_parses_response():
         mock_settings.OPENAI_BASE_URL = "https://api.openai.com/v1"
         mock_settings.LLM_TIMEOUT_SEC = 30
         with patch.dict(sys.modules, {"httpx": fake_httpx}):
-            bullets = summarize_network_review(snapshot)
+            summary = summarize_network_review(snapshot)
 
-    assert bullets == ["Network is quiet.", "One alert in the last hour."]
+    assert summary == "Network is quiet. One alert in the last hour."
     mock_client.post.assert_called_once()
