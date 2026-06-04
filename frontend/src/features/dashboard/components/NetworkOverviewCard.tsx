@@ -14,7 +14,6 @@ import Alert from '@mui/material/Alert';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
-import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
 import { useNetworkOverview } from '../hooks/useNetworkOverview';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
 
@@ -23,34 +22,34 @@ export default function NetworkOverviewCard() {
 
   const stats = data?.stats;
   const isAi = data?.source === 'llm';
-  const title = isAi ? 'AI review' : 'Network review';
-  const TitleIcon = isAi ? AutoAwesomeOutlinedIcon : SummarizeOutlinedIcon;
+  const wantsAi = data?.review_mode === 'ollama' || data?.review_mode === 'openai';
+  const showFallbackHint = wantsAi && !isAi && !loading;
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-        <TitleIcon color="primary" fontSize="small" />
+        <AutoAwesomeOutlinedIcon color="primary" fontSize="small" />
         <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
-          {title}
+          AI overview
         </Typography>
         {data && (
           <Stack direction="row" spacing={0.75} alignItems="center">
             {isAi && data.llm_model && (
               <Chip size="small" label={data.llm_model} variant="outlined" color="primary" />
             )}
-            {!isAi && <Chip size="small" label="Template" variant="outlined" />}
+            {!isAi && <Chip size="small" label="Rules-based fallback" variant="outlined" color="warning" />}
             <Typography variant="caption" color="text.secondary">
               Last {data.period_minutes} min · {formatShortDateTime(data.generated_at)}
             </Typography>
           </Stack>
         )}
-        <Tooltip title="Regenerate review">
+        <Tooltip title="Regenerate AI overview">
           <span>
             <IconButton
               size="small"
               onClick={() => refetch(true)}
               disabled={loading}
-              aria-label="Regenerate network review"
+              aria-label="Regenerate AI overview"
             >
               {loading ? <CircularProgress size={18} /> : <RefreshIcon fontSize="small" />}
             </IconButton>
@@ -64,9 +63,17 @@ export default function NetworkOverviewCard() {
         </Alert>
       )}
 
-      {loading && isAi && !data && (
+      {showFallbackHint && (
+        <Alert severity="warning" sx={{ mb: 1.5 }}>
+          AI is configured ({data?.review_mode}) but the API returned a rules-based summary. Check that
+          Ollama is running, then click Regenerate. On EC2:{' '}
+          <code>sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh</code>
+        </Alert>
+      )}
+
+      {loading && !data && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Generating AI summary…
+          Generating AI overview…
         </Typography>
       )}
 

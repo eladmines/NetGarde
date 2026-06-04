@@ -17,4 +17,5 @@ export interface NetworkOverview {
   stats: NetworkOverviewStats;
   source: NetworkOverviewSource;
   llm_model: string | null;
+  review_mode: string;
 }
