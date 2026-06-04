@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -11,7 +11,6 @@ import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
-import SaveIcon from '@mui/icons-material/Save';
 import { policyApi } from '../config/api';
 import {
   CountryChoice,
@@ -96,7 +95,16 @@ function CountryAutocomplete({
   );
 }
 
-export default function GeoCountryPolicyEditor() {
+export type GeoCountryPolicyEditorHandle = {
+  save: () => Promise<void>;
+};
+
+type GeoCountryPolicyEditorProps = {
+  onSavingChange?: (saving: boolean) => void;
+};
+
+const GeoCountryPolicyEditor = forwardRef<GeoCountryPolicyEditorHandle, GeoCountryPolicyEditorProps>(
+  function GeoCountryPolicyEditor({ onSavingChange }, ref) {
   const [choices, setChoices] = useState<CountryChoice[]>([]);
   const [policy, setPolicy] = useState<ForbiddenCountryPolicy | null>(null);
   const [vpnLoginEnabled, setVpnLoginEnabled] = useState(true);
@@ -178,7 +186,7 @@ export default function GeoCountryPolicyEditor() {
     setAddUserCountry(null);
   };
 
-  const save = async () => {
+  const save = useCallback(async () => {
     setSaving(true);
     setError(null);
     setInfo(null);
@@ -202,7 +210,13 @@ export default function GeoCountryPolicyEditor() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [vpnLoginEnabled, destEnabled, vpnDenied, destRules]);
+
+  useImperativeHandle(ref, () => ({ save }), [save]);
+
+  useEffect(() => {
+    onSavingChange?.(saving);
+  }, [saving, onSavingChange]);
 
   if (loading) {
     return (
@@ -343,16 +357,9 @@ export default function GeoCountryPolicyEditor() {
         </Button>
       </Stack>
       </Box>
-
-      <Button
-        variant="contained"
-        size="small"
-        startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-        onClick={save}
-        disabled={saving}
-      >
-        Save country blocks
-      </Button>
     </Paper>
   );
-}
+},
+);
+
+export default GeoCountryPolicyEditor;

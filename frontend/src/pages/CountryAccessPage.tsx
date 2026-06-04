@@ -1,13 +1,20 @@
+import { useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import GeoCountryPolicyEditor from '../features/policy/components/GeoCountryPolicyEditor';
+import SaveIcon from '@mui/icons-material/Save';
+import GeoCountryPolicyEditor, {
+  GeoCountryPolicyEditorHandle,
+} from '../features/policy/components/GeoCountryPolicyEditor';
 import { usePolicyDnsSync } from '../features/policy/hooks/usePolicyDnsSync';
 
 export default function CountryAccessPage() {
+  const editorRef = useRef<GeoCountryPolicyEditorHandle>(null);
+  const [savingCountries, setSavingCountries] = useState(false);
   const {
     syncStatusLabel,
     applying,
@@ -33,15 +40,28 @@ export default function CountryAccessPage() {
             {syncStatusLabel}
           </Typography>
         </Box>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={applyNow}
-          disabled={applying}
-        >
-          Apply now
-        </Button>
+        <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={
+              savingCountries ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />
+            }
+            onClick={() => void editorRef.current?.save()}
+            disabled={savingCountries}
+          >
+            Save country blocks
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={applying ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />}
+            onClick={applyNow}
+            disabled={applying}
+          >
+            Apply now
+          </Button>
+        </Stack>
       </Stack>
 
       {applyError && (
@@ -55,7 +75,7 @@ export default function CountryAccessPage() {
         </Alert>
       )}
 
-      <GeoCountryPolicyEditor />
+      <GeoCountryPolicyEditor ref={editorRef} onSavingChange={setSavingCountries} />
     </Box>
   );
 }
