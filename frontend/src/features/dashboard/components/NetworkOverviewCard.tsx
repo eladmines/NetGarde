@@ -65,15 +65,22 @@ export default function NetworkOverviewCard() {
 
       {showFallbackHint && (
         <Alert severity="warning" sx={{ mb: 1.5 }}>
-          AI is configured ({data?.review_mode}) but the API returned a rules-based summary. Check that
-          Ollama is running, then click Regenerate. On EC2:{' '}
-          <code>sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh</code>
+          {data?.llm_error ? (
+            <>
+              <strong>AI error:</strong> {data.llm_error}
+            </>
+          ) : (
+            <>
+              AI is configured ({data?.review_mode}) but the API returned a rules-based summary. Run on EC2:{' '}
+              <code>sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh</code>
+            </>
+          )}
         </Alert>
       )}
 
       {loading && !data && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Generating AI overview…
+          Generating AI overview… On CPU this can take up to 2 minutes the first time.
         </Typography>
       )}
 

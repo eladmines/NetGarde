@@ -24,3 +24,4 @@ class NetworkOverviewRead(BaseModel):
     source: OverviewSource = "template"
     llm_model: Optional[str] = None
     review_mode: str = "template"
+    llm_error: Optional[str] = None

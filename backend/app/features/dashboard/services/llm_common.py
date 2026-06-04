@@ -56,12 +56,27 @@ def _normalize_bullets(items: list[Any]) -> list[str]:
     return bullets
 
 
+def compact_snapshot_for_llm(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Smaller JSON for CPU Ollama (faster prompt eval on t3.medium)."""
+    blocked = snapshot.get("blocked") or {}
+    top_domains = (blocked.get("top_domains") or [])[:3]
+    alerts = snapshot.get("alerts") or {}
+    return {
+        "period_minutes": snapshot.get("period_minutes"),
+        "live": snapshot.get("live"),
+        "history": snapshot.get("history"),
+        "alerts": {"total": alerts.get("total"), "by_type": alerts.get("by_type")},
+        "blocked": {"count": blocked.get("count"), "top_domains": top_domains},
+        "policy": snapshot.get("policy"),
+        "behavior": snapshot.get("behavior"),
+    }
+
+
 def build_review_prompt(snapshot: dict[str, Any]) -> tuple[str, str]:
     system = (
-        "You are a home network security analyst helping parents understand their network. "
-        "Given JSON metrics only (no raw logs), write a concise status summary. "
-        "Return ONLY a JSON array of 3 to 6 strings. Each string is one bullet, under 180 characters, "
-        "plain text, no markdown, no numbering prefix. Be factual and calm."
+        "Home network security analyst. Given JSON metrics, return ONLY a JSON array of "
+        "exactly 4 short bullet strings (under 120 chars each). Plain text, no markdown."
     )
-    user = json.dumps(snapshot, separators=(",", ":"), default=str)
+    compact = compact_snapshot_for_llm(snapshot)
+    user = json.dumps(compact, separators=(",", ":"), default=str)
     return system, user

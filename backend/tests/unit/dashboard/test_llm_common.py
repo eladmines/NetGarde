@@ -1,29 +1,24 @@
-import json
-
-import pytest
-
-from app.features.dashboard.services.llm_common import parse_bullets_from_content
+from app.features.dashboard.services.llm_common import compact_snapshot_for_llm
 
 
-def test_parse_json_array():
-    raw = json.dumps(["One bullet.", "Two bullet."])
-    assert parse_bullets_from_content(raw) == ["One bullet.", "Two bullet."]
-
-
-def test_parse_embedded_json_array():
-    raw = 'Here is the summary:\n["Alert spike on social.", "Traffic normal."]'
-    bullets = parse_bullets_from_content(raw)
-    assert len(bullets) == 2
-    assert "Alert spike" in bullets[0]
-
-
-def test_parse_line_fallback():
-    raw = "- First point\n- Second point"
-    bullets = parse_bullets_from_content(raw)
-    assert bullets[0] == "First point"
-    assert bullets[1] == "Second point"
-
-
-def test_parse_empty_raises():
-    with pytest.raises(ValueError):
-        parse_bullets_from_content("")
+def test_compact_snapshot_trims_top_domains():
+    compact = compact_snapshot_for_llm(
+        {
+            "period_minutes": 60,
+            "blocked": {
+                "count": 10,
+                "top_domains": [
+                    {"domain": "a.com", "count": 5},
+                    {"domain": "b.com", "count": 4},
+                    {"domain": "c.com", "count": 3},
+                    {"domain": "d.com", "count": 2},
+                ],
+            },
+            "alerts": {"total": 1, "by_type": {"x": 1}},
+            "live": {},
+            "history": {},
+            "policy": {},
+            "behavior": {},
+        }
+    )
+    assert len(compact["blocked"]["top_domains"]) == 3
