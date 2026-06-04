@@ -76,6 +76,16 @@ class Settings(BaseSettings):
     POLICY_PACK_REMOTE_URLS: str = ""
     POLICY_PACK_REFRESH_ON_STARTUP: bool = True
 
+    # Dashboard network / AI review (template | openai | ollama)
+    NETWORK_REVIEW_MODE: str = "template"
+    NETWORK_REVIEW_CACHE_TTL_SEC: int = 90
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OLLAMA_BASE_URL: str = "http://ollama:11434"
+    OLLAMA_MODEL: str = "llama3.2:3b"
+    LLM_TIMEOUT_SEC: float = 45.0
+
     @property
     def policy_pack_remote_urls(self) -> Dict[str, str]:
         out: Dict[str, str] = {}

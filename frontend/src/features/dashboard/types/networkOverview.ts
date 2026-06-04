@@ -8,9 +8,13 @@ export interface NetworkOverviewStats {
   elevated_behavior_clients: number;
 }
 
+export type NetworkOverviewSource = 'template' | 'llm';
+
 export interface NetworkOverview {
   generated_at: string;
   period_minutes: number;
   bullets: string[];
   stats: NetworkOverviewStats;
+  source: NetworkOverviewSource;
+  llm_model: string | null;
 }

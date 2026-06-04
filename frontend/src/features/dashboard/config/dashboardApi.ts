@@ -19,6 +19,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const dashboardApi = {
-  networkOverview: (periodMinutes = 60) =>
-    apiFetch<NetworkOverview>(`/dashboard/network-overview?period_minutes=${periodMinutes}`),
+  networkOverview: (periodMinutes = 60, refresh = false) => {
+    const params = new URLSearchParams({ period_minutes: String(periodMinutes) });
+    if (refresh) params.set('refresh', 'true');
+    return apiFetch<NetworkOverview>(`/dashboard/network-overview?${params.toString()}`);
+  },
 };

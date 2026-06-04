@@ -17,6 +17,13 @@ def get_network_overview_service(db: Session = Depends(get_db)) -> NetworkOvervi
 def get_network_overview(
     _: None = Depends(verify_admin_api_token),
     period_minutes: int = Query(60, ge=5, le=1440),
+    refresh: bool = Query(False, description="Bypass Redis cache and regenerate review"),
     service: NetworkOverviewService = Depends(get_network_overview_service),
 ):
-    return service.build_overview(period_minutes=period_minutes)
+    if refresh:
+        from app.features.dashboard.services import network_overview_cache
+
+        network_overview_cache.delete_cached_overview(
+            max(5, min(period_minutes, 24 * 60))
+        )
+    return service.build_overview(period_minutes=period_minutes, refresh=refresh)

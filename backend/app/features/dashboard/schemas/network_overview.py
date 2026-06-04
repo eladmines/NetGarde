@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
+
+OverviewSource = Literal["template", "llm"]
 
 
 class NetworkOverviewStats(BaseModel):
@@ -18,3 +21,5 @@ class NetworkOverviewRead(BaseModel):
     period_minutes: int = Field(ge=1, le=24 * 60)
     bullets: list[str]
     stats: NetworkOverviewStats
+    source: OverviewSource = "template"
+    llm_model: Optional[str] = None

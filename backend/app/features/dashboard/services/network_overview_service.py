@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta, timezone
+from typing import Any, Literal, Optional
 
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from app.features.client_behavior.models.client_behavior_profile import ClientBehaviorProfile
 from app.features.dashboard.schemas.network_overview import NetworkOverviewRead, NetworkOverviewStats
+from app.features.dashboard.services import network_overview_cache
 from app.features.dashboard.services.overview_templates import build_network_overview_bullets
 from app.features.dns_queries.models.dns_alert import DnsAlert
 from app.features.dns_queries.models.dns_query import DnsQuery
@@ -12,6 +14,11 @@ from app.features.dns_queries.repositories.dns_query_repository import DnsQueryR
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.vpn.services.usage_service import UsageService
 from app.shared.config import settings
+from app.shared.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
+OverviewSource = Literal["template", "llm"]
 
 
 class NetworkOverviewService:
@@ -21,9 +28,40 @@ class NetworkOverviewService:
         self.dns_repo = DnsQueryRepository(db)
         self.policy_repo = PolicyRepository(db)
 
-    def build_overview(self, *, period_minutes: int = 60) -> NetworkOverviewRead:
+    def build_overview(self, *, period_minutes: int = 60, refresh: bool = False) -> NetworkOverviewRead:
         period = max(5, min(period_minutes, 24 * 60))
+
+        if not refresh:
+            cached = network_overview_cache.get_cached_overview(period)
+            if cached is not None:
+                return cached
+
         now = datetime.now(timezone.utc)
+        snapshot = self._build_snapshot(period=period, now=now)
+        bullets, source, llm_model = self._resolve_bullets(snapshot)
+
+        stats = NetworkOverviewStats(
+            reporting_clients=int(snapshot["live"]["reporting"]),
+            live_total_mib_per_sec=float(snapshot["live"]["total_mib_per_sec"]),
+            peak_mib_per_sec=float(snapshot["history"]["peak_mib_per_sec"]),
+            alerts_total=int(snapshot["alerts"]["total"]),
+            blocked_queries=int(snapshot["blocked"]["count"]),
+            enabled_policy_packs=len(snapshot["policy"]["enabled_pack_names"]),
+            elevated_behavior_clients=int(snapshot["behavior"]["elevated_count"]),
+        )
+
+        overview = NetworkOverviewRead(
+            generated_at=now,
+            period_minutes=period,
+            bullets=bullets,
+            stats=stats,
+            source=source,
+            llm_model=llm_model,
+        )
+        network_overview_cache.set_cached_overview(overview, period)
+        return overview
+
+    def _build_snapshot(self, *, period: int, now: datetime) -> dict[str, Any]:
         since = now - timedelta(minutes=period)
 
         live = self.usage_service.list_live_bandwidth()
@@ -71,7 +109,7 @@ class NetworkOverviewService:
             .count()
         )
 
-        snapshot = {
+        return {
             "period_minutes": period,
             "live": {"reporting": reporting, "total_mib_per_sec": live_total},
             "history": {"peak_mib_per_sec": peak},
@@ -81,20 +119,27 @@ class NetworkOverviewService:
             "behavior": {"elevated_count": elevated_count, "threshold": threshold},
         }
 
-        bullets = build_network_overview_bullets(snapshot)
-        stats = NetworkOverviewStats(
-            reporting_clients=reporting,
-            live_total_mib_per_sec=live_total,
-            peak_mib_per_sec=peak,
-            alerts_total=alerts_total,
-            blocked_queries=blocked_count,
-            enabled_policy_packs=len(enabled_packs),
-            elevated_behavior_clients=elevated_count,
-        )
+    def _resolve_bullets(self, snapshot: dict[str, Any]) -> tuple[list[str], OverviewSource, Optional[str]]:
+        mode = settings.NETWORK_REVIEW_MODE.strip().lower()
+        if mode == "template":
+            return build_network_overview_bullets(snapshot), "template", None
 
-        return NetworkOverviewRead(
-            generated_at=now,
-            period_minutes=period,
-            bullets=bullets,
-            stats=stats,
-        )
+        llm_model: Optional[str] = None
+        try:
+            if mode == "openai":
+                from app.features.dashboard.services import openai_llm_client
+
+                llm_model = settings.OPENAI_MODEL
+                bullets = openai_llm_client.summarize_network_review(snapshot)
+                return bullets, "llm", llm_model
+            if mode == "ollama":
+                from app.features.dashboard.services import ollama_llm_client
+
+                llm_model = settings.OLLAMA_MODEL
+                bullets = ollama_llm_client.summarize_network_review(snapshot)
+                return bullets, "llm", llm_model
+            logger.warning("Unknown NETWORK_REVIEW_MODE=%s, using template", mode)
+        except Exception as exc:
+            logger.warning("LLM network review failed, using template fallback: %s", exc)
+
+        return build_network_overview_bullets(snapshot), "template", None

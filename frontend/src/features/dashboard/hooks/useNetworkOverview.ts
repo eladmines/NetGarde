@@ -9,11 +9,11 @@ export function useNetworkOverview(periodMinutes = 60) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = useCallback(async () => {
+  const refetch = useCallback(async (refresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      const overview = await dashboardApi.networkOverview(periodMinutes);
+      const overview = await dashboardApi.networkOverview(periodMinutes, refresh);
       setData(overview);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load network review';
@@ -25,8 +25,8 @@ export function useNetworkOverview(periodMinutes = 60) {
   }, [periodMinutes]);
 
   useEffect(() => {
-    refetch();
-    const id = window.setInterval(refetch, REFRESH_MS);
+    refetch(false);
+    const id = window.setInterval(() => refetch(false), REFRESH_MS);
     return () => window.clearInterval(id);
   }, [refetch]);
 
