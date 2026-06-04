@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+BehaviorReviewSource = Literal["template", "llm"]
 
 
 class DeviceSecurityPolicyRead(BaseModel):
@@ -16,6 +18,16 @@ class DeviceSecurityPolicyUpdate(BaseModel):
     auto_block_enabled: Optional[bool] = None
     auto_block_threshold: Optional[int] = Field(default=None, ge=50, le=100)
     max_blocks_per_day: Optional[int] = Field(default=None, ge=1, le=100)
+
+
+class BehaviorReviewRead(BaseModel):
+    device_id: int
+    generated_at: datetime
+    summary: str
+    source: BehaviorReviewSource = "template"
+    review_mode: str = "template"
+    llm_model: Optional[str] = None
+    llm_error: Optional[str] = None
 
 
 class BehaviorProfileRead(BaseModel):

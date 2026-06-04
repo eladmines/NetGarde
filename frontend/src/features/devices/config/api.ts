@@ -3,6 +3,7 @@ import { DnsAlertListResponse } from '../../dns-queries/types/dnsQuery';
 import {
   Device,
   BehaviorProfile,
+  BehaviorReview,
   DeviceSecurityPolicy,
   ClientBlockedDomain,
   BlockedClientsListResponse,
@@ -48,6 +49,10 @@ export const devicesApi = {
     }),
   getBehaviorProfile: (deviceId: number) =>
     apiFetch<BehaviorProfile>(`/devices/${deviceId}/behavior-profile`),
+  getBehaviorReview: (deviceId: number, refresh = false) => {
+    const q = refresh ? '?refresh=true' : '';
+    return apiFetch<BehaviorReview>(`/devices/${deviceId}/behavior-review${q}`);
+  },
   getSecurityPolicy: (deviceId: number) =>
     apiFetch<DeviceSecurityPolicy>(`/devices/${deviceId}/security-policy`),
   updateSecurityPolicy: (deviceId: number, body: Partial<DeviceSecurityPolicy>) =>

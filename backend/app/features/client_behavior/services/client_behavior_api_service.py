@@ -8,6 +8,7 @@ from app.features.client_behavior.repositories.client_blocked_domain_repository 
 from app.features.client_behavior.repositories.device_security_policy_repository import DeviceSecurityPolicyRepository
 from app.features.client_behavior.schemas.behavior import (
     BehaviorProfileRead,
+    BehaviorReviewRead,
     BlockedClientSummary,
     BlockedClientsListResponse,
     ClientBlockSyncEntry,
@@ -17,6 +18,7 @@ from app.features.client_behavior.schemas.behavior import (
     DeviceSecurityPolicyUpdate,
 )
 from app.features.client_behavior.services.behavior_baseline_service import BehaviorBaselineService
+from app.features.client_behavior.services.behavior_review_service import BehaviorReviewService
 from fastapi import HTTPException
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.features.dns_queries.models.dns_alert import DnsAlert
@@ -36,6 +38,21 @@ class ClientBehaviorApiService:
         if not device:
             raise HTTPException(status_code=404, detail=f"Device {device_id} not found")
         return device
+
+    def get_behavior_review(self, device_id: int, *, refresh: bool = False) -> BehaviorReviewRead:
+        return BehaviorReviewService(self.db).get_device_review(device_id, refresh=refresh)
+
+    @staticmethod
+    def _alert_response(alert, review_service: BehaviorReviewService) -> DnsAlertResponse:
+        data = DnsAlertResponse.model_validate(alert)
+        return data.model_copy(
+            update={
+                "parent_summary": review_service.explain_alert_for_parent(
+                    message=alert.message,
+                    domain=alert.domain,
+                )
+            }
+        )
 
     def get_behavior_profile(self, device_id: int) -> BehaviorProfileRead:
         self._require_device(device_id)
@@ -69,8 +86,11 @@ class ClientBehaviorApiService:
             .limit(page_size)
             .all()
         )
+        review_service = BehaviorReviewService(self.db)
         return {
-            "items": [DnsAlertResponse.model_validate(a) for a in items],
+            "items": [
+                self._alert_response(a, review_service) for a in items
+            ],
             "total": total,
             "page": page,
             "page_size": page_size,
