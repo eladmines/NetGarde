@@ -21,6 +21,34 @@ export interface BehaviorReview {
   llm_error?: string | null;
 }
 
+export interface CountryCountItem {
+  country_code: string;
+  country_name: string;
+  query_count: number;
+  share_percent: number;
+}
+
+export interface DeviceCountryBreakdown {
+  device_id: number;
+  period_hours: number;
+  total_queries: number;
+  primary_country_code: string | null;
+  primary_country_name: string | null;
+  countries: CountryCountItem[];
+  note?: string | null;
+}
+
+export interface DeviceCountrySummary {
+  device_id: number;
+  primary_country_code: string | null;
+  primary_country_name: string | null;
+}
+
+export interface DeviceCountrySummaryList {
+  items: DeviceCountrySummary[];
+  period_hours: number;
+}
+
 export interface BehaviorProfile {
   device_id: number;
   profile_ready: boolean;

@@ -28,6 +28,11 @@ from app.features.devices.controllers.device_controller import (
     sync_dhcp_leases_controller,
 )
 from app.features.devices.dependencies import get_device_service
+from app.features.devices.schemas.device_country import (
+    DeviceCountryBreakdownRead,
+    DeviceCountrySummaryList,
+)
+from app.features.devices.services.device_country_service import DeviceCountryService
 from app.features.devices.services.device_service_interface import IDeviceService
 from app.shared.database import SessionLocal
 from app.shared.dependencies import get_db
@@ -49,6 +54,10 @@ def get_client_behavior_service(db: Session = Depends(get_db)) -> ClientBehavior
 
 def get_policy_service(db: Session = Depends(get_db)) -> PolicyService:
     return PolicyService(db)
+
+
+def get_device_country_service(db: Session = Depends(get_db)) -> DeviceCountryService:
+    return DeviceCountryService(db)
 
 
 @router.post("")
@@ -195,6 +204,16 @@ def list_blocked_clients_endpoint(
     return behavior.list_blocked_clients()
 
 
+@router.get("/countries/summary", response_model=DeviceCountrySummaryList)
+def list_device_countries_summary_endpoint(
+    period_hours: int = Query(default=168, ge=1, le=24 * 30),
+    _: None = Depends(verify_admin_api_token),
+    service: DeviceCountryService = Depends(get_device_country_service),
+):
+    """Primary inferred country per device from DNS domain TLDs (last N hours)."""
+    return service.list_summaries(period_hours=period_hours)
+
+
 @router.post("/recompute-behavior-baselines", response_model=BehaviorRecomputeResult)
 def recompute_behavior_baselines_endpoint(
     _: None = Depends(verify_admin_api_token),
@@ -221,6 +240,17 @@ def assign_device_policy_profile_endpoint(
     service: PolicyService = Depends(get_policy_service),
 ):
     return service.assign_profile_to_device(device_id, body.policy_profile_slug)
+
+
+@router.get("/{device_id}/dns-countries", response_model=DeviceCountryBreakdownRead)
+def get_device_dns_countries_endpoint(
+    device_id: int,
+    period_hours: int = Query(default=168, ge=1, le=24 * 30),
+    _: None = Depends(verify_admin_api_token),
+    service: DeviceCountryService = Depends(get_device_country_service),
+):
+    """Country breakdown for one device from DNS domains (ccTLD / suffix heuristics)."""
+    return service.get_breakdown(device_id, period_hours=period_hours)
 
 
 @router.get("/{device_id}/behavior-profile", response_model=BehaviorProfileRead)

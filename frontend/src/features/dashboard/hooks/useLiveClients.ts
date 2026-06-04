@@ -15,6 +15,8 @@ export interface LiveClientRow {
   mac_address: string | null;
   source: string | null;
   device_id: number | null;
+  primary_country_code: string | null;
+  primary_country_name: string | null;
   /** DNS activity in the last few minutes (WebSocket feed). */
   is_active_now: boolean;
   /** Latest VPN tunnel throughput from /devices/usage/live. */
@@ -42,16 +44,24 @@ export function formatClientSource(source: string | null): string {
   return sourceLabel(source);
 }
 
-function buildRows(devices: Device[]): LiveClientRow[] {
-  return devices.map((device) => ({
-    client_ip: device.client_ip,
-    hostname: device.hostname,
-    mac_address: device.mac_address,
-    source: device.source,
-    device_id: device.id,
-    is_active_now: false,
-    bandwidth: null,
-  }));
+function buildRows(
+  devices: Device[],
+  countryByDevice: Map<number, { primary_country_code: string | null; primary_country_name: string | null }>,
+): LiveClientRow[] {
+  return devices.map((device) => {
+    const country = countryByDevice.get(device.id);
+    return {
+      client_ip: device.client_ip,
+      hostname: device.hostname,
+      mac_address: device.mac_address,
+      source: device.source,
+      device_id: device.id,
+      primary_country_code: country?.primary_country_code ?? null,
+      primary_country_name: country?.primary_country_name ?? null,
+      is_active_now: false,
+      bandwidth: null,
+    };
+  });
 }
 
 function buildUsageMaps(items: DeviceUsageLiveItem[]): {
@@ -137,6 +147,9 @@ export function useLiveClients(): UseLiveClientsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dnsActivityTick, setDnsActivityTick] = useState(0);
+  const [countryByDevice, setCountryByDevice] = useState<
+    Map<number, { primary_country_code: string | null; primary_country_name: string | null }>
+  >(new Map());
 
   const {
     liveItems,
@@ -152,12 +165,12 @@ export function useLiveClients(): UseLiveClientsResult {
   );
 
   const clients = useMemo(() => {
-    const withActivity = withLiveActivity(buildRows(devices));
+    const withActivity = withLiveActivity(buildRows(devices, countryByDevice));
     const withBandwidth = attachBandwidth(withActivity, byDeviceId, byClientIp);
     return sortClients(filterLiveRegisteredClients(withBandwidth));
   // dnsActivityTick forces refresh when DNS live feed marks clients active.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devices, byDeviceId, byClientIp, dnsActivityTick]);
+  }, [devices, countryByDevice, byDeviceId, byClientIp, dnsActivityTick]);
 
   useEffect(
     () => subscribeDnsClientActivity(() => setDnsActivityTick((t) => t + 1)),
@@ -167,8 +180,22 @@ export function useLiveClients(): UseLiveClientsResult {
   const fetchAll = useCallback(async () => {
     setError(null);
     try {
-      const deviceList = await devicesApi.list();
+      const [deviceList, countryRes] = await Promise.all([
+        devicesApi.list(),
+        devicesApi.listCountrySummaries(168).catch(() => ({ items: [], period_hours: 168 })),
+      ]);
       setDevices(deviceList);
+      const cmap = new Map<
+        number,
+        { primary_country_code: string | null; primary_country_name: string | null }
+      >();
+      for (const item of countryRes.items) {
+        cmap.set(item.device_id, {
+          primary_country_code: item.primary_country_code,
+          primary_country_name: item.primary_country_name,
+        });
+      }
+      setCountryByDevice(cmap);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load clients');
     } finally {

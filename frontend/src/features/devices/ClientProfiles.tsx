@@ -12,11 +12,14 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import { useDevices } from './hooks/useDevices';
+import { useDeviceCountrySummaries } from './hooks/useDeviceCountrySummaries';
+import { countryLabel } from './utils/countryDisplay';
 import ClientProfileDetail from './components/ClientProfileDetail';
 import { clientProfilePath, parseDeviceIdParam } from './clientProfilePaths';
 
 export default function ClientProfiles() {
   const { devices, loading, error, refresh } = useDevices();
+  const { byDeviceId: countryByDevice } = useDeviceCountrySummaries();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -89,7 +92,14 @@ export default function ClientProfiles() {
                     >
                       <ListItemText
                         primary={d.hostname || d.client_ip}
-                        secondary={d.mac_address || d.client_ip}
+                        secondary={
+                          countryByDevice.get(d.id)?.primary_country_code
+                            ? countryLabel(
+                                countryByDevice.get(d.id)!.primary_country_code,
+                                countryByDevice.get(d.id)!.primary_country_name,
+                              )
+                            : d.mac_address || d.client_ip
+                        }
                         primaryTypographyProps={{ fontWeight: isSelected ? 600 : 400 }}
                       />
                     </ListItemButton>
@@ -99,7 +109,11 @@ export default function ClientProfiles() {
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, md: 8, lg: 9 }}>
-            <ClientProfileDetail key={selected.id} device={selected} />
+            <ClientProfileDetail
+              key={selected.id}
+              device={selected}
+              countrySummary={countryByDevice.get(selected.id) ?? null}
+            />
           </Grid>
         </Grid>
       )}

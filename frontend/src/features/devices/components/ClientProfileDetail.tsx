@@ -29,16 +29,20 @@ import {
   ClientBlockedDomain,
   Device,
   DeviceSecurityPolicy,
+  DeviceCountrySummary,
 } from '../types/device';
 import { DnsAlert } from '../../dns-queries/types/dnsQuery';
 import BaselineSummary from './BaselineSummary';
+import DeviceCountriesSection from './DeviceCountriesSection';
+import { countryLabel } from '../utils/countryDisplay';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
 
 interface ClientProfileDetailProps {
   device: Device;
+  countrySummary?: DeviceCountrySummary | null;
 }
 
-export default function ClientProfileDetail({ device }: ClientProfileDetailProps) {
+export default function ClientProfileDetail({ device, countrySummary }: ClientProfileDetailProps) {
   const [profile, setProfile] = useState<BehaviorProfile | null>(null);
   const [policy, setPolicy] = useState<DeviceSecurityPolicy | null>(null);
   const [blocks, setBlocks] = useState<ClientBlockedDomain[]>([]);
@@ -156,6 +160,15 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
             <Typography variant="caption" color="text.secondary">
               Source: {device.source}
             </Typography>
+            {countrySummary?.primary_country_code && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Primary DNS region:{' '}
+                {countryLabel(
+                  countrySummary.primary_country_code,
+                  countrySummary.primary_country_name,
+                )}
+              </Typography>
+            )}
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <Chip
@@ -229,6 +242,8 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
                 </Typography>
               )}
             </Box>
+
+            <DeviceCountriesSection deviceId={device.id} />
 
             <Box>
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
