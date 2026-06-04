@@ -38,7 +38,7 @@ class NetworkOverviewService:
 
         now = datetime.now(timezone.utc)
         snapshot = self._build_snapshot(period=period, now=now)
-        bullets, source, llm_model = self._resolve_bullets(snapshot)
+        bullets, source, llm_model, llm_error = self._resolve_bullets(snapshot)
 
         stats = NetworkOverviewStats(
             reporting_clients=int(snapshot["live"]["reporting"]),
@@ -58,8 +58,11 @@ class NetworkOverviewService:
             source=source,
             llm_model=llm_model,
             review_mode=settings.NETWORK_REVIEW_MODE.strip().lower() or "template",
+            llm_error=llm_error,
         )
-        network_overview_cache.set_cached_overview(overview, period)
+        mode = overview.review_mode
+        if source == "llm" or mode == "template":
+            network_overview_cache.set_cached_overview(overview, period)
         return overview
 
     def _build_snapshot(self, *, period: int, now: datetime) -> dict[str, Any]:
@@ -120,27 +123,32 @@ class NetworkOverviewService:
             "behavior": {"elevated_count": elevated_count, "threshold": threshold},
         }
 
-    def _resolve_bullets(self, snapshot: dict[str, Any]) -> tuple[list[str], OverviewSource, Optional[str]]:
+    def _resolve_bullets(
+        self, snapshot: dict[str, Any]
+    ) -> tuple[list[str], OverviewSource, Optional[str], Optional[str]]:
         mode = settings.NETWORK_REVIEW_MODE.strip().lower()
         if mode == "template":
-            return build_network_overview_bullets(snapshot), "template", None
+            return build_network_overview_bullets(snapshot), "template", None, None
 
         llm_model: Optional[str] = None
+        llm_error: Optional[str] = None
         try:
             if mode == "openai":
                 from app.features.dashboard.services import openai_llm_client
 
                 llm_model = settings.OPENAI_MODEL
                 bullets = openai_llm_client.summarize_network_review(snapshot)
-                return bullets, "llm", llm_model
+                return bullets, "llm", llm_model, None
             if mode == "ollama":
                 from app.features.dashboard.services import ollama_llm_client
 
                 llm_model = settings.OLLAMA_MODEL
                 bullets = ollama_llm_client.summarize_network_review(snapshot)
-                return bullets, "llm", llm_model
+                return bullets, "llm", llm_model, None
             logger.warning("Unknown NETWORK_REVIEW_MODE=%s, using template", mode)
+            llm_error = f"Unknown NETWORK_REVIEW_MODE={mode}"
         except Exception as exc:
+            llm_error = str(exc)
             logger.warning("LLM network review failed, using template fallback: %s", exc)
 
-        return build_network_overview_bullets(snapshot), "template", None
+        return build_network_overview_bullets(snapshot), "template", None, llm_error

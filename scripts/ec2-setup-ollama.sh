@@ -32,7 +32,8 @@ set_env_kv() {
 
 echo "Enabling Ollama AI review in ${ENV_FILE}..."
 set_env_kv NETWORK_REVIEW_MODE ollama
-set_env_kv OLLAMA_BASE_URL http://ollama:11434
+# Prefer host gateway so API reaches Ollama even if backend was started without compose profile ai
+set_env_kv OLLAMA_BASE_URL http://host.docker.internal:11434
 set_env_kv OLLAMA_MODEL "$MODEL"
 set_env_kv LLM_TIMEOUT_SEC 90
 
@@ -42,4 +43,12 @@ echo "Clearing cached network review (Redis)..."
 docker exec netgarde-redis redis-cli --scan --pattern 'dashboard:network_overview:*' | \
   xargs -r docker exec -i netgarde-redis redis-cli DEL || true
 
-echo "Done. Open the dashboard AI overview (first summary may take 15–45s)."
+echo "Verifying API -> Ollama from inside backend container..."
+if docker exec netgarde-api curl -sf http://host.docker.internal:11434/api/tags >/dev/null; then
+  echo "Ollama reachable from backend."
+else
+  echo "WARNING: backend cannot reach Ollama at host.docker.internal:11434"
+  echo "Try: docker exec netgarde-api curl -v http://ollama:11434/api/tags"
+fi
+
+echo "Done. Open the dashboard AI overview and click Regenerate (first summary may take 15–90s)."

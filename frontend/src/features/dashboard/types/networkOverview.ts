@@ -18,4 +18,5 @@ export interface NetworkOverview {
   source: NetworkOverviewSource;
   llm_model: string | null;
   review_mode: string;
+  llm_error: string | null;
 }

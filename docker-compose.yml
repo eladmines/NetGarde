@@ -5,6 +5,9 @@ services:
     profiles: ["ai"]
     image: ollama/ollama:latest
     container_name: netgarde-ollama
+    ports:
+      # Reachable from backend via host.docker.internal when compose DNS name is unavailable
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama-data:/root/.ollama
     restart: always
@@ -42,6 +45,8 @@ services:
       dockerfile: Dockerfile
       target: production
     container_name: netgarde-api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     # Production secrets live on the EC2 host (survives CI/CD); see scripts/ec2-sync-backend-env.sh
