@@ -13,6 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
 import { useNetworkOverview } from '../hooks/useNetworkOverview';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
@@ -21,22 +22,36 @@ export default function NetworkOverviewCard() {
   const { data, loading, error, refetch } = useNetworkOverview(60);
 
   const stats = data?.stats;
+  const isAi = data?.source === 'llm';
+  const title = isAi ? 'AI review' : 'Network review';
+  const TitleIcon = isAi ? AutoAwesomeOutlinedIcon : SummarizeOutlinedIcon;
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-        <SummarizeOutlinedIcon color="primary" fontSize="small" />
+        <TitleIcon color="primary" fontSize="small" />
         <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
-          Network review
+          {title}
         </Typography>
         {data && (
-          <Typography variant="caption" color="text.secondary">
-            Last {data.period_minutes} min · {formatShortDateTime(data.generated_at)}
-          </Typography>
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            {isAi && data.llm_model && (
+              <Chip size="small" label={data.llm_model} variant="outlined" color="primary" />
+            )}
+            {!isAi && <Chip size="small" label="Template" variant="outlined" />}
+            <Typography variant="caption" color="text.secondary">
+              Last {data.period_minutes} min · {formatShortDateTime(data.generated_at)}
+            </Typography>
+          </Stack>
         )}
-        <Tooltip title="Refresh review">
+        <Tooltip title="Regenerate review">
           <span>
-            <IconButton size="small" onClick={() => refetch()} disabled={loading} aria-label="Refresh network review">
+            <IconButton
+              size="small"
+              onClick={() => refetch(true)}
+              disabled={loading}
+              aria-label="Regenerate network review"
+            >
               {loading ? <CircularProgress size={18} /> : <RefreshIcon fontSize="small" />}
             </IconButton>
           </span>
@@ -47,6 +62,12 @@ export default function NetworkOverviewCard() {
         <Alert severity="error" sx={{ mb: 1.5 }}>
           {error}
         </Alert>
+      )}
+
+      {loading && isAi && !data && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Generating AI summary…
+        </Typography>
       )}
 
       {stats && (
