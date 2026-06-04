@@ -5,6 +5,19 @@ from typing import Any
 MAX_BULLETS = 6
 MAX_BULLET_LEN = 220
 
+_METRIC_DUMP_RE = re.compile(
+    r"^[A-Za-z][A-Za-z0-9_ /]*:\s*[\d.]+",
+    re.IGNORECASE,
+)
+
+
+def bullets_look_like_metric_dump(bullets: list[str]) -> bool:
+    """Detect LLM echoing JSON fields ('Peak mib/sec: 0.5') instead of prose."""
+    if not bullets:
+        return True
+    matches = sum(1 for b in bullets if _METRIC_DUMP_RE.match(b.strip()))
+    return matches >= max(2, len(bullets) // 2)
+
 
 def parse_bullets_from_content(content: str) -> list[str]:
     """Parse model output into a list of bullet strings."""
@@ -12,15 +25,24 @@ def parse_bullets_from_content(content: str) -> list[str]:
     if not text:
         raise ValueError("empty LLM response")
 
-    # Direct JSON array
     try:
         parsed = json.loads(text)
+        if isinstance(parsed, dict) and isinstance(parsed.get("bullets"), list):
+            return _normalize_bullets(parsed["bullets"])
         if isinstance(parsed, list):
             return _normalize_bullets(parsed)
     except json.JSONDecodeError:
         pass
 
-    # JSON array embedded in prose
+    match = re.search(r"\{[\s\S]*\"bullets\"[\s\S]*\}", text)
+    if match:
+        try:
+            parsed = json.loads(match.group(0))
+            if isinstance(parsed, dict) and isinstance(parsed.get("bullets"), list):
+                return _normalize_bullets(parsed["bullets"])
+        except json.JSONDecodeError:
+            pass
+
     match = re.search(r"\[[\s\S]*\]", text)
     if match:
         try:
@@ -30,9 +52,10 @@ def parse_bullets_from_content(content: str) -> list[str]:
         except json.JSONDecodeError:
             pass
 
-    # Line-based fallback
     lines = [ln.strip().lstrip("-•* ").strip() for ln in text.splitlines() if ln.strip()]
     if lines:
+        if bullets_look_like_metric_dump(lines):
+            raise ValueError("model returned metric labels instead of a summary")
         return _normalize_bullets(lines)
 
     raise ValueError("could not parse bullets from LLM response")
@@ -45,6 +68,8 @@ def _normalize_bullets(items: list[Any]) -> list[str]:
             continue
         s = " ".join(item.split())
         if not s:
+            continue
+        if ":" in s and _METRIC_DUMP_RE.match(s):
             continue
         if len(s) > MAX_BULLET_LEN:
             s = s[: MAX_BULLET_LEN - 3] + "..."
@@ -72,11 +97,25 @@ def compact_snapshot_for_llm(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_review_prompt(snapshot: dict[str, Any]) -> tuple[str, str]:
-    system = (
-        "Home network security analyst. Given JSON metrics, return ONLY a JSON array of "
-        "exactly 4 short bullet strings (under 120 chars each). Plain text, no markdown."
+def build_review_prompt(snapshot: dict[str, Any], *, strict: bool = False) -> tuple[str, str]:
+    example = (
+        '{"bullets":["Traffic is light with one device online.",'
+        '"Many blocked sites were attempted in the last hour.",'
+        '"Alert volume is high; most are blocked DNS attempts.",'
+        '"No policy packs are enabled; consider turning on Social."]}'
     )
+    system = (
+        "You summarize home network security for parents. Read the JSON metrics and write "
+        "four complete English sentences. "
+        f'Return ONLY valid JSON in this shape: {example} '
+        "Do NOT copy field names like 'Peak mib/sec' or 'Total alerts'. "
+        "Do NOT use 'key: value' lines. Explain what it means, not just the numbers."
+    )
+    if strict:
+        system += " IMPORTANT: Previous reply was invalid. Use full sentences only."
     compact = compact_snapshot_for_llm(snapshot)
-    user = json.dumps(compact, separators=(",", ":"), default=str)
+    user = (
+        f"Summarize this network snapshot for the last {compact.get('period_minutes', 60)} minutes:\n"
+        + json.dumps(compact, separators=(",", ":"), default=str)
+    )
     return system, user

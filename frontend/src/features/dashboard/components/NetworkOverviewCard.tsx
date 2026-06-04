@@ -84,7 +84,7 @@ export default function NetworkOverviewCard() {
         </Typography>
       )}
 
-      {stats && (
+      {stats && !isAi && (
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
           <Chip size="small" label={`${stats.reporting_clients} live`} variant="outlined" />
           <Chip size="small" label={`${stats.live_total_mib_per_sec.toFixed(1)} MiB/s now`} variant="outlined" />
