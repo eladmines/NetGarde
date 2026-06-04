@@ -14,42 +14,28 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PolicyPackDomainsDialog from '../features/policy/components/PolicyPackDomainsDialog';
 import { policyApi } from '../features/policy/config/api';
-import { PolicyPack, PolicyProfile, PolicySyncStatus } from '../features/policy/types/policy';
-import GeoCountryPolicyEditor from '../features/policy/components/GeoCountryPolicyEditor';
-import { formatShortDateTime } from '../shared/utils/dateUtils';
-
-const SYNC_POLL_MS = 8000;
-
-function syncStatusLabel(status: PolicySyncStatus | null): string {
-  if (!status?.last_sync_at) {
-    return 'Not applied to dnsmasq yet';
-  }
-  const when = formatShortDateTime(status.last_sync_at);
-  if (status.last_success === false) {
-    return `Last apply failed · ${when}`;
-  }
-  return `Last applied · ${when}`;
-}
+import { PolicyPack, PolicyProfile } from '../features/policy/types/policy';
+import { usePolicyDnsSync } from '../features/policy/hooks/usePolicyDnsSync';
 
 export default function PolicyPage() {
   const [packs, setPacks] = useState<PolicyPack[]>([]);
   const [profiles, setProfiles] = useState<PolicyProfile[]>([]);
-  const [syncStatus, setSyncStatus] = useState<PolicySyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [viewPack, setViewPack] = useState<PolicyPack | null>(null);
-  const [applying, setApplying] = useState(false);
 
-  const loadSyncStatus = useCallback(async () => {
-    try {
-      const status = await policyApi.getSyncStatus();
-      setSyncStatus(status);
-    } catch {
-      /* optional on older backends */
-    }
-  }, []);
+  const {
+    syncStatusLabel,
+    applying,
+    applyError,
+    setApplyError,
+    applyInfo,
+    setApplyInfo,
+    applyNow,
+    loadSyncStatus,
+  } = usePolicyDnsSync();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,11 +55,6 @@ export default function PolicyPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    const id = window.setInterval(loadSyncStatus, SYNC_POLL_MS);
-    return () => window.clearInterval(id);
-  }, [loadSyncStatus]);
 
   const handlePackUpdated = (updated: PolicyPack) => {
     setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
@@ -95,19 +76,6 @@ export default function PolicyPage() {
     }
   };
 
-  const applyNow = async () => {
-    setApplying(true);
-    setError(null);
-    try {
-      const result = await policyApi.applyPolicy();
-      setInfo(result.message);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to queue policy apply');
-    } finally {
-      setApplying(false);
-    }
-  };
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -124,10 +92,10 @@ export default function PolicyPage() {
             Policy
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Changes sync to dnsmasq automatically via the host listener.
+            List packs and device profiles. Changes sync to dnsmasq via the host listener.
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-            {syncStatusLabel(syncStatus)}
+            {syncStatusLabel}
           </Typography>
         </Box>
         <Button
@@ -151,8 +119,16 @@ export default function PolicyPage() {
           {info}
         </Alert>
       )}
-
-      <GeoCountryPolicyEditor />
+      {applyError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApplyError(null)}>
+          {applyError}
+        </Alert>
+      )}
+      {applyInfo && (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setApplyInfo(null)}>
+          {applyInfo}
+        </Alert>
+      )}
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Stack

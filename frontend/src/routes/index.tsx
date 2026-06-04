@@ -2,6 +2,7 @@ import { RouteObject } from 'react-router-dom';
 import Layout from '../shared/components/Layout';
 import DashboardPage from '../pages/DashboardPage';
 import PolicyPage from '../pages/PolicyPage';
+import CountryAccessPage from '../pages/CountryAccessPage';
 import ClientProfilesPage from '../pages/ClientProfilesPage';
 
 export const routes: RouteObject[] = [
@@ -18,6 +19,14 @@ export const routes: RouteObject[] = [
     element: (
       <Layout>
         <PolicyPage />
+      </Layout>
+    ),
+  },
+  {
+    path: '/policy/countries',
+    element: (
+      <Layout>
+        <CountryAccessPage />
       </Layout>
     ),
   },
