@@ -20,6 +20,8 @@ import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import IconButton from '@mui/material/IconButton';
 import { devicesApi } from '../config/api';
 import { policyApi } from '../../policy/config/api';
 import { DevicePolicyAssignment, PolicyProfile } from '../../policy/types/policy';
@@ -158,13 +160,37 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Chip
-              label={profile?.profile_ready ? 'Baseline ready' : 'Learning'}
-              color={profile?.profile_ready ? 'success' : 'default'}
-              variant="outlined"
-            />
+            <Stack direction="row" alignItems="center" spacing={0.25}>
+              <Chip
+                label={profile?.profile_ready ? 'Baseline ready' : 'Learning'}
+                color={profile?.profile_ready ? 'success' : 'default'}
+                variant="outlined"
+              />
+              <Tooltip
+                title={
+                  profile?.profile_ready
+                    ? 'Enough DNS history exists. “Normal” stats refresh about every hour; recent activity is scored against them.'
+                    : 'Collecting DNS history to learn this device’s normal patterns before anomaly scoring runs.'
+                }
+                arrow
+              >
+                <IconButton size="small" aria-label="About baseline status" sx={{ p: 0.25 }}>
+                  <HelpOutlineIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
             {profile?.last_score != null && (
-              <Chip label={`Score: ${profile.last_score}`} color="warning" variant="outlined" />
+              <Stack direction="row" alignItems="center" spacing={0.25}>
+                <Chip label={`Score: ${profile.last_score}`} color="warning" variant="outlined" />
+                <Tooltip
+                  title="0–100 unusual-activity score for the last ~15 minutes vs this baseline. At or above your policy threshold (often 70) can trigger a behavior alert."
+                  arrow
+                >
+                  <IconButton size="small" aria-label="About behavior score" sx={{ p: 0.25 }}>
+                    <HelpOutlineIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
             )}
             {policyAssignment?.in_quarantine && (
               <Chip label="Quarantine" color="error" />
@@ -185,9 +211,17 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
         {!loading && profile && (
           <>
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                Behavior baseline
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1.5 }}>
+                <Typography variant="subtitle1">Behavior baseline</Typography>
+                <Tooltip
+                  title="Learned “normal” DNS habits for this device. Each metric has a (?) with details. Stats update from recent history while the device is active."
+                  arrow
+                >
+                  <IconButton size="small" aria-label="About behavior baseline" sx={{ p: 0.25 }}>
+                    <HelpOutlineIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
               {profile.profile_ready && Object.keys(profile.baseline).length > 0 ? (
                 <BaselineSummary baseline={profile.baseline} />
               ) : (
@@ -289,16 +323,26 @@ export default function ClientProfileDetail({ device }: ClientProfileDetailProps
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>
                   Security policy
                 </Typography>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={policy.auto_block_enabled}
-                      onChange={toggleAutoBlock}
-                      disabled={saving}
-                    />
-                  }
-                  label="Auto-block domains on abnormal behavior"
-                />
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.auto_block_enabled}
+                        onChange={toggleAutoBlock}
+                        disabled={saving}
+                      />
+                    }
+                    label="Auto-block domains on abnormal behavior"
+                  />
+                  <Tooltip
+                    title="When the behavior score is very high, NetGarde can temporarily block domains seen in that burst (in addition to policy packs)."
+                    arrow
+                  >
+                    <IconButton size="small" aria-label="About auto-block" sx={{ p: 0.25 }}>
+                      <HelpOutlineIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
                 <Typography variant="body2" color="text.secondary">
                   Threshold: {policy.auto_block_threshold} · Max blocks/day:{' '}
                   {policy.max_blocks_per_day}
