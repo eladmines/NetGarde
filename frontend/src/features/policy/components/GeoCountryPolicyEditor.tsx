@@ -141,7 +141,7 @@ export default function GeoCountryPolicyEditor() {
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+    <Paper variant="outlined" sx={{ p: 2 }}>
       <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
         Block countries (manual)
       </Typography>

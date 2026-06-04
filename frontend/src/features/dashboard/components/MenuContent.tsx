@@ -15,6 +15,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import RouterIcon from '@mui/icons-material/Router';
 import PolicyIcon from '@mui/icons-material/Policy';
+import PublicIcon from '@mui/icons-material/Public';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import HistoryIcon from '@mui/icons-material/History';
 import SecurityIcon from '@mui/icons-material/Security';
@@ -31,6 +32,12 @@ const mainListItems = [
 
 const manageNetworkItems = [
   { text: 'Policy', icon: <PolicyIcon />, path: '/policy', iconClass: 'policyIcon' },
+  {
+    text: 'Country access',
+    icon: <PublicIcon />,
+    path: '/policy/countries',
+    iconClass: 'countryAccessIcon',
+  },
 ];
 
 const analyticsItems = [
