@@ -8,6 +8,7 @@ _ALERT_TYPE_LABELS: dict[str, str] = {
     "suspicious_domain": "suspicious domains",
     "bandwidth_spike": "bandwidth spikes",
     "behavior_anomaly": "behavior anomalies",
+    "new_country_region": "new country regions",
 }
 
 

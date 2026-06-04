@@ -5,6 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.features.client_behavior.repositories.behavior_rollup_country import parse_country_counts
 from app.features.client_behavior.repositories.behavior_rollup_repository import BehaviorRollupRepository
+from app.features.devices.repositories.device_country_presence_repository import (
+    DeviceCountryPresenceRepository,
+)
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.features.devices.schemas.device_country import (
     CountryCountItem,
@@ -21,6 +24,7 @@ class DeviceCountryService:
         self.db = db
         self.device_repo = DeviceRepository(db)
         self.rollup_repo = BehaviorRollupRepository(db)
+        self.presence_repo = DeviceCountryPresenceRepository(db)
 
     def get_breakdown(self, device_id: int, *, period_hours: int = 168) -> DeviceCountryBreakdownRead:
         device = self.device_repo.get_by_id(device_id)
@@ -29,15 +33,30 @@ class DeviceCountryService:
 
         hours = max(1, min(period_hours, 24 * 30))
         since = datetime.now(timezone.utc) - timedelta(hours=hours)
-        rollups = self.rollup_repo.get_rollups_for_device(device_id, since)
 
-        totals = self._sum_country_counts(rollups)
-        countries, primary = self._build_country_items(totals)
-        total_queries = sum(totals.values())
+        presences = self.presence_repo.list_for_device(device_id)
+        active = [p for p in presences if p.last_seen_at >= since]
 
-        note = None
-        if total_queries == 0:
-            note = "No DNS activity recorded for this device in the selected period yet."
+        if active:
+            totals = {p.country_code: p.query_count for p in active}
+            countries, primary = self._build_country_items(active, totals)
+            total_queries = sum(totals.values())
+            known_count = len(presences)
+            note = None
+            if total_queries == 0:
+                note = "No DNS activity in the selected period."
+        else:
+            rollups = self.rollup_repo.get_rollups_for_device(device_id, since)
+            totals = self._sum_country_counts(rollups)
+            countries, primary = self._build_country_items_from_totals(totals)
+            total_queries = sum(totals.values())
+            known_count = len(presences)
+            note = (
+                "Country regions are inferred from domain endings (.il, .de, .co.uk, etc.). "
+                "Alerts fire when a device uses a region for the first time."
+            )
+            if total_queries == 0:
+                note = "No DNS activity recorded for this device in the selected period yet."
 
         return DeviceCountryBreakdownRead(
             device_id=device_id,
@@ -47,18 +66,24 @@ class DeviceCountryService:
             primary_country_name=primary[1] if primary else None,
             countries=countries,
             note=note,
+            known_regions_count=known_count,
         )
 
     def list_summaries(self, *, period_hours: int = 168) -> DeviceCountrySummaryList:
         hours = max(1, min(period_hours, 24 * 30))
-        since = datetime.now(timezone.utc) - timedelta(hours=hours)
         devices = self.device_repo.get_all()
         items: List[DeviceCountrySummaryItem] = []
 
         for device in devices:
-            rollups = self.rollup_repo.get_rollups_for_device(device.id, since)
-            totals = self._sum_country_counts(rollups)
-            _, primary = self._build_country_items(totals)
+            presences = self.presence_repo.list_for_device(device.id)
+            if presences:
+                totals = {p.country_code: p.query_count for p in presences}
+                _, primary = self._build_country_items_from_totals(totals)
+            else:
+                since = datetime.now(timezone.utc) - timedelta(hours=hours)
+                rollups = self.rollup_repo.get_rollups_for_device(device.id, since)
+                totals = self._sum_country_counts(rollups)
+                _, primary = self._build_country_items_from_totals(totals)
             items.append(
                 DeviceCountrySummaryItem(
                     device_id=device.id,
@@ -77,8 +102,40 @@ class DeviceCountryService:
                 totals[code] = totals.get(code, 0) + count
         return totals
 
-    @staticmethod
     def _build_country_items(
+        self,
+        presences,
+        totals: Dict[str, int],
+    ) -> Tuple[List[CountryCountItem], Optional[Tuple[str, str]]]:
+        total = sum(totals.values())
+        if total <= 0:
+            return [], None
+
+        by_code = {p.country_code: p for p in presences}
+        sorted_items = sorted(totals.items(), key=lambda x: (-x[1], x[0]))
+        countries: List[CountryCountItem] = []
+        window_start = datetime.now(timezone.utc) - timedelta(hours=48)
+
+        for code, count in sorted_items[:12]:
+            row = by_code.get(code)
+            first_seen = row.first_seen_at if row else None
+            countries.append(
+                CountryCountItem(
+                    country_code=code,
+                    country_name=country_display_name(code),
+                    query_count=count,
+                    share_percent=round(100.0 * count / total, 1),
+                    first_seen_at=first_seen,
+                    last_seen_at=row.last_seen_at if row else None,
+                    is_new=bool(first_seen and first_seen >= window_start),
+                )
+            )
+
+        _, primary = self._build_country_items_from_totals(totals)
+        return countries, primary
+
+    @staticmethod
+    def _build_country_items_from_totals(
         totals: Dict[str, int],
     ) -> Tuple[List[CountryCountItem], Optional[Tuple[str, str]]]:
         total = sum(totals.values())

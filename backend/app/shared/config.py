@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     # Parent-facing behavior text (template | openai | ollama)
     BEHAVIOR_REVIEW_MODE: str = "template"
     BEHAVIOR_REVIEW_CACHE_TTL_SEC: int = 300
+    # Alert when a device uses DNS associated with a new country/region (ccTLD heuristic)
+    DEVICE_COUNTRY_ALERT_ENABLED: bool = True
+    DEVICE_COUNTRY_ALERT_COOLDOWN_HOURS: int = 24
 
     # Policy packs: fetch upstream hosts lists into on-disk snapshots (all built-in packs).
     # Writable dir in Docker production (see docker-compose policy-pack-snapshots volume).

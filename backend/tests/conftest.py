@@ -15,6 +15,7 @@ from app.features.dns_queries.models.dns_query import DnsQuery  # noqa: F401
 from app.features.dns_queries.models.dns_alert import DnsAlert  # noqa: F401
 from app.features.dns_queries.models.domain_first_seen import DomainFirstSeen  # noqa: F401
 from app.features.devices.models.device import Device  # noqa: F401
+from app.features.devices.models.device_country_presence import DeviceCountryPresence  # noqa: F401
 from app.features.vpn.models.ip_pool import IpPool  # noqa: F401
 from app.features.vpn.models.vpn_peer import VpnPeer  # noqa: F401
 from app.features.vpn.models.ip_lease import IpLease  # noqa: F401

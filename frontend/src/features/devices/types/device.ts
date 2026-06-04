@@ -26,6 +26,9 @@ export interface CountryCountItem {
   country_name: string;
   query_count: number;
   share_percent: number;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+  is_new?: boolean;
 }
 
 export interface DeviceCountryBreakdown {
@@ -36,6 +39,7 @@ export interface DeviceCountryBreakdown {
   primary_country_name: string | null;
   countries: CountryCountItem[];
   note?: string | null;
+  known_regions_count?: number;
 }
 
 export interface DeviceCountrySummary {

@@ -39,6 +39,7 @@ const TYPE_LABEL: Record<string, string> = {
   suspicious_domain: 'Suspicious',
   bandwidth_spike: 'Bandwidth',
   behavior_anomaly: 'Behavior',
+  new_country_region: 'New region',
 };
 
 function lookupDomainForAlert(alert: DnsAlert): string | null {

@@ -90,9 +90,14 @@ export default function DeviceCountriesSection({ deviceId }: DeviceCountriesSect
               {data.countries.map((c) => (
                 <Box key={c.country_code}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2">
-                      {countryFlagEmoji(c.country_code)} {c.country_name}
-                    </Typography>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Typography variant="body2">
+                        {countryFlagEmoji(c.country_code)} {c.country_name}
+                      </Typography>
+                      {c.is_new && (
+                        <Chip size="small" label="New" color="warning" variant="outlined" />
+                      )}
+                    </Stack>
                     <Typography variant="caption" color="text.secondary">
                       {c.share_percent}% · {c.query_count.toLocaleString()} queries
                     </Typography>
