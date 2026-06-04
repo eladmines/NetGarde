@@ -27,8 +27,8 @@ export default function ClientMapPage() {
             Client map
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Where your clients last connected to VPN (GeoIP from public IP at enroll). Not DNS
-            domain country.
+            Where your clients last connected to VPN (GeoIP from public IP at enroll). Click a
+            country flag to see all clients there. Not DNS domain country.
           </Typography>
         </Box>
         <Button

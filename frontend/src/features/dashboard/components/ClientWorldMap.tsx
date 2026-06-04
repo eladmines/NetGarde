@@ -1,78 +1,54 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
-import { useNavigate } from 'react-router-dom';
 import { useTheme, alpha } from '@mui/material/styles';
 import worldMap from '@svg-maps/world';
 import PublicIcon from '@mui/icons-material/Public';
 import { LiveClientRow } from '../hooks/useLiveClients';
 import { countryFlagEmoji, countryLabel } from '../../devices/utils/countryDisplay';
 import { countryCodeToMapPoint, WORLD_MAP_VIEW_BOX } from '../utils/countryCentroids';
-import { clientProfilePath } from '../../devices/clientProfilePaths';
+import CountryClientsDialog, { CountryClientsSelection } from './CountryClientsDialog';
 
 const MAP_VIEW_BOX = worldMap.viewBox || WORLD_MAP_VIEW_BOX;
-const JITTER_RADIUS = 18;
 
-type MapMarker = {
-  key: string;
+type CountryMarker = {
+  countryCode: string;
+  countryName: string | null;
   x: number;
   y: number;
-  flag: string;
-  label: string;
-  tooltip: string;
-  active: boolean;
-  deviceId: number | null;
+  clients: LiveClientRow[];
+  activeCount: number;
 };
 
-function jitterPosition(
-  base: { x: number; y: number },
-  index: number,
-  total: number,
-): { x: number; y: number } {
-  if (total <= 1) {
-    return base;
-  }
-  const angle = (2 * Math.PI * index) / total;
-  return {
-    x: base.x + JITTER_RADIUS * Math.cos(angle),
-    y: base.y + JITTER_RADIUS * Math.sin(angle),
-  };
-}
-
-function buildMarkers(clients: LiveClientRow[]): MapMarker[] {
-  const withCountry = clients.filter((c) => c.vpn_login_country_code);
+function buildCountryMarkers(clients: LiveClientRow[]): CountryMarker[] {
   const byCountry = new Map<string, LiveClientRow[]>();
-  for (const c of withCountry) {
-    const code = c.vpn_login_country_code!.toUpperCase();
+  for (const c of clients) {
+    const code = c.vpn_login_country_code?.trim().toUpperCase();
+    if (!code || code === 'UNKNOWN' || code === 'GLOBAL') {
+      continue;
+    }
     const list = byCountry.get(code) ?? [];
     list.push(c);
     byCountry.set(code, list);
   }
 
-  const markers: MapMarker[] = [];
-  for (const [code, group] of byCountry.entries()) {
-    const base = countryCodeToMapPoint(code);
+  const markers: CountryMarker[] = [];
+  for (const [countryCode, group] of byCountry.entries()) {
+    const base = countryCodeToMapPoint(countryCode);
     if (!base) {
       continue;
     }
-    group.forEach((client, index) => {
-      const pos = jitterPosition(base, index, group.length);
-      const name = client.hostname || client.client_ip;
-      const countryName = client.vpn_login_country_name;
-      markers.push({
-        key: `${code}-${client.device_id ?? client.client_ip}-${index}`,
-        x: pos.x,
-        y: pos.y,
-        flag: countryFlagEmoji(code),
-        label: countryLabel(code, countryName),
-        tooltip: `${name} · ${countryLabel(code, countryName)}${client.is_active_now ? ' · Active' : ''}`,
-        active: client.is_active_now,
-        deviceId: client.device_id,
-      });
+    markers.push({
+      countryCode,
+      countryName: group[0]?.vpn_login_country_name ?? null,
+      x: base.x,
+      y: base.y,
+      clients: group,
+      activeCount: group.filter((c) => c.is_active_now).length,
     });
   }
   return markers;
@@ -91,23 +67,16 @@ export default function ClientWorldMap({
   showHeader = true,
 }: ClientWorldMapProps) {
   const theme = useTheme();
-  const navigate = useNavigate();
+  const [selection, setSelection] = useState<CountryClientsSelection | null>(null);
 
-  const markers = useMemo(() => buildMarkers(clients), [clients]);
+  const countryMarkers = useMemo(() => buildCountryMarkers(clients), [clients]);
 
   const highlightedCountryIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const c of clients) {
-      const code = c.vpn_login_country_code?.trim().toLowerCase();
-      if (code && code !== 'unknown' && code !== 'global') {
-        ids.add(code);
-      }
-    }
-    return ids;
-  }, [clients]);
+    return new Set(countryMarkers.map((m) => m.countryCode.toLowerCase()));
+  }, [countryMarkers]);
 
+  const placedClientCount = countryMarkers.reduce((n, m) => n + m.clients.length, 0);
   const unknownCount = clients.filter((c) => !c.vpn_login_country_code).length;
-  const placedCount = markers.length;
 
   const landFill = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.12 : 0.08);
   const landHighlight = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.38 : 0.28);
@@ -116,6 +85,14 @@ export default function ClientWorldMap({
     theme.palette.mode === 'dark'
       ? alpha(theme.palette.background.default, 0.6)
       : alpha(theme.palette.primary.main, 0.04);
+
+  const openCountryDialog = (marker: CountryMarker) => {
+    setSelection({
+      countryCode: marker.countryCode,
+      countryName: marker.countryName,
+      clients: marker.clients,
+    });
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
@@ -129,7 +106,7 @@ export default function ClientWorldMap({
             <Chip
               size="small"
               variant="outlined"
-              label={`${placedCount} located`}
+              label={`${placedClientCount} located`}
               sx={{ height: 24 }}
             />
             {unknownCount > 0 && (
@@ -142,13 +119,13 @@ export default function ClientWorldMap({
             )}
           </Stack>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-            VPN login country (GeoIP at enroll). Hover a flag for the client; green ring = active now.
+            Click a flag to see all clients in that country. Green ring = at least one active now.
           </Typography>
         </>
       )}
       {!showHeader && (
         <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mb: 1.5 }}>
-          <Chip size="small" variant="outlined" label={`${placedCount} located`} />
+          <Chip size="small" variant="outlined" label={`${placedClientCount} located`} />
           {unknownCount > 0 && (
             <Chip size="small" variant="outlined" label={`${unknownCount} no VPN geo`} />
           )}
@@ -201,51 +178,68 @@ export default function ClientWorldMap({
               />
             );
           })}
-          {markers.map((m) => (
-            <g
-              key={m.key}
-              transform={`translate(${m.x}, ${m.y})`}
-              style={{ cursor: m.deviceId != null ? 'pointer' : 'default' }}
-              onClick={() => {
-                if (m.deviceId != null) {
-                  navigate(clientProfilePath(m.deviceId));
-                }
-              }}
-              role={m.deviceId != null ? 'button' : undefined}
-              tabIndex={m.deviceId != null ? 0 : undefined}
-              onKeyDown={(e) => {
-                if (m.deviceId != null && (e.key === 'Enter' || e.key === ' ')) {
-                  e.preventDefault();
-                  navigate(clientProfilePath(m.deviceId));
-                }
-              }}
-            >
-              <title>{m.tooltip}</title>
-              <circle
-                r={16}
-                fill={theme.palette.background.paper}
-                stroke={m.active ? theme.palette.success.main : theme.palette.primary.main}
-                strokeWidth={m.active ? 2.5 : 1.5}
-              />
-              <text
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={15}
-                style={{ pointerEvents: 'none' }}
+          {countryMarkers.map((m) => {
+            const count = m.clients.length;
+            const hasActive = m.activeCount > 0;
+            const tooltip = `${countryLabel(m.countryCode, m.countryName)} · ${count} client${count === 1 ? '' : 's'}${hasActive ? ` · ${m.activeCount} active` : ''}`;
+            return (
+              <g
+                key={m.countryCode}
+                transform={`translate(${m.x}, ${m.y})`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => openCountryDialog(m)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openCountryDialog(m);
+                  }
+                }}
               >
-                {m.flag}
-              </text>
-            </g>
-          ))}
+                <title>{tooltip}</title>
+                <circle
+                  r={18}
+                  fill={theme.palette.background.paper}
+                  stroke={hasActive ? theme.palette.success.main : theme.palette.primary.main}
+                  strokeWidth={hasActive ? 2.5 : 1.5}
+                />
+                <text
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={16}
+                  y={count > 1 ? -3 : 0}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {countryFlagEmoji(m.countryCode)}
+                </text>
+                {count > 1 && (
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={9}
+                    fontWeight={700}
+                    y={11}
+                    fill={theme.palette.text.secondary}
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    {count}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </Box>
       </Box>
+
+      <CountryClientsDialog selection={selection} onClose={() => setSelection(null)} />
 
       {!loading && clients.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
           No clients yet. Devices appear after VPN enroll or DHCP sync.
         </Typography>
       )}
-      {!loading && clients.length > 0 && placedCount === 0 && (
+      {!loading && clients.length > 0 && countryMarkers.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
           No VPN login location recorded yet. Re-enroll with netgarde-wg to populate the map.
         </Typography>
