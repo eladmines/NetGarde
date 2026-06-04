@@ -7,6 +7,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useLiveClients } from '../features/dashboard/hooks/useLiveClients';
+import ClientMapIntro from '../features/dashboard/components/ClientMapIntro';
 
 const ClientWorldMap = lazy(() => import('../features/dashboard/components/ClientWorldMap'));
 
@@ -27,8 +28,7 @@ export default function ClientMapPage() {
             Client map
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Where your clients last connected to VPN (GeoIP from public IP at enroll). Click a
-            country flag to see all clients there. Not DNS domain country.
+            Geographic view of VPN login locations. Click a country flag to list clients there.
           </Typography>
         </Box>
         <Button
@@ -42,6 +42,8 @@ export default function ClientMapPage() {
           Refresh
         </Button>
       </Stack>
+
+      <ClientMapIntro />
 
       <Suspense
         fallback={
