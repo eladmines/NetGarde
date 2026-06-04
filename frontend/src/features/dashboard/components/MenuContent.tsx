@@ -39,11 +39,11 @@ const manageNetworkItems = [
     path: '/policy/countries',
     iconClass: 'countryAccessIcon',
   },
+  { text: 'Client map', icon: <MapIcon />, path: '/client-map', iconClass: 'clientMapIcon' },
 ];
 
 const analyticsItems = [
   { text: 'Client profiles', icon: <DevicesOtherIcon />, path: '/client-profiles', iconClass: 'clientProfilesIcon' },
-  { text: 'Client map', icon: <MapIcon />, path: '/client-map', iconClass: 'clientMapIcon' },
   { text: 'Reports', icon: <AnalyticsIcon />, path: '/reports', iconClass: 'reportsIcon' },
   { text: 'Activity Logs', icon: <HistoryIcon />, path: '/activity-logs', iconClass: 'activityLogsIcon' },
 ];
