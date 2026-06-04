@@ -20,14 +20,26 @@ docker compose -f docker-compose.yml up -d ollama
 echo "Pulling model ${MODEL} (one-time download)..."
 docker exec netgarde-ollama ollama pull "$MODEL"
 
-echo "Enabling NETWORK_REVIEW_MODE=ollama in ${ENV_FILE}..."
-if sudo grep -q '^NETWORK_REVIEW_MODE=' "$ENV_FILE" 2>/dev/null; then
-  sudo sed -i.bak 's/^NETWORK_REVIEW_MODE=.*/NETWORK_REVIEW_MODE=ollama/' "$ENV_FILE"
-  sudo rm -f "${ENV_FILE}.bak"
-else
-  echo "NETWORK_REVIEW_MODE=ollama" | sudo tee -a "$ENV_FILE" >/dev/null
-fi
+set_env_kv() {
+  local key="$1" value="$2"
+  if sudo grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+    sudo sed -i.bak "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
+    sudo rm -f "${ENV_FILE}.bak"
+  else
+    echo "${key}=${value}" | sudo tee -a "$ENV_FILE" >/dev/null
+  fi
+}
 
-docker compose -f docker-compose.yml up -d backend
+echo "Enabling Ollama AI review in ${ENV_FILE}..."
+set_env_kv NETWORK_REVIEW_MODE ollama
+set_env_kv OLLAMA_BASE_URL http://ollama:11434
+set_env_kv OLLAMA_MODEL "$MODEL"
+set_env_kv LLM_TIMEOUT_SEC 90
 
-echo "Done. Open the dashboard and use Regenerate on AI review (first call may be slow)."
+COMPOSE_PROFILES=ai docker compose -f docker-compose.yml up -d --force-recreate backend ollama
+
+echo "Clearing cached network review (Redis)..."
+docker exec netgarde-redis redis-cli --scan --pattern 'dashboard:network_overview:*' | \
+  xargs -r docker exec -i netgarde-redis redis-cli DEL || true
+
+echo "Done. Open the dashboard AI overview (first summary may take 15–45s)."

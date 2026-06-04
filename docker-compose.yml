@@ -62,14 +62,7 @@ services:
       USAGE_HISTORY_MINUTES: ${USAGE_HISTORY_MINUTES:-60}
       USAGE_PERSIST_SAMPLES: ${USAGE_PERSIST_SAMPLES:-false}
       POLICY_PACK_SNAPSHOT_DIR: /var/lib/netgarde/policy-snapshots
-      NETWORK_REVIEW_MODE: ${NETWORK_REVIEW_MODE:-template}
-      NETWORK_REVIEW_CACHE_TTL_SEC: ${NETWORK_REVIEW_CACHE_TTL_SEC:-90}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
-      LLM_TIMEOUT_SEC: ${LLM_TIMEOUT_SEC:-45}
+      # AI review settings: use /etc/netgarde/backend.env only (compose env would override env_file)
     depends_on:
       redis:
         condition: service_healthy

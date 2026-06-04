@@ -57,6 +57,7 @@ class NetworkOverviewService:
             stats=stats,
             source=source,
             llm_model=llm_model,
+            review_mode=settings.NETWORK_REVIEW_MODE.strip().lower() or "template",
         )
         network_overview_cache.set_cached_overview(overview, period)
         return overview
