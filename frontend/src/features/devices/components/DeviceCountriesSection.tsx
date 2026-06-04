@@ -7,7 +7,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
 import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PublicIcon from '@mui/icons-material/Public';
 import { devicesApi } from '../config/api';
@@ -51,9 +50,19 @@ export default function DeviceCountriesSection({ deviceId }: DeviceCountriesSect
           title="Estimated from domain endings (e.g. .il, .de, .co.uk). Global sites (.com) count as Global. Based on all DNS seen by NetGarde, not only blocked queries."
           arrow
         >
-          <IconButton size="small" aria-label="About DNS countries" sx={{ p: 0.25 }}>
+          <Box
+            component="span"
+            aria-label="About DNS countries"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              cursor: 'help',
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary' },
+            }}
+          >
             <HelpOutlineIcon sx={{ fontSize: 18 }} />
-          </IconButton>
+          </Box>
         </Tooltip>
       </Stack>
 

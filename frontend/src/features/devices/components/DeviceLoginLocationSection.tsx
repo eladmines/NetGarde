@@ -6,7 +6,6 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { devicesApi } from '../config/api';
@@ -53,9 +52,19 @@ export default function DeviceLoginLocationSection({ deviceId }: DeviceLoginLoca
           title="Estimated from the device's public IP when it enrolled or re-connected to the VPN (before the tunnel). This is physical location, not DNS domain country."
           arrow
         >
-          <IconButton size="small" aria-label="About VPN login location" sx={{ p: 0.25 }}>
+          <Box
+            component="span"
+            aria-label="About VPN login location"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              cursor: 'help',
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary' },
+            }}
+          >
             <HelpOutlineIcon sx={{ fontSize: 18 }} />
-          </IconButton>
+          </Box>
         </Tooltip>
       </Stack>
 

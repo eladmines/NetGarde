@@ -18,6 +18,7 @@ import {
   GeoCountryPolicyUpdate,
 } from '../types/policy';
 import { countryFlagEmoji, countryLabel } from '../../devices/utils/countryDisplay';
+import { chromelessIconButtonSx } from '../../../shared/theme/chromelessIconButtonSx';
 
 type RuleRow = { user_country: string; blocked_countries: string[] };
 
@@ -36,6 +37,8 @@ const countryAutocompleteSx = {
     transform: 'translateY(-50%)',
     gap: 0.25,
   },
+  '& .MuiAutocomplete-clearIndicator .MuiIconButton-root': chromelessIconButtonSx,
+  '& .MuiAutocomplete-popupIndicator .MuiIconButton-root': chromelessIconButtonSx,
   '& .MuiAutocomplete-clearIndicator': {
     order: 1,
     p: 0.5,
@@ -73,8 +76,8 @@ function CountryAutocomplete({
         getOptionLabel={(o) => countryLabel(o.code, o.name)}
         sx={countryAutocompleteSx}
         slotProps={{
-          clearIndicator: { size: 'small' },
-          popupIndicator: { size: 'small' },
+          clearIndicator: { size: 'small', sx: chromelessIconButtonSx },
+          popupIndicator: { size: 'small', sx: chromelessIconButtonSx },
         }}
         renderInput={(params) => (
           <TextField
