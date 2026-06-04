@@ -58,12 +58,12 @@ class BehaviorScoringService:
 
     def _score_device(self, device_id: int, entries: List[Tuple[str, str, str]]) -> int:
         profile = self.profile_repo.get_by_device_id(device_id)
+        if self._should_recompute_baseline(profile):
+            self.baseline_service.recompute_device(device_id)
+            profile = self.profile_repo.get_by_device_id(device_id)
+
         if not profile or not profile.profile_ready:
-            if self._should_recompute_baseline(profile):
-                self.baseline_service.recompute_device(device_id)
-                profile = self.profile_repo.get_by_device_id(device_id)
-            if not profile or not profile.profile_ready:
-                return 0
+            return 0
 
         baseline = self.profile_repo.parse_baseline(profile)
         window_min = settings.BEHAVIOR_SCORE_WINDOW_MINUTES
@@ -151,8 +151,22 @@ class BehaviorScoringService:
         return True
 
     def _should_recompute_baseline(self, profile) -> bool:
+        """True when baseline is missing or older than BEHAVIOR_BASELINE_RECOMPUTE_HOURS."""
         if profile is None:
             return True
+
+        baseline = self.profile_repo.parse_baseline(profile) if profile.baseline_json else {}
+        computed_raw = baseline.get("computed_at")
+        if isinstance(computed_raw, str) and computed_raw.strip():
+            try:
+                computed = datetime.fromisoformat(computed_raw.replace("Z", "+00:00"))
+                if computed.tzinfo is None:
+                    computed = computed.replace(tzinfo=timezone.utc)
+                age = datetime.now(timezone.utc) - computed
+                return age > timedelta(hours=settings.BEHAVIOR_BASELINE_RECOMPUTE_HOURS)
+            except ValueError:
+                pass
+
         if profile.updated_at is None:
             return True
         age = datetime.now(timezone.utc) - profile.updated_at
