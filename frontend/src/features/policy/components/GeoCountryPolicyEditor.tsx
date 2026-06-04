@@ -15,7 +15,6 @@ import { policyApi } from '../config/api';
 import {
   CountryChoice,
   DestinationCountryRuleUpdate,
-  ForbiddenCountryPolicy,
   GeoCountryPolicyUpdate,
 } from '../types/policy';
 import { countryFlagEmoji, countryLabel } from '../../devices/utils/countryDisplay';
@@ -106,7 +105,6 @@ type GeoCountryPolicyEditorProps = {
 const GeoCountryPolicyEditor = forwardRef<GeoCountryPolicyEditorHandle, GeoCountryPolicyEditorProps>(
   function GeoCountryPolicyEditor({ onSavingChange }, ref) {
   const [choices, setChoices] = useState<CountryChoice[]>([]);
-  const [policy, setPolicy] = useState<ForbiddenCountryPolicy | null>(null);
   const [vpnLoginEnabled, setVpnLoginEnabled] = useState(true);
   const [destEnabled, setDestEnabled] = useState(true);
   const [vpnDenied, setVpnDenied] = useState<string[]>([]);
@@ -137,7 +135,6 @@ const GeoCountryPolicyEditor = forwardRef<GeoCountryPolicyEditorHandle, GeoCount
         policyApi.getForbiddenCountries(),
       ]);
       setChoices(ch);
-      setPolicy(pol);
       setVpnLoginEnabled(pol.vpn_login_block_enabled);
       setDestEnabled(pol.enabled);
       setVpnDenied([...pol.blocked_vpn_login_countries]);
@@ -202,8 +199,7 @@ const GeoCountryPolicyEditor = forwardRef<GeoCountryPolicyEditorHandle, GeoCount
       ),
     };
     try {
-      const updated = await policyApi.updateForbiddenCountries(body);
-      setPolicy(updated);
+      await policyApi.updateForbiddenCountries(body);
       setInfo('Country rules saved.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save');
