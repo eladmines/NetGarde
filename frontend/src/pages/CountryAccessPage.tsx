@@ -55,11 +55,6 @@ export default function CountryAccessPage() {
         </Alert>
       )}
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        VPN login blocks take effect on the next enroll attempt. Destination country rules need{' '}
-        <strong>Save country blocks</strong> then <strong>Apply now</strong> to update dnsmasq.
-      </Alert>
-
       <GeoCountryPolicyEditor />
     </Box>
   );

@@ -23,6 +23,79 @@ import { countryFlagEmoji, countryLabel } from '../../devices/utils/countryDispl
 
 type RuleRow = { user_country: string; blocked_countries: string[] };
 
+const countryAutocompleteSx = {
+  width: '100%',
+  '& .MuiOutlinedInput-root': {
+    pr: '58px !important',
+  },
+  '& .MuiAutocomplete-endAdornment': {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    gap: 0.25,
+  },
+  '& .MuiAutocomplete-clearIndicator': {
+    order: 1,
+    p: 0.5,
+  },
+  '& .MuiAutocomplete-popupIndicator': {
+    order: 2,
+    p: 0.5,
+  },
+} as const;
+
+function CountryAutocomplete({
+  label,
+  options,
+  value,
+  onChange,
+  minWidth = 200,
+}: {
+  label: string;
+  options: CountryChoice[];
+  value: CountryChoice | null;
+  onChange: (value: CountryChoice | null) => void;
+  minWidth?: number;
+}) {
+  return (
+    <Box sx={{ minWidth, flex: 1, width: '100%' }}>
+      <Typography variant="caption" color="text.secondary" component="label" display="block" sx={{ mb: 0.75 }}>
+        {label}
+      </Typography>
+      <Autocomplete
+        fullWidth
+        size="small"
+        options={options}
+        value={value}
+        onChange={(_, v) => onChange(v)}
+        getOptionLabel={(o) => countryLabel(o.code, o.name)}
+        sx={countryAutocompleteSx}
+        slotProps={{
+          clearIndicator: { size: 'small' },
+          popupIndicator: { size: 'small' },
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            hiddenLabel
+            placeholder={value ? undefined : 'Select country'}
+            slotProps={{
+              input: {
+                ...params.InputProps,
+                sx: { flexWrap: 'nowrap' },
+              },
+            }}
+          />
+        )}
+      />
+    </Box>
+  );
+}
+
 export default function GeoCountryPolicyEditor() {
   const [choices, setChoices] = useState<CountryChoice[]>([]);
   const [policy, setPolicy] = useState<ForbiddenCountryPolicy | null>(null);
@@ -38,7 +111,6 @@ export default function GeoCountryPolicyEditor() {
   const [addVpnCountry, setAddVpnCountry] = useState<CountryChoice | null>(null);
   const [addUserCountry, setAddUserCountry] = useState<CountryChoice | null>(null);
   const [addDestCountry, setAddDestCountry] = useState<CountryChoice | null>(null);
-  const [addDestForUser, setAddDestForUser] = useState<string>('IL');
 
   const choiceByCode = useMemo(() => {
     const m = new Map<string, CountryChoice>();
@@ -103,7 +175,7 @@ export default function GeoCountryPolicyEditor() {
       );
     });
     setAddDestCountry(null);
-    setAddUserCountry(choiceByCode.get(addDestForUser) ?? addUserCountry);
+    setAddUserCountry(null);
   };
 
   const save = async () => {
@@ -124,7 +196,7 @@ export default function GeoCountryPolicyEditor() {
     try {
       const updated = await policyApi.updateForbiddenCountries(body);
       setPolicy(updated);
-      setInfo('Geo country rules saved. Click Apply now to push DNS blocks to dnsmasq.');
+      setInfo('Country rules saved.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save');
     } finally {
@@ -141,20 +213,11 @@ export default function GeoCountryPolicyEditor() {
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
+    <Paper variant="outlined" sx={{ p: 2.5 }}>
+      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
         Block countries (manual)
       </Typography>
-      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-        User location = VPN login GeoIP. Save here overrides env defaults. Deny enroll blocks
-        countries from joining; destination rules block ccTLDs for matching login countries.
-      </Typography>
 
-      {policy && !policy.managed_in_database && (
-        <Alert severity="info" sx={{ mb: 1.5 }}>
-          Showing env defaults until you save. After save, rules are stored in the database.
-        </Alert>
-      )}
       {error && (
         <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError(null)}>
           {error}
@@ -166,50 +229,61 @@ export default function GeoCountryPolicyEditor() {
         </Alert>
       )}
 
-      <FormControlLabel
-        control={
-          <Switch checked={vpnLoginEnabled} onChange={(e) => setVpnLoginEnabled(e.target.checked)} />
-        }
-        label="Deny VPN enrollment from blocked countries"
-        sx={{ mb: 1 }}
-      />
-      <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mb: 1 }}>
-        {vpnDenied.map((code) => (
-          <Chip
-            key={code}
-            label={countryLabel(code, choiceByCode.get(code)?.name)}
-            icon={<span>{countryFlagEmoji(code)}</span>}
-            onDelete={() => setVpnDenied((prev) => prev.filter((c) => c !== code))}
-            size="small"
-          />
-        ))}
-      </Stack>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }} alignItems="flex-start">
-        <Autocomplete
-          size="small"
-          sx={{ minWidth: 220, flex: 1 }}
-          options={choices}
-          value={addVpnCountry}
-          onChange={(_, v) => setAddVpnCountry(v)}
-          getOptionLabel={(o) => countryLabel(o.code, o.name)}
-          renderInput={(params) => <TextField {...params} label="Add blocked login country" />}
+      <Box sx={{ mb: 3 }}>
+        <FormControlLabel
+          control={
+            <Switch checked={vpnLoginEnabled} onChange={(e) => setVpnLoginEnabled(e.target.checked)} />
+          }
+          label="Deny VPN enrollment from blocked countries"
+          sx={{ mb: 1.5, display: 'block' }}
         />
-        <Button size="small" variant="outlined" onClick={addVpnDenied} disabled={!addVpnCountry}>
-          Add
-        </Button>
-      </Stack>
+        <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mb: 1.5, minHeight: 28 }}>
+          {vpnDenied.map((code) => (
+            <Chip
+              key={code}
+              label={countryLabel(code, choiceByCode.get(code)?.name)}
+              icon={<span>{countryFlagEmoji(code)}</span>}
+              onDelete={() => setVpnDenied((prev) => prev.filter((c) => c !== code))}
+              size="small"
+            />
+          ))}
+        </Stack>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'stretch', sm: 'flex-end' }}
+        >
+          <CountryAutocomplete
+            label="Blocked login country"
+            options={choices}
+            value={addVpnCountry}
+            onChange={setAddVpnCountry}
+            minWidth={240}
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={addVpnDenied}
+            disabled={!addVpnCountry}
+            sx={{ flexShrink: 0, alignSelf: { sm: 'flex-end' }, mb: { sm: 0.25 } }}
+          >
+            Add
+          </Button>
+        </Stack>
+      </Box>
 
-      <FormControlLabel
-        control={
-          <Switch checked={destEnabled} onChange={(e) => setDestEnabled(e.target.checked)} />
-        }
-        label="Block destination countries for users in…"
-        sx={{ mb: 1 }}
-      />
-      <Stack spacing={1} sx={{ mb: 1 }}>
+      <Box>
+        <FormControlLabel
+          control={
+            <Switch checked={destEnabled} onChange={(e) => setDestEnabled(e.target.checked)} />
+          }
+          label="Block destination countries for users in…"
+          sx={{ mb: 1.5, display: 'block' }}
+        />
+      <Stack spacing={2} sx={{ mb: 2 }}>
         {destRules.map((rule) => (
           <Box key={rule.user_country}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
+            <Typography variant="body2" sx={{ mb: 0.75 }}>
               Login {countryLabel(rule.user_country, choiceByCode.get(rule.user_country)?.name)}{' '}
               → block:
             </Typography>
@@ -240,37 +314,35 @@ export default function GeoCountryPolicyEditor() {
           </Box>
         ))}
       </Stack>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }} flexWrap="wrap">
-        <Autocomplete
-          size="small"
-          sx={{ minWidth: 180, flex: 1 }}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1.5}
+        alignItems={{ xs: 'stretch', sm: 'flex-end' }}
+        sx={{ mb: 2 }}
+      >
+        <CountryAutocomplete
+          label="User login country"
           options={choices}
-          value={addUserCountry ?? choiceByCode.get(addDestForUser) ?? null}
-          onChange={(_, v) => {
-            setAddUserCountry(v);
-            if (v) setAddDestForUser(v.code);
-          }}
-          getOptionLabel={(o) => countryLabel(o.code, o.name)}
-          renderInput={(params) => <TextField {...params} label="When user login country" />}
+          value={addUserCountry}
+          onChange={setAddUserCountry}
         />
-        <Autocomplete
-          size="small"
-          sx={{ minWidth: 180, flex: 1 }}
+        <CountryAutocomplete
+          label="Destination to block"
           options={choices}
           value={addDestCountry}
-          onChange={(_, v) => setAddDestCountry(v)}
-          getOptionLabel={(o) => countryLabel(o.code, o.name)}
-          renderInput={(params) => <TextField {...params} label="Block destination" />}
+          onChange={setAddDestCountry}
         />
         <Button
           size="small"
           variant="outlined"
           onClick={addDestinationBlock}
           disabled={!addDestCountry || !addUserCountry}
+          sx={{ flexShrink: 0, alignSelf: { sm: 'flex-end' }, mb: { sm: 0.25 } }}
         >
           Add rule
         </Button>
       </Stack>
+      </Box>
 
       <Button
         variant="contained"
