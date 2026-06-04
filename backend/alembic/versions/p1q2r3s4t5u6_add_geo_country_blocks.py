@@ -27,12 +27,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.execute(
-        sa.text(
-            "INSERT INTO geo_country_policy_config "
-            "(id, configured_in_ui, vpn_login_block_enabled, destination_rules_enabled, updated_at) "
-            "VALUES (1, false, :vpn, :dest, CURRENT_TIMESTAMP)"
-        ),
-        {"vpn": True, "dest": True},
+        "INSERT INTO geo_country_policy_config "
+        "(id, configured_in_ui, vpn_login_block_enabled, destination_rules_enabled, updated_at) "
+        "VALUES (1, false, true, true, CURRENT_TIMESTAMP)"
     )
 
     op.create_table(
