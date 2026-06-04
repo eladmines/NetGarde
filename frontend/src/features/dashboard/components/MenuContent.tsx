@@ -20,6 +20,7 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import HistoryIcon from '@mui/icons-material/History';
 import SecurityIcon from '@mui/icons-material/Security';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import MapIcon from '@mui/icons-material/Map';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
@@ -38,6 +39,7 @@ const manageNetworkItems = [
     path: '/policy/countries',
     iconClass: 'countryAccessIcon',
   },
+  { text: 'Client map', icon: <MapIcon />, path: '/client-map', iconClass: 'clientMapIcon' },
 ];
 
 const analyticsItems = [

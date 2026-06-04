@@ -1,9 +1,8 @@
-import { lazy, Suspense } from 'react';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import CircularProgress from '@mui/material/CircularProgress';
 import Copyright from '../internals/components/Copyright';
 import DnsLiveFeed from './DnsLiveFeed';
 import LiveClientsView from './LiveClientsView';
@@ -11,9 +10,10 @@ import LiveNetworkGraph from './LiveNetworkGraph';
 import BlockedAttemptsView from './BlockedAttemptsView';
 import DnsAlertsView from './DnsAlertsView';
 import NetworkOverviewCard from './NetworkOverviewCard';
+import { Link as RouterLink } from 'react-router-dom';
+import Button from '@mui/material/Button';
+import MapIcon from '@mui/icons-material/Map';
 import { useLiveClients } from '../hooks/useLiveClients';
-
-const ClientWorldMap = lazy(() => import('./ClientWorldMap'));
 
 export default function MainGrid() {
   const live = useLiveClients();
@@ -25,20 +25,6 @@ export default function MainGrid() {
       </Typography>
 
       <NetworkOverviewCard />
-
-      <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12 }}>
-          <Suspense
-            fallback={
-              <Paper variant="outlined" sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-                <CircularProgress size={28} />
-              </Paper>
-            }
-          >
-            <ClientWorldMap clients={live.clients} loading={live.loading} />
-          </Suspense>
-        </Grid>
-      </Grid>
 
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12 }}>
@@ -62,9 +48,27 @@ export default function MainGrid() {
           <Typography component="h2" variant="h6" sx={{ mb: 0.5 }}>
             Live Clients
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-            Connected clients and VPN login countries (GeoIP at enroll).
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
+            gap={1}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Connected clients and VPN login countries (GeoIP at enroll).
+            </Typography>
+            <Button
+              component={RouterLink}
+              to="/client-map"
+              size="small"
+              variant="text"
+              startIcon={<MapIcon fontSize="small" />}
+            >
+              Client map
+            </Button>
+          </Stack>
           <LiveClientsView live={live} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
