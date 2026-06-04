@@ -35,7 +35,7 @@ set_env_kv NETWORK_REVIEW_MODE ollama
 # Prefer host gateway so API reaches Ollama even if backend was started without compose profile ai
 set_env_kv OLLAMA_BASE_URL http://host.docker.internal:11434
 set_env_kv OLLAMA_MODEL "$MODEL"
-set_env_kv LLM_TIMEOUT_SEC 90
+set_env_kv LLM_TIMEOUT_SEC 180
 
 COMPOSE_PROFILES=ai docker compose -f docker-compose.yml up -d --force-recreate backend ollama
 

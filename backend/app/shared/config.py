@@ -84,7 +84,7 @@ class Settings(BaseSettings):
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OLLAMA_BASE_URL: str = "http://ollama:11434"
     OLLAMA_MODEL: str = "llama3.2:3b"
-    LLM_TIMEOUT_SEC: float = 45.0
+    LLM_TIMEOUT_SEC: float = 180.0
 
     @property
     def policy_pack_remote_urls(self) -> Dict[str, str]:

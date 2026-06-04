@@ -80,7 +80,7 @@ export default function NetworkOverviewCard() {
 
       {loading && !data && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Generating AI overview…
+          Generating AI overview… On CPU this can take up to 2 minutes the first time.
         </Typography>
       )}
 
