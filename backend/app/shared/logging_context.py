@@ -29,9 +29,21 @@ def reset_request_id(token: contextvars.Token) -> None:
     request_id_var.reset(token)
 
 
+_LOG_RECORD_RESERVED = frozenset({
+    "args", "asctime", "created", "exc_info", "exc_text", "filename",
+    "funcName", "levelname", "levelno", "lineno", "message", "module",
+    "msecs", "msg", "name", "pathname", "process", "processName",
+    "relativeCreated", "stack_info", "thread", "threadName",
+})
+
+
 def structured_extra(event: str, **fields: object) -> dict[str, object]:
     """Build logger extra={...} with a stable event name for CloudWatch Insights."""
-    return {"event": event, **fields}
+    safe: dict[str, object] = {"event": event}
+    for key, value in fields.items():
+        out_key = f"ctx_{key}" if key in _LOG_RECORD_RESERVED else key
+        safe[out_key] = value
+    return safe
 
 
 class RequestContextFilter(logging.Filter):

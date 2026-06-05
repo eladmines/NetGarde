@@ -36,8 +36,20 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False)
 
 
+_LOG_RECORD_RESERVED = frozenset({
+    "args", "asctime", "created", "exc_info", "exc_text", "filename",
+    "funcName", "levelname", "levelno", "lineno", "message", "module",
+    "msecs", "msg", "name", "pathname", "process", "processName",
+    "relativeCreated", "stack_info", "thread", "threadName",
+})
+
+
 def structured_extra(event: str, **fields: object) -> dict[str, object]:
-    return {"event": event, **fields}
+    safe: dict[str, object] = {"event": event}
+    for key, value in fields.items():
+        out_key = f"ctx_{key}" if key in _LOG_RECORD_RESERVED else key
+        safe[out_key] = value
+    return safe
 
 
 def setup_logging(
