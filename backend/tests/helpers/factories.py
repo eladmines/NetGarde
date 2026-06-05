@@ -43,11 +43,35 @@ def seed_policy_catalog(db_session) -> tuple[PolicyPack, PolicyProfile]:
         quarantine_hours=4,
         is_builtin=True,
     )
-    db_session.add(teen)
+    work = PolicyProfile(
+        slug="work",
+        name="Work",
+        description="Custom work profile",
+        enabled_pack_slugs=["malware"],
+        extra_block_domains=[],
+        allowlist_domains=[],
+        schedule_rules=[],
+        behavior_sensitivity="low",
+        quarantine_on_abnormal=False,
+        quarantine_hours=2,
+        is_builtin=False,
+    )
+    db_session.add_all([teen, work])
     db_session.commit()
     db_session.refresh(malware)
     db_session.refresh(teen)
+    db_session.refresh(work)
     return malware, teen
+
+
+def seed_country_presence(db_session, device: Device, *, country_code: str = "IL", count: int = 5):
+    from app.features.devices.repositories.device_country_presence_repository import (
+        DeviceCountryPresenceRepository,
+    )
+
+    repo = DeviceCountryPresenceRepository(db_session)
+    repo.record_batch(device.id, {country_code: count})
+    db_session.commit()
 
 
 def create_ip_lease(

@@ -39,6 +39,15 @@ from app.features.policy.models.device_quarantine import DeviceQuarantine  # noq
 from app.features.policy.models.policy_sync_status import PolicySyncStatus  # noqa: F401
 
 
+@pytest.fixture(autouse=True)
+def test_runtime_settings(monkeypatch):
+    """Keep tests fast and offline: no remote pack fetch or Redis usage."""
+    monkeypatch.setattr("app.shared.config.settings.POLICY_PACK_FETCH_ENABLED", False)
+    monkeypatch.setattr("app.shared.config.settings.POLICY_PACK_REFRESH_ON_STARTUP", False)
+    monkeypatch.setattr("app.shared.config.settings.USAGE_REDIS_ENABLED", False)
+    monkeypatch.setattr("app.shared.config.settings.REDIS_URL", "")
+
+
 @pytest.fixture(scope="function")
 def db_session():
     engine = create_engine(
@@ -105,8 +114,27 @@ def dns_ingest_env(monkeypatch):
 
 
 @pytest.fixture
+def dns_live_stats_env(monkeypatch):
+    """DNS ingest with in-memory live stats (selective persistence)."""
+    monkeypatch.setattr("app.shared.config.settings.DNS_INGEST_TOKEN", "")
+    monkeypatch.setattr("app.shared.config.settings.PERSIST_ALL_DNS", False)
+
+
+@pytest.fixture
 def dashboard_env(monkeypatch):
     monkeypatch.setattr("app.shared.config.settings.NETWORK_REVIEW_MODE", "template")
+
+
+@pytest.fixture
+def behavior_env(monkeypatch):
+    monkeypatch.setattr("app.shared.config.settings.BEHAVIOR_REVIEW_MODE", "template")
+    monkeypatch.setattr("app.shared.config.settings.BEHAVIOR_FAST_START", True)
+
+
+@pytest.fixture
+def topology_env(monkeypatch, enroll_env):
+    """VPN pool settings for topology tests (reuses enroll_env VPN settings)."""
+    pass
 
 
 @pytest.fixture

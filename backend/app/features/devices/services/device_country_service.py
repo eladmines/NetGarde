@@ -19,6 +19,12 @@ from app.shared.domain_country import country_display_name
 from fastapi import HTTPException
 
 
+def _as_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 class DeviceCountryService:
     def __init__(self, db: Session):
         self.db = db
@@ -35,7 +41,7 @@ class DeviceCountryService:
         since = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         presences = self.presence_repo.list_for_device(device_id)
-        active = [p for p in presences if p.last_seen_at >= since]
+        active = [p for p in presences if _as_utc(p.last_seen_at) >= since]
 
         if active:
             totals = {p.country_code: p.query_count for p in active}
@@ -118,7 +124,8 @@ class DeviceCountryService:
 
         for code, count in sorted_items[:12]:
             row = by_code.get(code)
-            first_seen = row.first_seen_at if row else None
+            first_seen = _as_utc(row.first_seen_at) if row and row.first_seen_at else None
+            last_seen = _as_utc(row.last_seen_at) if row and row.last_seen_at else None
             countries.append(
                 CountryCountItem(
                     country_code=code,
@@ -126,7 +133,7 @@ class DeviceCountryService:
                     query_count=count,
                     share_percent=round(100.0 * count / total, 1),
                     first_seen_at=first_seen,
-                    last_seen_at=row.last_seen_at if row else None,
+                    last_seen_at=last_seen,
                     is_new=bool(first_seen and first_seen >= window_start),
                 )
             )
