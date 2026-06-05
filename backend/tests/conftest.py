@@ -1,12 +1,17 @@
-import pytest
 import os
+
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-os.environ.setdefault('DB_URL', 'sqlite:///:memory:')
+os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 
+from app.main import app
 from app.shared.database import Base
+from app.shared.dependencies import get_db
+from tests.helpers.factories import create_vpn_device, seed_policy_catalog
 
 # Register all models on Base.metadata (required for create_all FK resolution)
 from app.features.dns_queries.models.dns_query import DnsQuery  # noqa: F401
@@ -64,4 +69,32 @@ def sample_blocked_site_data():
 def sample_blocked_site(db_session, sample_blocked_site_data):
     """Backward-compat fixture kept for older tests; returns dict only."""
     return sample_blocked_site_data
+
+
+@pytest.fixture
+def seed_policy(db_session):
+    return seed_policy_catalog(db_session)
+
+
+@pytest.fixture
+def vpn_device(db_session):
+    device, _lease = create_vpn_device(db_session)
+    return device
+
+
+@pytest.fixture
+def api_client(db_session, monkeypatch):
+    """FastAPI TestClient with in-memory DB and admin auth disabled."""
+    monkeypatch.setattr("app.shared.config.settings.ADMIN_API_TOKEN", "")
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as client:
+        yield client
+    app.dependency_overrides.clear()
 
