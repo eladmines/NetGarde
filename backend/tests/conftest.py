@@ -9,8 +9,6 @@ os.environ.setdefault('DB_URL', 'sqlite:///:memory:')
 from app.shared.database import Base
 
 # Register all models on Base.metadata (required for create_all FK resolution)
-from app.features.blocked_sites.models.blocked_site import BlockedSite  # noqa: F401
-from app.features.categories.models.category import Category  # noqa: F401
 from app.features.dns_queries.models.dns_query import DnsQuery  # noqa: F401
 from app.features.dns_queries.models.dns_alert import DnsAlert  # noqa: F401
 from app.features.dns_queries.models.domain_first_seen import DomainFirstSeen  # noqa: F401
@@ -59,29 +57,11 @@ def sample_blocked_site_data():
     return {
         "domain": "example.com",
         "reason": "Test reason",
-        "category": "Malware",
     }
 
 
 @pytest.fixture
 def sample_blocked_site(db_session, sample_blocked_site_data):
-    blocked_site = BlockedSite(**sample_blocked_site_data)
-    db_session.add(blocked_site)
-    db_session.commit()
-    db_session.refresh(blocked_site)
-    return blocked_site
-
-
-@pytest.fixture
-def multiple_blocked_sites(db_session):
-    sites = [
-        BlockedSite(domain="example.com", reason="Reason 1", category="Malware"),
-        BlockedSite(domain="test.com", reason="Reason 2", category="Phishing"),
-        BlockedSite(domain="sample.org", reason="Reason 3", category=None),
-        BlockedSite(domain="deleted.com", reason="Reason 4", category="Malware", is_deleted=True),
-    ]
-    for site in sites:
-        db_session.add(site)
-    db_session.commit()
-    return sites
+    """Backward-compat fixture kept for older tests; returns dict only."""
+    return sample_blocked_site_data
 
