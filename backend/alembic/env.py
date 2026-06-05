@@ -9,8 +9,6 @@ from app.shared.config import settings
 from app.shared.database import Base
 
 # Import all models so Alembic can detect them
-from app.features.blocked_sites.models.blocked_site import BlockedSite
-from app.features.categories.models.category import Category 
 from app.features.dns_queries.models.dns_query import DnsQuery
 from app.features.dns_queries.models.dns_alert import DnsAlert
 from app.features.dns_queries.models.domain_first_seen import DomainFirstSeen

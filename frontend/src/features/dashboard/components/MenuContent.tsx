@@ -17,14 +17,8 @@ import RouterIcon from '@mui/icons-material/Router';
 import PolicyIcon from '@mui/icons-material/Policy';
 import PublicIcon from '@mui/icons-material/Public';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import HistoryIcon from '@mui/icons-material/History';
-import SecurityIcon from '@mui/icons-material/Security';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import MapIcon from '@mui/icons-material/Map';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
-import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 import './MenuContent.css';
 
 const mainListItems = [
@@ -44,17 +38,10 @@ const manageNetworkItems = [
 
 const analyticsItems = [
   { text: 'Client profiles', icon: <DevicesOtherIcon />, path: '/client-profiles', iconClass: 'clientProfilesIcon' },
-  { text: 'Reports', icon: <AnalyticsIcon />, path: '/reports', iconClass: 'reportsIcon' },
-  { text: 'Activity Logs', icon: <HistoryIcon />, path: '/activity-logs', iconClass: 'activityLogsIcon' },
+  // TODO: add Reports & Activity Logs when implemented
 ];
 
-const secondaryListItems = [
-  { text: 'Security', icon: <SecurityIcon />, path: '/security', iconClass: 'securityIcon' },
-  { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications', iconClass: 'notificationsIcon' },
-  { text: 'Settings', icon: <SettingsRoundedIcon />, path: '/settings', iconClass: 'settingsIcon' },
-  { text: 'About', icon: <InfoRoundedIcon />, path: '/about', iconClass: 'aboutIcon' },
-  { text: 'Feedback', icon: <HelpRoundedIcon />, path: '/feedback', iconClass: 'feedbackIcon' },
-];
+const secondaryListItems = [];
 
 interface MenuContentProps {
   open?: boolean;
