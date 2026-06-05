@@ -1,16 +1,13 @@
 import os
 
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 
-from app.main import app
 from app.shared.database import Base
-from app.shared.dependencies import get_db
 from tests.helpers.factories import create_vpn_device, seed_policy_catalog
 
 # Register all models on Base.metadata (required for create_all FK resolution)
@@ -39,6 +36,15 @@ from app.features.policy.models.device_quarantine import DeviceQuarantine  # noq
 from app.features.policy.models.policy_sync_status import PolicySyncStatus  # noqa: F401
 
 
+@pytest.fixture(autouse=True)
+def test_runtime_settings(monkeypatch):
+    """Keep tests fast and offline: no remote pack fetch or Redis usage."""
+    monkeypatch.setattr("app.shared.config.settings.POLICY_PACK_FETCH_ENABLED", False)
+    monkeypatch.setattr("app.shared.config.settings.POLICY_PACK_REFRESH_ON_STARTUP", False)
+    monkeypatch.setattr("app.shared.config.settings.USAGE_REDIS_ENABLED", False)
+    monkeypatch.setattr("app.shared.config.settings.REDIS_URL", "")
+
+
 @pytest.fixture(scope="function")
 def db_session():
     engine = create_engine(
@@ -48,27 +54,13 @@ def db_session():
     )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
+
     session = TestingSessionLocal()
     try:
         yield session
     finally:
         session.close()
         Base.metadata.drop_all(bind=engine)
-
-
-@pytest.fixture
-def sample_blocked_site_data():
-    return {
-        "domain": "example.com",
-        "reason": "Test reason",
-    }
-
-
-@pytest.fixture
-def sample_blocked_site(db_session, sample_blocked_site_data):
-    """Backward-compat fixture kept for older tests; returns dict only."""
-    return sample_blocked_site_data
 
 
 @pytest.fixture
@@ -83,18 +75,46 @@ def vpn_device(db_session):
 
 
 @pytest.fixture
-def api_client(db_session, monkeypatch):
-    """FastAPI TestClient with in-memory DB and admin auth disabled."""
-    monkeypatch.setattr("app.shared.config.settings.ADMIN_API_TOKEN", "")
+def enroll_env(monkeypatch):
+    """VPN enroll + device token settings for unit/integration enroll tests."""
+    monkeypatch.setattr("app.shared.config.settings.ENROLL_BOOTSTRAP_TOKEN", "")
+    monkeypatch.setattr("app.shared.config.settings.DEVICE_TOKEN_SECRET", "test-device-token-secret")
+    monkeypatch.setattr("app.shared.config.settings.VPN_ENDPOINT", "vpn.test.example:51820")
+    monkeypatch.setattr("app.shared.config.settings.VPN_SERVER_PUBLIC_KEY", "serverPubKeyTest=")
+    monkeypatch.setattr("app.shared.config.settings.VPN_POOL_NAME", "default")
+    monkeypatch.setattr("app.shared.config.settings.VPN_POOL_CIDR", "10.8.0.0/24")
+    monkeypatch.setattr("app.shared.config.settings.VPN_GATEWAY_IP", "10.8.0.1")
+    monkeypatch.setattr("app.shared.config.settings.VPN_DNS_IP", "10.8.0.1")
+    monkeypatch.setattr("app.shared.config.settings.VPN_LOGIN_GEO_BLOCK_ENABLED", False)
+    monkeypatch.setattr("app.shared.config.settings.BLOCKED_VPN_LOGIN_COUNTRIES", "")
 
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
 
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as client:
-        yield client
-    app.dependency_overrides.clear()
+@pytest.fixture
+def dns_ingest_env(monkeypatch):
+    """Disable DNS ingest auth and persist all queries in tests."""
+    monkeypatch.setattr("app.shared.config.settings.DNS_INGEST_TOKEN", "")
+    monkeypatch.setattr("app.shared.config.settings.PERSIST_ALL_DNS", True)
 
+
+@pytest.fixture
+def dns_live_stats_env(monkeypatch):
+    """DNS ingest with in-memory live stats (selective persistence)."""
+    monkeypatch.setattr("app.shared.config.settings.DNS_INGEST_TOKEN", "")
+    monkeypatch.setattr("app.shared.config.settings.PERSIST_ALL_DNS", False)
+
+
+@pytest.fixture
+def dashboard_env(monkeypatch):
+    monkeypatch.setattr("app.shared.config.settings.NETWORK_REVIEW_MODE", "template")
+
+
+@pytest.fixture
+def behavior_env(monkeypatch):
+    monkeypatch.setattr("app.shared.config.settings.BEHAVIOR_REVIEW_MODE", "template")
+    monkeypatch.setattr("app.shared.config.settings.BEHAVIOR_FAST_START", True)
+
+
+@pytest.fixture
+def topology_env(monkeypatch, enroll_env):
+    """VPN pool settings for topology tests (reuses enroll_env VPN settings)."""
+    pass
