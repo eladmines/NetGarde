@@ -149,5 +149,5 @@ def apply_policy_now(
     _: None = Depends(verify_admin_api_token),
     service: PolicyService = Depends(get_policy_service),
 ):
-    """Manually queue policy DNS sync + dnsmasq reload on the host listener."""
+    """Run host dns-sync (run-sync.sh via wg-agent) and reload dnsmasq."""
     return service.apply_policy_now()

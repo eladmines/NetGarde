@@ -172,7 +172,6 @@ export default function ClientProfileDetail({
         quarantine_expires_at: result.quarantine_expires_at,
       });
       setActionMessage(result.message);
-      await applyPolicyAfterBlock();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to quarantine client');
     } finally {
@@ -194,7 +193,6 @@ export default function ClientProfileDetail({
         quarantine_expires_at: result.quarantine_expires_at,
       });
       setActionMessage(result.message);
-      await applyPolicyAfterBlock();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to end quarantine');
     } finally {

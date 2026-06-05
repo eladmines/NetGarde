@@ -123,6 +123,22 @@ def mock_policy_notify():
 
 
 @pytest.fixture
+def mock_host_dns_sync():
+    with patch("app.features.policy.services.policy_service.sync_dns_policy_on_host") as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_host_client_block():
+    with patch(
+        "app.features.policy.services.policy_service.block_client_on_host"
+    ) as block_mock, patch(
+        "app.features.policy.services.policy_service.unblock_client_on_host"
+    ) as unblock_mock:
+        yield block_mock, unblock_mock
+
+
+@pytest.fixture
 def mock_refresh_pack():
     with patch("app.features.policy.services.policy_service.refresh_pack") as mock:
         mock.return_value = 42
