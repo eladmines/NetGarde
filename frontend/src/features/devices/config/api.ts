@@ -78,15 +78,6 @@ export const devicesApi = {
     }),
   listClientBlocks: (deviceId: number) =>
     apiFetch<ClientBlockedDomain[]>(`/devices/${deviceId}/client-blocks`),
-  createClientBlock: (deviceId: number, domain: string, expiresInHours?: number) =>
-    apiFetch<ClientBlockedDomain>(`/devices/${deviceId}/client-blocks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        domain,
-        ...(expiresInHours != null ? { expires_in_hours: expiresInHours } : {}),
-      }),
-    }),
   revokeClientBlock: (deviceId: number, blockId: number) =>
     apiFetch<{ revoked: boolean }>(`/devices/${deviceId}/client-blocks/${blockId}`, {
       method: 'DELETE',
