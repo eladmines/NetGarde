@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
+from app.features.client_behavior.models.client_blocked_domain import ClientBlockedDomain
 from app.features.devices.models.device import Device
 from app.features.policy.models.policy_pack import PolicyPack
 from app.features.policy.models.policy_profile import PolicyProfile
@@ -113,3 +116,24 @@ def create_vpn_device(
     db_session.refresh(device)
     db_session.refresh(lease)
     return device, lease
+
+
+def create_behavior_block(
+    db_session,
+    device: Device,
+    *,
+    domain: str = "bad.example.com",
+    score: int = 85,
+) -> ClientBlockedDomain:
+    block = ClientBlockedDomain(
+        device_id=device.id,
+        domain=domain,
+        root_domain="example.com",
+        source="behavior_auto",
+        score=score,
+        created_at=datetime.now(timezone.utc),
+    )
+    db_session.add(block)
+    db_session.commit()
+    db_session.refresh(block)
+    return block

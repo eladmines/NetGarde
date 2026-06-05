@@ -83,6 +83,33 @@ def vpn_device(db_session):
 
 
 @pytest.fixture
+def enroll_env(monkeypatch):
+    """VPN enroll + device token settings for unit/integration enroll tests."""
+    monkeypatch.setattr("app.shared.config.settings.ENROLL_BOOTSTRAP_TOKEN", "")
+    monkeypatch.setattr("app.shared.config.settings.DEVICE_TOKEN_SECRET", "test-device-token-secret")
+    monkeypatch.setattr("app.shared.config.settings.VPN_ENDPOINT", "vpn.test.example:51820")
+    monkeypatch.setattr("app.shared.config.settings.VPN_SERVER_PUBLIC_KEY", "serverPubKeyTest=")
+    monkeypatch.setattr("app.shared.config.settings.VPN_POOL_NAME", "default")
+    monkeypatch.setattr("app.shared.config.settings.VPN_POOL_CIDR", "10.8.0.0/24")
+    monkeypatch.setattr("app.shared.config.settings.VPN_GATEWAY_IP", "10.8.0.1")
+    monkeypatch.setattr("app.shared.config.settings.VPN_DNS_IP", "10.8.0.1")
+    monkeypatch.setattr("app.shared.config.settings.VPN_LOGIN_GEO_BLOCK_ENABLED", False)
+    monkeypatch.setattr("app.shared.config.settings.BLOCKED_VPN_LOGIN_COUNTRIES", "")
+
+
+@pytest.fixture
+def dns_ingest_env(monkeypatch):
+    """Disable DNS ingest auth and persist all queries in tests."""
+    monkeypatch.setattr("app.shared.config.settings.DNS_INGEST_TOKEN", "")
+    monkeypatch.setattr("app.shared.config.settings.PERSIST_ALL_DNS", True)
+
+
+@pytest.fixture
+def dashboard_env(monkeypatch):
+    monkeypatch.setattr("app.shared.config.settings.NETWORK_REVIEW_MODE", "template")
+
+
+@pytest.fixture
 def api_client(db_session, monkeypatch):
     """FastAPI TestClient with in-memory DB and admin auth disabled."""
     monkeypatch.setattr("app.shared.config.settings.ADMIN_API_TOKEN", "")
