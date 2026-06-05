@@ -8,16 +8,13 @@ import os
 import sys
 import subprocess
 import time
-import logging
 import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from log_config import setup_logging
+
+logger = setup_logging(service="dns-sync", logger_name=__name__)
 
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 POLICY_DNS_SYNC_ENDPOINT = os.getenv('POLICY_DNS_SYNC_ENDPOINT', '/policy/dns-sync')
@@ -60,7 +57,11 @@ def fetch_policy_dns_sync(api_url: str, endpoint: str) -> Optional[Dict[str, Any
                 return None
             return json.loads(response.read().decode('utf-8'))
     except Exception as e:
-        logger.error(f"Error fetching policy DNS sync: {e}", exc_info=True)
+        logger.error(
+            "Error fetching policy DNS sync",
+            extra={"event": "policy_sync_fetch_failed"},
+            exc_info=True,
+        )
         return None
 
 

@@ -228,6 +228,9 @@ The docker-compose files are already configured to use the appropriate `.env` fi
 | `PYTHONUNBUFFERED` | Python output buffering | `1` | `1` |
 | `ENVIRONMENT` | Environment name | `development` | `production` |
 | `LOG_LEVEL` | Logging level | `DEBUG` | `INFO` |
+| `LOG_JSON` | JSON logs for CloudWatch Insights | `0` | `1` |
+| `LOG_SERVICE` | `service` field on every log line | `backend` | `backend` |
+| `LOG_TO_FILE` | Rotating file handler | `1` | `0` (stdout only) |
 | `API_HOST` | API host address | `0.0.0.0` | `0.0.0.0` |
 | `API_PORT` | API port | `8000` | `8000` |
 | `PERSIST_ALL_DNS` | Persist every DNS query to RDS (`false` = blocked only) | `false` | `false` |
