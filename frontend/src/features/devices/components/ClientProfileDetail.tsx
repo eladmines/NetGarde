@@ -41,6 +41,7 @@ import DeviceLoginLocationSection from './DeviceLoginLocationSection';
 import { countryLabel } from '../utils/countryDisplay';
 import { DeviceLoginGeoSummary } from '../types/device';
 import { formatShortDateTime } from '../../../shared/utils/dateUtils';
+import { chromelessIconButtonSx } from '../../../shared/theme/chromelessIconButtonSx';
 
 interface ClientProfileDetailProps {
   device: Device;
@@ -263,7 +264,7 @@ export default function ClientProfileDetail({
                 }
                 arrow
               >
-                <IconButton size="small" aria-label="About baseline status" sx={{ p: 0.25 }}>
+                <IconButton size="small" aria-label="About baseline status" sx={{ p: 0.25, ...chromelessIconButtonSx }}>
                   <HelpOutlineIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
@@ -275,7 +276,7 @@ export default function ClientProfileDetail({
                   title="0–100 unusual-activity score for the last ~15 minutes vs this baseline. At or above your policy threshold (often 70) can trigger a behavior alert."
                   arrow
                 >
-                  <IconButton size="small" aria-label="About behavior score" sx={{ p: 0.25 }}>
+                  <IconButton size="small" aria-label="About behavior score" sx={{ p: 0.25, ...chromelessIconButtonSx }}>
                     <HelpOutlineIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Tooltip>
@@ -311,7 +312,7 @@ export default function ClientProfileDetail({
                   title="Learned “normal” DNS habits for this device. Each metric has a (?) with details. Stats update from recent history while the device is active."
                   arrow
                 >
-                  <IconButton size="small" aria-label="About behavior baseline" sx={{ p: 0.25 }}>
+                  <IconButton size="small" aria-label="About behavior baseline" sx={{ p: 0.25, ...chromelessIconButtonSx }}>
                     <HelpOutlineIcon sx={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
@@ -468,7 +469,7 @@ export default function ClientProfileDetail({
                     title="When the behavior score is very high, NetGarde can temporarily block domains seen in that burst (in addition to policy packs)."
                     arrow
                   >
-                    <IconButton size="small" aria-label="About auto-block" sx={{ p: 0.25 }}>
+                    <IconButton size="small" aria-label="About auto-block" sx={{ p: 0.25, ...chromelessIconButtonSx }}>
                       <HelpOutlineIcon sx={{ fontSize: 16 }} />
                     </IconButton>
                   </Tooltip>

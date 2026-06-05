@@ -18,6 +18,7 @@ import PolicyIcon from '@mui/icons-material/Policy';
 import PublicIcon from '@mui/icons-material/Public';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import BlockIcon from '@mui/icons-material/Block';
 import MapIcon from '@mui/icons-material/Map';
 import './MenuContent.css';
 
@@ -38,6 +39,7 @@ const manageNetworkItems = [
 
 const analyticsItems = [
   { text: 'Client profiles', icon: <DevicesOtherIcon />, path: '/client-profiles', iconClass: 'clientProfilesIcon' },
+  { text: 'Blocked clients', icon: <BlockIcon />, path: '/blocked-clients', iconClass: 'blockedClientsIcon' },
   // TODO: add Reports & Activity Logs when implemented
 ];
 

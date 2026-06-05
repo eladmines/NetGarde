@@ -6,6 +6,7 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import Stack from '@mui/material/Stack';
+import { chromelessIconButtonSx } from '../../../shared/theme/chromelessIconButtonSx';
 
 interface BaselineSummaryProps {
   baseline: Record<string, unknown>;
@@ -40,7 +41,7 @@ function LabelWithHelp({ label, helpKey }: { label: string; helpKey: string }) {
           <IconButton
             size="small"
             aria-label={`About ${label}`}
-            sx={{ p: 0.25, color: 'text.secondary' }}
+            sx={{ p: 0.25, color: 'text.secondary', ...chromelessIconButtonSx }}
             tabIndex={0}
           >
             <HelpOutlineIcon sx={{ fontSize: 14 }} />
@@ -123,7 +124,7 @@ export default function BaselineSummary({ baseline }: BaselineSummaryProps) {
             <IconButton
               size="small"
               aria-label="About busiest hours"
-              sx={{ p: 0.25, color: 'text.secondary', mt: -0.25 }}
+              sx={{ p: 0.25, color: 'text.secondary', mt: -0.25, ...chromelessIconButtonSx }}
             >
               <HelpOutlineIcon sx={{ fontSize: 14 }} />
             </IconButton>
@@ -143,7 +144,7 @@ export default function BaselineSummary({ baseline }: BaselineSummaryProps) {
             <IconButton
               size="small"
               aria-label="About baseline computed time"
-              sx={{ p: 0.25, color: 'text.secondary' }}
+              sx={{ p: 0.25, color: 'text.secondary', ...chromelessIconButtonSx }}
             >
               <HelpOutlineIcon sx={{ fontSize: 14 }} />
             </IconButton>
