@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 import os
 
+from app.shared.request_logging_middleware import RequestLoggingMiddleware
 from app.shared.utils.logging import setup_logging
 from app.shared.dependencies import get_db
 from app.features.dns_queries.routes.dns_query_route import router as dns_query_router
@@ -121,6 +122,9 @@ app.add_middleware(
 
 # Add a stable CORS header layer to handle CDN forwarding edge-cases.
 app.add_middleware(StableCORSHeadersMiddleware)
+
+# Request ID + access logging (added last so it runs first on incoming requests).
+app.add_middleware(RequestLoggingMiddleware)
 
 @app.get("/health")
 def health(db: Session = Depends(get_db)):

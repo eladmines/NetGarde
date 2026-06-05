@@ -12,18 +12,13 @@ import sys
 import re
 import json
 import time
-import logging
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Set
 
+from log_config import setup_logging
 from noise_filter import is_noise_domain
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - [dns_watcher] %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging(service="log-watcher", logger_name=__name__)
 
 # Configuration from environment variables
 DNSMASQ_LOG_PATH = os.getenv('DNSMASQ_LOG_PATH', '/var/log/dnsmasq.log')
@@ -167,7 +162,10 @@ def send_to_api(queries: List[Dict[str, Any]], api_url: str) -> bool:
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status in (200, 201):
                 return True
-            logger.error(f"API returned status {response.status}")
+            logger.error(
+                "DNS ingest API returned error status",
+                extra={"event": "dns_ingest_failed", "status_code": response.status},
+            )
             return False
 
     except urllib.error.HTTPError as e:

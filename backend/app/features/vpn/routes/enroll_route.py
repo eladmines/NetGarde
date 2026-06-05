@@ -28,13 +28,21 @@ def enroll_endpoint(
             connect_ip=client_ip_from_request(request),
         )
     except ValueError as e:
-        logger.warning("Enroll rejected: %s", e)
+        logger.warning(
+            "Enroll rejected",
+            extra={"event": "enroll_rejected", "reason": str(e)},
+        )
         raise HTTPException(status_code=409, detail=str(e)) from e
     except RuntimeError as e:
-        # Common misconfig: VPN_ENDPOINT / VPN_SERVER_PUBLIC_KEY not set.
-        logger.exception("Enroll failed due to server configuration")
+        logger.exception(
+            "Enroll failed due to server configuration",
+            extra={"event": "enroll_config_error"},
+        )
         raise HTTPException(status_code=500, detail=str(e)) from e
-    except Exception as e:
-        logger.exception("Unexpected enroll error")
-        raise HTTPException(status_code=500, detail="Enroll failed") from e
+    except Exception:
+        logger.exception(
+            "Unexpected enroll error",
+            extra={"event": "enroll_error"},
+        )
+        raise HTTPException(status_code=500, detail="Enroll failed") from None
 

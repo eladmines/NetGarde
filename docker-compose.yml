@@ -55,6 +55,9 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       LOG_TO_FILE: "0"  # Disable file logging in production (logs go to stdout/stderr)
+      LOG_JSON: "1"
+      LOG_LEVEL: "INFO"
+      LOG_SERVICE: "backend"
       # VPN enroll settings (required for POST /v1/enroll)
       VPN_ENDPOINT: ${VPN_ENDPOINT:-44.218.45.174:51820}
       VPN_SERVER_PUBLIC_KEY: ${VPN_SERVER_PUBLIC_KEY:-ooeDpLVJvX8OaNz13CPNAuZXFMMzMx3nV7Kvg0LPy1c=}
@@ -91,12 +94,15 @@ services:
     build:
       context: ./dns-sync
       dockerfile: Dockerfile
+    container_name: netgarde-dns-sync
     # Note: For cron mode, set SYNC_INTERVAL=0 and use 'docker compose run --rm dns-sync'
     # For continuous mode, keep restart: unless-stopped and SYNC_INTERVAL > 0
     volumes:
       - /etc/dnsmasq.d:/etc/dnsmasq.d:rw
       - /var/lib/misc:/var/lib/misc:ro
     environment:
+      - LOG_JSON=1
+      - LOG_LEVEL=INFO
       - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
       # Match /etc/netgarde/backend.env (export before compose up, or set in repo-root .env)
       - DNS_INGEST_TOKEN=${DNS_INGEST_TOKEN:-}
