@@ -13,9 +13,11 @@ from app.shared.logging_context import (
     bind_request_id,
     generate_request_id,
     reset_request_id,
+    structured_extra,
 )
+from app.shared.utils.logging import get_logger
 
-logger = logging.getLogger("app.http")
+logger = get_logger("app.http")
 
 _ACCESS_LOG_SKIP_PATHS = frozenset({"/health"})
 
@@ -46,12 +48,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
             logger.exception(
                 "request failed",
-                extra={
-                    "event": "http_request_failed",
-                    "http_method": request.method,
-                    "http_path": request.url.path,
-                    "duration_ms": duration_ms,
-                },
+                extra=structured_extra(
+                    "http_request_failed",
+                    http_method=request.method,
+                    http_path=request.url.path,
+                    duration_ms=duration_ms,
+                ),
             )
             raise
         finally:

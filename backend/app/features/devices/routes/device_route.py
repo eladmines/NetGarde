@@ -1,7 +1,6 @@
 from typing import Optional
 
 import hmac
-import logging
 
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -47,10 +46,12 @@ from app.features.vpn.services.usage_service import UsageService
 from app.shared.admin_auth import verify_admin_api_token
 from app.shared.config import settings
 from app.shared.usage_ws_manager import usage_ws_manager
+from app.shared.logging_context import structured_extra
 from app.shared.service_auth import verify_dns_ingest_service
+from app.shared.utils.logging import get_logger
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_client_behavior_service(db: Session = Depends(get_db)) -> ClientBehaviorApiService:
@@ -133,7 +134,10 @@ async def device_usage_websocket(websocket: WebSocket):
         snapshot = UsageWsSnapshot(history=history, live=live)
         await websocket.send_text(snapshot.model_dump_json())
     except Exception as exc:
-        logger.warning("Usage WebSocket snapshot failed: %s", exc)
+        logger.warning(
+            "Usage WebSocket snapshot failed",
+            extra=structured_extra("usage_ws_snapshot_failed", error=str(exc)),
+        )
     finally:
         db.close()
 
@@ -144,10 +148,12 @@ async def device_usage_websocket(websocket: WebSocket):
                 await websocket.send_text("pong")
     except WebSocketDisconnect:
         usage_ws_manager.disconnect(websocket)
-        logger.info("Usage WebSocket client disconnected normally")
     except Exception as e:
         usage_ws_manager.disconnect(websocket)
-        logger.warning("Usage WebSocket connection error: %s", e)
+        logger.warning(
+            "Usage WebSocket connection error",
+            extra=structured_extra("usage_ws_error", error=str(e)),
+        )
 
 
 @router.put("/{device_id}")

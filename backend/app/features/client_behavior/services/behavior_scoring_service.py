@@ -19,6 +19,7 @@ from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertR
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
 from app.shared.config import settings
 from app.shared.domain_utils import extract_root_domain, is_noise_domain
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -153,9 +154,14 @@ class BehaviorScoringService:
             return False
         hours = max(1, int(policy_profile.quarantine_hours or 4))
         self.policy_repo.start_quarantine(device_id, score, hours)
-        logger.info(
-            "Device quarantine started (allowlist-only DNS)",
-            extra={"device_id": device_id, "score": score, "hours": hours},
+        logger.warning(
+            "Device quarantine started",
+            extra=structured_extra(
+                "device_quarantine_started",
+                device_id=device_id,
+                score=score,
+                hours=hours,
+            ),
         )
         return True
 
@@ -263,7 +269,10 @@ class BehaviorScoringService:
 
         remaining = policy.max_blocks_per_day - self.block_repo.count_blocks_today(device_id)
         if remaining <= 0:
-            logger.info("Auto-block skipped: daily limit", extra={"device_id": device_id})
+            logger.warning(
+                "Auto-block skipped: daily limit",
+                extra=structured_extra("auto_block_daily_limit", device_id=device_id),
+            )
             return 0
 
         domains = self._domains_for_auto_block(entries)[:remaining]
@@ -288,8 +297,13 @@ class BehaviorScoringService:
             score=score,
             expires_at=expires,
         )
-        logger.info(
+        logger.warning(
             "Behavior auto-block created",
-            extra={"device_id": device_id, "domain": domain, "score": score},
+            extra=structured_extra(
+                "behavior_auto_block",
+                device_id=device_id,
+                domain=domain,
+                score=score,
+            ),
         )
         return True

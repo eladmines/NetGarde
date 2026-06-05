@@ -36,6 +36,10 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False)
 
 
+def structured_extra(event: str, **fields: object) -> dict[str, object]:
+    return {"event": event, **fields}
+
+
 def setup_logging(
     *,
     service: str,

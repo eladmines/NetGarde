@@ -4,11 +4,14 @@ Manages connected WebSocket clients and broadcasts messages to all of them.
 """
 
 import json
-import logging
-from typing import List, Any
+from typing import Any, List
+
 from fastapi import WebSocket
 
-logger = logging.getLogger(__name__)
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class ConnectionManager:
@@ -18,19 +21,14 @@ class ConnectionManager:
         self.active_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
-        """Accept a new WebSocket connection and add it to the pool."""
         await websocket.accept()
         self.active_connections.append(websocket)
-        logger.info(f"WebSocket client connected. Total connections: {len(self.active_connections)}")
 
     def disconnect(self, websocket: WebSocket):
-        """Remove a WebSocket connection from the pool."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-        logger.info(f"WebSocket client disconnected. Total connections: {len(self.active_connections)}")
 
     async def broadcast(self, data: Any):
-        """Send data to all connected WebSocket clients."""
         if not self.active_connections:
             return
 
@@ -40,11 +38,13 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except Exception as e:
-                logger.warning(f"Failed to send to WebSocket client: {e}")
+            except Exception as exc:
+                logger.warning(
+                    "DNS WebSocket broadcast send failed",
+                    extra=structured_extra("dns_ws_send_failed", error=str(exc)),
+                )
                 disconnected.append(connection)
 
-        # Clean up disconnected clients
         for conn in disconnected:
             self.disconnect(conn)
 
@@ -53,5 +53,4 @@ class ConnectionManager:
         return len(self.active_connections)
 
 
-# Singleton instance — shared across the entire application
 ws_manager = ConnectionManager()

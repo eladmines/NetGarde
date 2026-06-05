@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import time
 import urllib.error
 import urllib.request
@@ -12,8 +11,10 @@ from typing import FrozenSet, List, Optional, Set, Tuple
 
 from app.features.policy.pack_common import DATA_DIR, normalize_domain
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_snapshot_dir() -> Path:
@@ -142,20 +143,50 @@ def refresh_remote_pack(slug: str, *, force: bool = False) -> FrozenSet[str]:
     try:
         domains = fetch_remote_hosts(url, settings.POLICY_PACK_FETCH_TIMEOUT_SECONDS)
         write_snapshot(slug, domains)
-        log.info("refreshed policy pack %s from %s (%d domains)", slug, url, len(domains))
+        logger.info(
+            "Policy pack refreshed from upstream",
+            extra=structured_extra(
+                "policy_pack_refreshed",
+                slug=slug,
+                url=url,
+                domain_count=len(domains),
+            ),
+        )
         clear_sorted_pack_domains_cache()
         return frozenset(domains)
     except (urllib.error.URLError, TimeoutError, ValueError) as e:
-        log.warning("failed to fetch policy pack %s from %s: %s", slug, url, e)
+        logger.warning(
+            "Policy pack fetch failed",
+            extra=structured_extra(
+                "policy_pack_fetch_failed",
+                slug=slug,
+                url=url,
+                error=str(e),
+            ),
+        )
         snap = snapshot_path(slug)
         if snap.is_file():
             domains = _read_domains_file(snap)
             if domains:
-                log.info("using stale snapshot for pack %s (%d domains)", slug, len(domains))
+                logger.warning(
+                    "Using stale policy pack snapshot",
+                    extra=structured_extra(
+                        "policy_pack_stale_snapshot",
+                        slug=slug,
+                        domain_count=len(domains),
+                    ),
+                )
                 return frozenset(domains)
         if static_fallback.is_file():
             domains = _read_domains_file(static_fallback)
-            log.info("using static fallback for pack %s (%d domains)", slug, len(domains))
+            logger.warning(
+                "Using static policy pack fallback",
+                extra=structured_extra(
+                    "policy_pack_static_fallback",
+                    slug=slug,
+                    domain_count=len(domains),
+                ),
+            )
             return frozenset(domains)
         raise
 
@@ -233,5 +264,8 @@ def load_remote_or_static_pack(slug: str) -> FrozenSet[str]:
         try:
             return refresh_remote_pack(slug, force=False)
         except Exception:
-            log.warning("pack %s refresh failed during load; using empty set", slug)
+            logger.warning(
+                "Policy pack refresh failed during load",
+                extra=structured_extra("policy_pack_load_empty", slug=slug),
+            )
     return frozenset()

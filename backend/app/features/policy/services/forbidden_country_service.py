@@ -23,6 +23,7 @@ from app.shared.domain_country import dnsmasq_tld_patterns_for_country
 from app.shared.domain_country import country_code_for_domain, country_display_name
 from app.shared.domain_utils import extract_root_domain
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -129,14 +130,15 @@ class ForbiddenCountryService:
                     device_id=device.id,
                 )
                 alerts += 1
-                logger.info(
+                logger.warning(
                     "Forbidden country DNS block",
-                    extra={
-                        "device_id": device.id,
-                        "user_country": user_country,
-                        "dest_country": dest,
-                        "domain": q.domain,
-                    },
+                    extra=structured_extra(
+                        "forbidden_country_block",
+                        device_id=device.id,
+                        user_country=user_country,
+                        dest_country=dest,
+                        domain=q.domain,
+                    ),
                 )
 
         return alerts

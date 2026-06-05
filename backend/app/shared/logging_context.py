@@ -29,6 +29,11 @@ def reset_request_id(token: contextvars.Token) -> None:
     request_id_var.reset(token)
 
 
+def structured_extra(event: str, **fields: object) -> dict[str, object]:
+    """Build logger extra={...} with a stable event name for CloudWatch Insights."""
+    return {"event": event, **fields}
+
+
 class RequestContextFilter(logging.Filter):
     """Attach service and request_id to every log record for JSON output."""
 

@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -7,8 +5,10 @@ from app.features.vpn.schemas.usage import UsageReportRequest, UsageReportRespon
 from app.features.vpn.services.usage_service import UsageService
 from app.shared.dependencies import get_db
 from app.shared.device_auth import AuthenticatedDevice, get_authenticated_device
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/v1", tags=["VPN"])
 
@@ -25,5 +25,8 @@ def usage_report_endpoint(
     try:
         return service.report_usage(payload)
     except Exception as e:
-        logger.exception("Usage report failed")
+        logger.exception(
+            "Usage report failed",
+            extra=structured_extra("usage_report_failed", device_id=payload.device_id),
+        )
         raise HTTPException(status_code=500, detail="Usage report failed") from e

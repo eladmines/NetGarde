@@ -19,6 +19,7 @@ from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertR
 from app.shared.config import settings
 from app.shared.geoip import lookup_geo
 from app.shared.request_client_ip import is_public_ip
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -50,7 +51,6 @@ class DeviceLoginGeoService:
 
         public_ip = self._resolve_public_ip(connect_ip, client_reported_ip)
         if not public_ip:
-            logger.info("VPN enroll geo skipped: no public IP", extra={"device_id": device_id})
             return None
 
         geo = lookup_geo(public_ip)
@@ -148,9 +148,13 @@ class DeviceLoginGeoService:
             message=message,
             device_id=device_id,
         )
-        logger.info(
+        logger.warning(
             "New VPN login country alert",
-            extra={"device_id": device_id, "country_code": country_code},
+            extra=structured_extra(
+                "new_vpn_login_country",
+                device_id=device_id,
+                country_code=country_code,
+            ),
         )
 
     def _recent_login_country_alert_exists(self, device_id: int, country_code: str) -> bool:

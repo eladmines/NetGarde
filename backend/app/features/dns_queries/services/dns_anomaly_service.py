@@ -8,6 +8,7 @@ from app.features.dns_queries.repositories.domain_first_seen_repository import D
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
 from app.shared.config import settings
 from app.shared.domain_utils import extract_root_domain, is_noise_domain
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -27,7 +28,10 @@ class DnsAnomalyService:
             created += self._process_one(query)
         if created:
             self.db.commit()
-            logger.info("DNS anomaly alerts created", extra={"count": created})
+            logger.warning(
+                "DNS anomaly alerts created",
+                extra=structured_extra("dns_anomaly_alerts", count=created),
+            )
         return created
 
     def _process_one(self, query: DnsQueryCreate) -> int:
