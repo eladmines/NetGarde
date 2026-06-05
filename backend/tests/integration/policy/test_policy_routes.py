@@ -24,11 +24,9 @@ def test_list_policy_profiles(api_client, seed_policy):
     assert any(p["slug"] == "teen" for p in profiles)
 
 
-def test_get_forbidden_country_policy_defaults(api_client, seed_policy, monkeypatch):
-    monkeypatch.setattr("app.shared.config.settings.VPN_LOGIN_GEO_BLOCK_ENABLED", False)
-    monkeypatch.setattr("app.shared.config.settings.BLOCKED_VPN_LOGIN_COUNTRIES", "")
-    monkeypatch.setattr("app.shared.config.settings.FORBIDDEN_COUNTRY_RULES", "[]")
-
+def test_get_forbidden_country_policy_defaults(
+    api_client, seed_policy, forbidden_country_defaults
+):
     response = api_client.get("/policy/forbidden-countries")
     assert response.status_code == 200
     body = response.json()

@@ -1,6 +1,3 @@
-from unittest.mock import patch
-
-
 def test_policy_sync_status_empty(api_client, seed_policy):
     response = api_client.get("/policy/sync-status")
     assert response.status_code == 200
@@ -20,13 +17,12 @@ def test_policy_sync_report(api_client, seed_policy, dns_ingest_env):
     assert body["last_message"] == "dns-sync ok"
 
 
-@patch("app.features.policy.repositories.policy_sync_repository.PolicySyncRepository.notify_policy_changed")
-def test_apply_policy_now(mock_notify, api_client, seed_policy):
+def test_apply_policy_now(api_client, seed_policy, mock_policy_notify):
     response = api_client.post("/policy/apply")
     assert response.status_code == 200
     body = response.json()
     assert body["queued"] is True
-    mock_notify.assert_called_once()
+    mock_policy_notify.assert_called_once()
 
 
 def test_policy_dns_sync(api_client, seed_policy, dns_ingest_env):
@@ -45,9 +41,7 @@ def test_list_pack_domains(api_client, seed_policy):
     assert isinstance(body["domains"], list)
 
 
-@patch("app.features.policy.services.policy_service.refresh_pack")
-def test_refresh_policy_pack(mock_refresh, api_client, seed_policy):
-    mock_refresh.return_value = 42
+def test_refresh_policy_pack(api_client, seed_policy, mock_refresh_pack):
     response = api_client.post("/policy/packs/social/refresh")
     assert response.status_code == 200
     body = response.json()

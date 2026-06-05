@@ -1,18 +1,11 @@
-from datetime import datetime, timezone
+from tests.helpers.integration import dns_query_payload
 
 
-def test_create_dns_query(api_client, dns_ingest_env, vpn_device):
-    ts = datetime.now(timezone.utc).isoformat()
-    response = api_client.post(
-        "/dns-queries",
-        json={
-            "timestamp": ts,
-            "client_ip": "10.0.0.10",
-            "domain": "blocked.test",
-            "query_type": "A",
-            "action": "block",
-            "blocked": True,
-        },
+def test_create_dns_query(post_dns_query, dns_ingest_env, vpn_device):
+    response = post_dns_query(
+        domain="blocked.test",
+        query_type="A",
+        action="block",
     )
     assert response.status_code == 200
     body = response.json()
@@ -22,23 +15,12 @@ def test_create_dns_query(api_client, dns_ingest_env, vpn_device):
 
 
 def test_bulk_create_and_list_dns_queries(api_client, dns_ingest_env, vpn_device):
-    ts = datetime.now(timezone.utc).isoformat()
     bulk = api_client.post(
         "/dns-queries/bulk",
         json={
             "queries": [
-                {
-                    "timestamp": ts,
-                    "client_ip": "10.0.0.10",
-                    "domain": "one.test",
-                    "blocked": False,
-                },
-                {
-                    "timestamp": ts,
-                    "client_ip": "10.0.0.10",
-                    "domain": "two.test",
-                    "blocked": True,
-                },
+                dns_query_payload(domain="one.test", blocked=False),
+                dns_query_payload(domain="two.test", blocked=True),
             ]
         },
     )
@@ -53,17 +35,8 @@ def test_bulk_create_and_list_dns_queries(api_client, dns_ingest_env, vpn_device
     assert "two.test" in domains
 
 
-def test_get_dns_stats(api_client, dns_ingest_env, vpn_device):
-    ts = datetime.now(timezone.utc).isoformat()
-    api_client.post(
-        "/dns-queries",
-        json={
-            "timestamp": ts,
-            "client_ip": "10.0.0.10",
-            "domain": "stats.test",
-            "blocked": True,
-        },
-    )
+def test_get_dns_stats(post_dns_query, api_client, dns_ingest_env, vpn_device):
+    post_dns_query(domain="stats.test", blocked=True)
     response = api_client.get("/dns-queries/stats")
     assert response.status_code == 200
     stats = response.json()
