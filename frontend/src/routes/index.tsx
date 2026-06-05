@@ -4,6 +4,7 @@ import DashboardPage from '../pages/DashboardPage';
 import PolicyPage from '../pages/PolicyPage';
 import CountryAccessPage from '../pages/CountryAccessPage';
 import ClientProfilesPage from '../pages/ClientProfilesPage';
+import BlockedClientsPage from '../pages/BlockedClientsPage';
 import ClientMapPage from '../pages/ClientMapPage';
 
 export const routes: RouteObject[] = [
@@ -36,6 +37,14 @@ export const routes: RouteObject[] = [
     element: (
       <Layout>
         <ClientProfilesPage />
+      </Layout>
+    ),
+  },
+  {
+    path: '/blocked-clients',
+    element: (
+      <Layout>
+        <BlockedClientsPage />
       </Layout>
     ),
   },
