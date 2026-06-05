@@ -46,7 +46,11 @@ class PolicyDnsService:
 
             quarantine = self.policy_repo.get_active_quarantine(device.id)
             if quarantine:
-                allowlist = self._build_allowlist(profile)
+                # Admin quarantine (score=None): block all DNS. Behavior quarantine keeps allowlist.
+                if quarantine.score is None:
+                    allowlist_domains: list[str] = []
+                else:
+                    allowlist_domains = sorted(self._build_allowlist(profile))
                 entries.append(
                     PolicyDeviceDnsEntry(
                         device_id=device.id,
@@ -54,7 +58,7 @@ class PolicyDnsService:
                         tag=f"ng_device_{device.id}",
                         block_domains=[],
                         allowlist_only=True,
-                        allowlist_domains=sorted(allowlist),
+                        allowlist_domains=allowlist_domains,
                     )
                 )
                 continue

@@ -376,7 +376,7 @@ def start_device_quarantine_endpoint(
     _: None = Depends(verify_admin_api_token),
     service: PolicyService = Depends(get_policy_service),
 ):
-    """Block client at DNS: allowlist-only mode for the given duration."""
+    """Block all client network access (VPN iptables drop + full DNS deny) for the given duration."""
     return service.start_device_quarantine(device_id, hours=body.hours)
 
 

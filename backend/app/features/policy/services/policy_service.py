@@ -29,6 +29,11 @@ from app.features.policy.schemas.policy import (
     PolicySyncStatusRead,
 )
 from app.features.policy.sensitivity import block_threshold_for_sensitivity
+from app.features.vpn.services.wireguard_agent_client import block_client_on_host, unblock_client_on_host
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class PolicyService:
@@ -201,12 +206,13 @@ class PolicyService:
         self.repo.start_quarantine(device_id, score=None, hours=hours)
         self.db.commit()
         self.sync_repo.notify_policy_changed(source="admin_quarantine")
+        self._apply_full_network_block(device)
         quarantine = self.repo.get_active_quarantine(device_id)
         return QuarantineActionResponse(
             device_id=device_id,
             in_quarantine=True,
             quarantine_expires_at=quarantine.expires_at if quarantine else None,
-            message=f"Client quarantined for {hours} hour(s); allowlist-only DNS enforced after sync",
+            message=f"Client blocked for {hours} hour(s); all VPN traffic and DNS denied after sync",
         )
 
     def end_device_quarantine(self, device_id: int) -> QuarantineActionResponse:
@@ -218,9 +224,50 @@ class PolicyService:
             raise HTTPException(status_code=404, detail="No active quarantine for this device")
         self.db.commit()
         self.sync_repo.notify_policy_changed(source="admin_quarantine_release")
+        self._release_full_network_block(device)
         return QuarantineActionResponse(
             device_id=device_id,
             in_quarantine=False,
             quarantine_expires_at=None,
-            message="Quarantine ended; normal policy restored after sync",
+            message="Client unblocked; normal network access restored after sync",
         )
+
+    def _client_vpn_ip(self, device) -> Optional[str]:
+        lease = getattr(device, "ip_lease", None)
+        if lease is None or not lease.ip:
+            return None
+        return str(lease.ip).strip()
+
+    def _apply_full_network_block(self, device) -> None:
+        client_ip = self._client_vpn_ip(device)
+        if not client_ip:
+            return
+        try:
+            block_client_on_host(client_ip=client_ip)
+        except RuntimeError as exc:
+            logger.warning(
+                "VPN traffic block skipped (DNS block still applies)",
+                extra=structured_extra(
+                    "admin_block_vpn_skipped",
+                    device_id=device.id,
+                    client_ip=client_ip,
+                    error=str(exc),
+                ),
+            )
+
+    def _release_full_network_block(self, device) -> None:
+        client_ip = self._client_vpn_ip(device)
+        if not client_ip:
+            return
+        try:
+            unblock_client_on_host(client_ip=client_ip)
+        except RuntimeError as exc:
+            logger.warning(
+                "VPN traffic unblock skipped",
+                extra=structured_extra(
+                    "admin_unblock_vpn_skipped",
+                    device_id=device.id,
+                    client_ip=client_ip,
+                    error=str(exc),
+                ),
+            )

@@ -79,6 +79,63 @@ def _wg_list_peers(iface: str) -> list[Dict[str, Any]]:
     return peers
 
 
+BLOCK_CHAIN = "NETGARDE_BLOCK"
+
+
+def _ensure_block_chain() -> None:
+    subprocess.run(["iptables", "-N", BLOCK_CHAIN], capture_output=True, text=True)
+    check = subprocess.run(
+        ["iptables", "-C", "FORWARD", "-j", BLOCK_CHAIN],
+        capture_output=True,
+        text=True,
+    )
+    if check.returncode != 0:
+        insert = subprocess.run(
+            ["iptables", "-I", "FORWARD", "1", "-j", BLOCK_CHAIN],
+            capture_output=True,
+            text=True,
+        )
+        if insert.returncode != 0:
+            raise RuntimeError(insert.stderr.strip() or insert.stdout.strip() or "iptables insert failed")
+
+
+def _iptables_add_block(client_ip: str) -> None:
+    _ensure_block_chain()
+    for args in (["-s", client_ip], ["-d", client_ip]):
+        check = subprocess.run(
+            ["iptables", "-C", BLOCK_CHAIN, *args, "-j", "DROP"],
+            capture_output=True,
+            text=True,
+        )
+        if check.returncode != 0:
+            add = subprocess.run(
+                ["iptables", "-A", BLOCK_CHAIN, *args, "-j", "DROP"],
+                capture_output=True,
+                text=True,
+            )
+            if add.returncode != 0:
+                raise RuntimeError(add.stderr.strip() or add.stdout.strip() or "iptables add failed")
+
+
+def _iptables_remove_block(client_ip: str) -> None:
+    for args in (["-s", client_ip], ["-d", client_ip]):
+        while True:
+            check = subprocess.run(
+                ["iptables", "-C", BLOCK_CHAIN, *args, "-j", "DROP"],
+                capture_output=True,
+                text=True,
+            )
+            if check.returncode != 0:
+                break
+            delete = subprocess.run(
+                ["iptables", "-D", BLOCK_CHAIN, *args, "-j", "DROP"],
+                capture_output=True,
+                text=True,
+            )
+            if delete.returncode != 0:
+                raise RuntimeError(delete.stderr.strip() or delete.stdout.strip() or "iptables delete failed")
+
+
 def _wg_set_peer_allowed_ips(iface: str, pubkey: str, allowed_ip: str) -> None:
     # `wg set` updates are in-memory; persistence is intentionally out of scope here.
     cmd = ["wg", "set", iface, "peer", pubkey, "allowed-ips", f"{allowed_ip}/32"]
@@ -125,7 +182,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         server: "AgentServer" = self.server  # type: ignore[assignment]
         parsed = urlparse(self.path)
-        if parsed.path != "/v1/apply-peer":
+        if parsed.path not in ("/v1/apply-peer", "/v1/block-client", "/v1/unblock-client"):
             self._json(404, {"detail": "not found"})
             return
 
@@ -148,6 +205,23 @@ class Handler(BaseHTTPRequestHandler):
 
         if not isinstance(data, dict):
             self._json(400, {"detail": "invalid json"})
+            return
+
+        if parsed.path in ("/v1/block-client", "/v1/unblock-client"):
+            try:
+                client_ip = _validate_ipv4(str(data.get("client_ip", "")), server.pool_cidr)
+            except Exception as e:
+                self._json(400, {"detail": str(e)})
+                return
+            try:
+                if parsed.path == "/v1/block-client":
+                    _iptables_add_block(client_ip)
+                else:
+                    _iptables_remove_block(client_ip)
+            except Exception as e:
+                self._json(500, {"detail": str(e)})
+                return
+            self._json(200, {"applied": True, "client_ip": client_ip, "blocked": parsed.path == "/v1/block-client"})
             return
 
         try:

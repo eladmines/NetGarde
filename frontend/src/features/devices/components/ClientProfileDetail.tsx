@@ -303,7 +303,7 @@ export default function ClientProfileDetail({
               </Stack>
             )}
             {policyAssignment?.in_quarantine && (
-              <Chip label="Quarantine" color="error" />
+              <Chip label="Blocked" color="error" />
             )}
             <Button size="small" onClick={load}>
               Refresh
@@ -357,8 +357,8 @@ export default function ClientProfileDetail({
                 Block client
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Quarantine restricts this device to allowlist-only DNS. You can also block individual
-                domains without full quarantine.
+                Full block denies all VPN traffic and DNS for this device. You can also block
+                individual domains without a full network block.
               </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
                 {policyAssignment?.in_quarantine ? (
@@ -369,7 +369,7 @@ export default function ClientProfileDetail({
                     onClick={endQuarantine}
                     disabled={saving}
                   >
-                    End quarantine
+                    Unblock client
                   </Button>
                 ) : (
                   <Button
@@ -379,7 +379,7 @@ export default function ClientProfileDetail({
                     onClick={startQuarantine}
                     disabled={saving}
                   >
-                    Quarantine client (4h)
+                    Block client (4h)
                   </Button>
                 )}
                 <TextField
@@ -421,7 +421,7 @@ export default function ClientProfileDetail({
               </FormControl>
               {policyAssignment?.in_quarantine && policyAssignment.quarantine_expires_at && (
                 <Typography variant="caption" color="error" display="block" sx={{ mt: 1 }}>
-                  Allowlist-only quarantine until{' '}
+                  Full network block until{' '}
                   {formatShortDateTime(policyAssignment.quarantine_expires_at)}
                 </Typography>
               )}

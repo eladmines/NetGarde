@@ -4,7 +4,19 @@ This is a tiny HTTP service that runs **on the EC2 host as root** and applies:
 
 `wg set <iface> peer <client_pubkey> allowed-ips <ip>/32`
 
-It exists because the `netgarde-api` container cannot safely mutate the host `wg0` interface.
+It exists because the `netgarde-api` container cannot safely mutate the host `wg0` interface or host `iptables`.
+
+## Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/health` | Liveness |
+| `GET` | `/v1/peers` | List WireGuard peers (`wg show dump`) |
+| `POST` | `/v1/apply-peer` | Set peer `allowed-ips` after enroll |
+| `POST` | `/v1/block-client` | Drop all forwarded VPN traffic for a client IP |
+| `POST` | `/v1/unblock-client` | Remove iptables drops for a client IP |
+
+Admin **Block client** in the dashboard calls `/v1/block-client` (iptables `NETGARDE_BLOCK` chain) plus full DNS deny via dnsmasq.
 
 ## Install (EC2)
 

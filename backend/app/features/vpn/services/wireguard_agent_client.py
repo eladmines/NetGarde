@@ -36,6 +36,40 @@ def apply_peer_on_host(*, public_key: str, allowed_ip: str) -> None:
         raise RuntimeError(f"wg agent URL error: {e.reason}") from e
 
 
+def block_client_on_host(*, client_ip: str) -> None:
+    """Drop all VPN forwarded traffic for a client IP (admin full network block)."""
+    _post_wg_agent("/v1/block-client", {"client_ip": client_ip})
+
+
+def unblock_client_on_host(*, client_ip: str) -> None:
+    """Remove iptables drops for a client IP."""
+    _post_wg_agent("/v1/unblock-client", {"client_ip": client_ip})
+
+
+def _post_wg_agent(path: str, payload: dict) -> None:
+    base = (settings.WG_AGENT_URL or "").strip().rstrip("/")
+    token = (settings.WG_AGENT_TOKEN or "").strip()
+    if not base or not token:
+        raise RuntimeError("WG_AGENT_URL and WG_AGENT_TOKEN must be set")
+
+    url = f"{base}{path}"
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="POST")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Authorization", f"Bearer {token}")
+
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            if resp.status not in (200, 201):
+                raise RuntimeError(f"wg agent returned {resp.status}: {raw}")
+    except urllib.error.HTTPError as e:
+        err = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"wg agent HTTP {e.code}: {err}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"wg agent URL error: {e.reason}") from e
+
+
 def list_peers_on_host() -> list[dict]:
     """Return live WireGuard peers from the host agent (wg show dump)."""
     base = (settings.WG_AGENT_URL or "").strip().rstrip("/")
