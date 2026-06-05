@@ -17,6 +17,7 @@ from app.features.policy.pack_loader import (
 )
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.repositories.policy_sync_repository import PolicySyncRepository
+from app.features.client_behavior.schemas.behavior import QuarantineActionResponse
 from app.features.policy.schemas.policy import (
     DevicePolicyAssignmentRead,
     PolicyApplyResponse,
@@ -186,4 +187,40 @@ class PolicyService:
         return PolicyApplyResponse(
             queued=True,
             message="Policy enforcement sync queued; dnsmasq reload follows in ~30 seconds",
+        )
+
+    def start_device_quarantine(self, device_id: int, *, hours: int = 4) -> QuarantineActionResponse:
+        device = self.device_repo.get_by_id(device_id)
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+        if not device.mac_address:
+            raise HTTPException(
+                status_code=400,
+                detail="Device has no MAC address; quarantine requires DHCP MAC tagging",
+            )
+        self.repo.start_quarantine(device_id, score=None, hours=hours)
+        self.db.commit()
+        self.sync_repo.notify_policy_changed(source="admin_quarantine")
+        quarantine = self.repo.get_active_quarantine(device_id)
+        return QuarantineActionResponse(
+            device_id=device_id,
+            in_quarantine=True,
+            quarantine_expires_at=quarantine.expires_at if quarantine else None,
+            message=f"Client quarantined for {hours} hour(s); allowlist-only DNS enforced after sync",
+        )
+
+    def end_device_quarantine(self, device_id: int) -> QuarantineActionResponse:
+        device = self.device_repo.get_by_id(device_id)
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+        ended = self.repo.end_quarantine(device_id)
+        if not ended:
+            raise HTTPException(status_code=404, detail="No active quarantine for this device")
+        self.db.commit()
+        self.sync_repo.notify_policy_changed(source="admin_quarantine_release")
+        return QuarantineActionResponse(
+            device_id=device_id,
+            in_quarantine=False,
+            quarantine_expires_at=None,
+            message="Quarantine ended; normal policy restored after sync",
         )

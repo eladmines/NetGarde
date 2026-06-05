@@ -12,9 +12,12 @@ from app.features.client_behavior.schemas.behavior import (
     BehaviorRecomputeResult,
     BlockedClientsListResponse,
     ClientBlockSyncResponse,
+    ClientBlockedDomainCreate,
     ClientBlockedDomainRead,
     DeviceSecurityPolicyRead,
     DeviceSecurityPolicyUpdate,
+    QuarantineActionResponse,
+    QuarantineStartRequest,
 )
 from app.features.client_behavior.services.client_behavior_api_service import ClientBehaviorApiService
 from app.features.policy.schemas.policy import AssignPolicyProfileRequest, DevicePolicyAssignmentRead
@@ -215,7 +218,7 @@ def list_blocked_clients_endpoint(
     _: None = Depends(verify_admin_api_token),
     behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
 ):
-    """Devices with active auto-blocks after abnormal behavior scores."""
+    """Devices with active quarantine or per-device DNS blocks."""
     return behavior.list_blocked_clients()
 
 
@@ -345,6 +348,17 @@ def list_client_blocks_endpoint(
     return behavior.list_client_blocks(device_id)
 
 
+@router.post("/{device_id}/client-blocks", response_model=ClientBlockedDomainRead)
+def create_client_block_endpoint(
+    device_id: int,
+    body: ClientBlockedDomainCreate,
+    _: None = Depends(verify_admin_api_token),
+    behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
+):
+    """Manually block a domain for one client (merged into dnsmasq per-device rules)."""
+    return behavior.create_client_block(device_id, body)
+
+
 @router.delete("/{device_id}/client-blocks/{block_id}")
 def revoke_client_block_endpoint(
     device_id: int,
@@ -353,3 +367,24 @@ def revoke_client_block_endpoint(
     behavior: ClientBehaviorApiService = Depends(get_client_behavior_service),
 ):
     return behavior.revoke_client_block(device_id, block_id)
+
+
+@router.post("/{device_id}/quarantine", response_model=QuarantineActionResponse)
+def start_device_quarantine_endpoint(
+    device_id: int,
+    body: QuarantineStartRequest,
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    """Block client at DNS: allowlist-only mode for the given duration."""
+    return service.start_device_quarantine(device_id, hours=body.hours)
+
+
+@router.delete("/{device_id}/quarantine", response_model=QuarantineActionResponse)
+def end_device_quarantine_endpoint(
+    device_id: int,
+    _: None = Depends(verify_admin_api_token),
+    service: PolicyService = Depends(get_policy_service),
+):
+    """Release client from quarantine early."""
+    return service.end_device_quarantine(device_id)
