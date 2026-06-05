@@ -110,7 +110,7 @@ services:
       - ./dns-sync/output:/etc/dnsmasq.d:rw
     environment:
       - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
-      - API_ENDPOINT=${API_ENDPOINT:-/blocked-sites}
+      - POLICY_DNS_SYNC_ENDPOINT=${POLICY_DNS_SYNC_ENDPOINT:-/policy/dns-sync}
       - DEVICE_SYNC_ENDPOINT=${DEVICE_SYNC_ENDPOINT:-/devices/sync-dhcp}
       - DHCP_LEASES_PATH=${DHCP_LEASES_PATH:-/var/lib/misc/dnsmasq.leases}
       - DEVICE_SYNC_ENABLED=${DEVICE_SYNC_ENABLED:-1}
@@ -119,7 +119,6 @@ services:
       - BLOCK_IPV6_IP=${BLOCK_IPV6_IP:-::}
       - DNS_CONFIG_PATH=${DNS_CONFIG_PATH:-/etc/dnsmasq.d/blocked-domains.conf}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0}  # Run once and exit (for manual testing)
-      - PAGE_SIZE=${PAGE_SIZE:-100}
       - DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-}  # Empty for dev
     depends_on:
       - backend
