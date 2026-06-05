@@ -39,6 +39,23 @@ class BehaviorProfileRead(BaseModel):
     updated_at: Optional[datetime] = None
 
 
+class ClientBlockedDomainCreate(BaseModel):
+    domain: str = Field(min_length=1, max_length=253)
+    expires_in_hours: Optional[int] = Field(default=None, ge=1, le=24 * 30)
+
+
+class QuarantineStartRequest(BaseModel):
+    hours: int = Field(default=4, ge=1, le=168)
+    reason: Optional[str] = Field(default=None, max_length=500)
+
+
+class QuarantineActionResponse(BaseModel):
+    device_id: int
+    in_quarantine: bool
+    quarantine_expires_at: Optional[datetime] = None
+    message: str
+
+
 class ClientBlockedDomainRead(BaseModel):
     id: int
     device_id: int
@@ -68,7 +85,7 @@ class BehaviorRecomputeResult(BaseModel):
 
 
 class BlockedClientSummary(BaseModel):
-    """Device with active behavior-driven DNS blocks after an abnormal score."""
+    """Device with active admin/quarantine enforcement or per-device DNS blocks."""
 
     device_id: int
     client_ip: Optional[str] = None
@@ -76,9 +93,12 @@ class BlockedClientSummary(BaseModel):
     mac_address: Optional[str] = None
     last_score: Optional[int] = None
     last_scored_at: Optional[datetime] = None
+    in_quarantine: bool = False
+    quarantine_expires_at: Optional[datetime] = None
     active_block_count: int = 0
     latest_blocked_domain: Optional[str] = None
     latest_block_at: Optional[datetime] = None
+    latest_block_source: Optional[str] = None
 
 
 class BlockedClientsListResponse(BaseModel):

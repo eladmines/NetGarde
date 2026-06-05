@@ -105,9 +105,19 @@ export interface BlockedClientSummary {
   mac_address: string | null;
   last_score: number | null;
   last_scored_at: string | null;
+  in_quarantine: boolean;
+  quarantine_expires_at: string | null;
   active_block_count: number;
   latest_blocked_domain: string | null;
   latest_block_at: string | null;
+  latest_block_source: string | null;
+}
+
+export interface QuarantineActionResult {
+  device_id: number;
+  in_quarantine: boolean;
+  quarantine_expires_at: string | null;
+  message: string;
 }
 
 export interface BlockedClientsListResponse {

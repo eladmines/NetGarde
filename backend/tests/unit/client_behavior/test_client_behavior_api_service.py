@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
 
-from app.features.client_behavior.schemas.behavior import DeviceSecurityPolicyUpdate
+from app.features.client_behavior.schemas.behavior import (
+    ClientBlockedDomainCreate,
+    DeviceSecurityPolicyUpdate,
+)
 from app.features.client_behavior.services.client_behavior_api_service import ClientBehaviorApiService
 from app.features.dns_queries.models.dns_alert import DnsAlert
 from tests.helpers.factories import create_behavior_block, create_vpn_device
@@ -31,6 +34,17 @@ def test_security_policy_update(db_session):
         DeviceSecurityPolicyUpdate(auto_block_threshold=80),
     )
     assert updated.auto_block_threshold == 80
+
+
+def test_create_client_block_manual(db_session):
+    device, _ = create_vpn_device(db_session, ip="10.0.0.55")
+    svc = ClientBehaviorApiService(db_session)
+    created = svc.create_client_block(
+        device.id,
+        ClientBlockedDomainCreate(domain="manual.block.test"),
+    )
+    assert created.source == "admin_manual"
+    assert created.domain == "manual.block.test"
 
 
 def test_revoke_client_block(db_session):

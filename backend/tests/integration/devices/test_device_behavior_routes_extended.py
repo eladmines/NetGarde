@@ -84,3 +84,60 @@ def test_client_blocks_sync_endpoint(api_client, dns_ingest_env, vpn_device, db_
     assert response.status_code == 200
     body = response.json()
     assert "entries" in body
+
+
+def test_create_client_block_manual(api_client, vpn_device):
+    response = api_client.post(
+        f"/devices/{vpn_device.id}/client-blocks",
+        json={"domain": "https://Bad.Example.COM/path"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["domain"] == "bad.example.com"
+    assert body["source"] == "admin_manual"
+
+    listed = api_client.get(f"/devices/{vpn_device.id}/client-blocks")
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+
+
+def test_start_and_end_quarantine(api_client, vpn_device, db_session):
+    start = api_client.post(
+        f"/devices/{vpn_device.id}/quarantine",
+        json={"hours": 2},
+    )
+    assert start.status_code == 200
+    body = start.json()
+    assert body["in_quarantine"] is True
+    assert body["quarantine_expires_at"] is not None
+
+    assignment = api_client.get(f"/devices/{vpn_device.id}/policy-assignment")
+    assert assignment.status_code == 200
+    assert assignment.json()["in_quarantine"] is True
+
+    blocked = api_client.get("/devices/blocked-clients")
+    assert blocked.status_code == 200
+    items = blocked.json()["items"]
+    assert any(i["device_id"] == vpn_device.id and i["in_quarantine"] for i in items)
+
+    end = api_client.delete(f"/devices/{vpn_device.id}/quarantine")
+    assert end.status_code == 200
+    assert end.json()["in_quarantine"] is False
+
+    assignment2 = api_client.get(f"/devices/{vpn_device.id}/policy-assignment")
+    assert assignment2.json()["in_quarantine"] is False
+
+
+def test_quarantine_requires_mac(api_client, db_session):
+    from tests.helpers.factories import create_ip_lease
+
+    lease = create_ip_lease(db_session, ip="10.0.0.99", device_id="no-mac-device")
+    from app.features.devices.models.device import Device
+
+    device = Device(ip_lease_id=lease.id, hostname="no-mac", mac_address=None, source="manual")
+    db_session.add(device)
+    db_session.commit()
+    db_session.refresh(device)
+
+    response = api_client.post(f"/devices/{device.id}/quarantine", json={"hours": 1})
+    assert response.status_code == 400

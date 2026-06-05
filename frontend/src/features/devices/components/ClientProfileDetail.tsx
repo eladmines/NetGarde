@@ -13,6 +13,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
@@ -21,6 +22,7 @@ import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import BlockIcon from '@mui/icons-material/Block';
 import IconButton from '@mui/material/IconButton';
 import { devicesApi } from '../config/api';
 import { policyApi } from '../../policy/config/api';
@@ -64,6 +66,8 @@ export default function ClientProfileDetail({
   const [review, setReview] = useState<BehaviorReview | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [blockDomain, setBlockDomain] = useState('');
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -145,13 +149,93 @@ export default function ClientProfileDetail({
     }
   };
 
+  const applyPolicyAfterBlock = async () => {
+    try {
+      const result = await policyApi.applyPolicy();
+      setActionMessage(result.message);
+    } catch (e) {
+      setActionMessage(
+        e instanceof Error ? e.message : 'Block saved; policy sync may be delayed',
+      );
+    }
+  };
+
+  const startQuarantine = async () => {
+    setSaving(true);
+    setActionMessage(null);
+    try {
+      const result = await devicesApi.startQuarantine(device.id, 4);
+      setPolicyAssignment({
+        device_id: device.id,
+        policy_profile_id: policyAssignment?.policy_profile_id ?? null,
+        policy_profile_slug: policyAssignment?.policy_profile_slug ?? null,
+        policy_profile_name: policyAssignment?.policy_profile_name ?? null,
+        in_quarantine: result.in_quarantine,
+        quarantine_expires_at: result.quarantine_expires_at,
+      });
+      setActionMessage(result.message);
+      await applyPolicyAfterBlock();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to quarantine client');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const endQuarantine = async () => {
+    setSaving(true);
+    setActionMessage(null);
+    try {
+      const result = await devicesApi.endQuarantine(device.id);
+      setPolicyAssignment({
+        device_id: device.id,
+        policy_profile_id: policyAssignment?.policy_profile_id ?? null,
+        policy_profile_slug: policyAssignment?.policy_profile_slug ?? null,
+        policy_profile_name: policyAssignment?.policy_profile_name ?? null,
+        in_quarantine: result.in_quarantine,
+        quarantine_expires_at: result.quarantine_expires_at,
+      });
+      setActionMessage(result.message);
+      await applyPolicyAfterBlock();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to end quarantine');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addDomainBlock = async () => {
+    const domain = blockDomain.trim();
+    if (!domain) return;
+    setSaving(true);
+    setActionMessage(null);
+    try {
+      await devicesApi.createClientBlock(device.id, domain);
+      setBlockDomain('');
+      await load();
+      await applyPolicyAfterBlock();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to block domain');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const revokeBlock = async (blockId: number) => {
     try {
       await devicesApi.revokeClientBlock(device.id, blockId);
       await load();
+      await applyPolicyAfterBlock();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to revoke block');
     }
+  };
+
+  const formatBlockSource = (source: string) => {
+    if (source === 'admin_manual') return 'Admin';
+    if (source === 'behavior_auto') return 'Behavior auto';
+    if (source === 'forbidden_country') return 'Forbidden country';
+    return source;
   };
 
   const label = device.hostname || device.client_ip;
@@ -233,6 +317,11 @@ export default function ClientProfileDetail({
           </Box>
         )}
         {error && <Alert severity="error">{error}</Alert>}
+        {actionMessage && (
+          <Alert severity="success" onClose={() => setActionMessage(null)}>
+            {actionMessage}
+          </Alert>
+        )}
 
         {!loading && profile && (
           <>
@@ -261,6 +350,54 @@ export default function ClientProfileDetail({
                   Last scored: {formatShortDateTime(profile.last_scored_at)}
                 </Typography>
               )}
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Block client
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Quarantine restricts this device to allowlist-only DNS. You can also block individual
+                domains without full quarantine.
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+                {policyAssignment?.in_quarantine ? (
+                  <Button
+                    color="success"
+                    variant="contained"
+                    startIcon={<BlockIcon />}
+                    onClick={endQuarantine}
+                    disabled={saving}
+                  >
+                    End quarantine
+                  </Button>
+                ) : (
+                  <Button
+                    color="error"
+                    variant="contained"
+                    startIcon={<BlockIcon />}
+                    onClick={startQuarantine}
+                    disabled={saving}
+                  >
+                    Quarantine client (4h)
+                  </Button>
+                )}
+                <TextField
+                  size="small"
+                  label="Block domain"
+                  placeholder="example.com"
+                  value={blockDomain}
+                  onChange={(e) => setBlockDomain(e.target.value)}
+                  disabled={saving}
+                  sx={{ minWidth: 220, flex: 1 }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addDomainBlock();
+                  }}
+                />
+                <Button variant="outlined" onClick={addDomainBlock} disabled={saving || !blockDomain.trim()}>
+                  Block domain
+                </Button>
+              </Stack>
             </Box>
 
             <Box>
@@ -380,11 +517,15 @@ export default function ClientProfileDetail({
               </Box>
             )}
 
-            {blocks.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  Active per-device blocks
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Active per-device blocks
+              </Typography>
+              {blocks.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No active domain blocks for this device.
                 </Typography>
+              ) : (
                 <List dense disablePadding>
                   {blocks.map((b) => (
                     <Box key={b.id}>
@@ -399,8 +540,8 @@ export default function ClientProfileDetail({
                           primary={b.domain}
                           secondary={
                             b.expires_at
-                              ? `Expires ${formatShortDateTime(b.expires_at)} · score ${b.score ?? '—'}`
-                              : `score ${b.score ?? '—'}`
+                              ? `Expires ${formatShortDateTime(b.expires_at)} · ${formatBlockSource(b.source)} · score ${b.score ?? '—'}`
+                              : `${formatBlockSource(b.source)} · score ${b.score ?? '—'}`
                           }
                         />
                       </ListItem>
@@ -408,8 +549,8 @@ export default function ClientProfileDetail({
                     </Box>
                   ))}
                 </List>
-              </Box>
-            )}
+              )}
+            </Box>
 
             <Box>
               <Typography variant="subtitle1" sx={{ mb: 1 }}>

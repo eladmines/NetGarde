@@ -37,6 +37,9 @@ class PolicySyncRepository:
         return self.get_status()
 
     def notify_policy_changed(self, source: str = "api") -> None:
+        bind = self.db.get_bind()
+        if bind is None or bind.dialect.name != "postgresql":
+            return
         payload = json.dumps({"source": source, "at": datetime.now(timezone.utc).isoformat()})
         self.db.execute(text("SELECT pg_notify('policy_changed', :payload)"), {"payload": payload})
         self.db.commit()
