@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -16,8 +15,6 @@ from app.features.vpn.schemas.usage_history import UsageHistoryPoint, UsageHisto
 from app.features.vpn.schemas.usage_live import DeviceUsageLiveItem, DeviceUsageLiveResponse
 from app.shared.config import settings
 from app.shared.redis_client import get_redis, redis_available
-
-logger = logging.getLogger(__name__)
 
 MIB = 1024 * 1024
 DEVICE_KEY_PREFIX = "ng:usage:device:"

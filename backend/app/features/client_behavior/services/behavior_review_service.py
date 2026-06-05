@@ -17,6 +17,7 @@ from app.features.dns_queries.models.dns_alert import DnsAlert
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.policy.sensitivity import alert_threshold_for_sensitivity
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -154,9 +155,15 @@ class BehaviorReviewService:
                 llm_model = settings.OLLAMA_MODEL
                 return summarize_behavior_review_ollama(snapshot), "llm", llm_model, None
             llm_error = f"Unknown BEHAVIOR_REVIEW_MODE={mode}"
-            logger.warning(llm_error)
+            logger.warning(
+                "Unknown behavior review mode",
+                extra=structured_extra("behavior_review_unknown_mode", mode=mode),
+            )
         except Exception as exc:
             llm_error = str(exc)
-            logger.warning("LLM behavior review failed, using template fallback: %s", exc)
+            logger.warning(
+                "LLM behavior review failed, using template fallback",
+                extra=structured_extra("behavior_review_llm_failed", error=str(exc)),
+            )
 
         return build_device_review_template(snapshot), "template", None, llm_error

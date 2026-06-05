@@ -12,18 +12,13 @@ import sys
 import re
 import json
 import time
-import logging
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Set
 
+from log_config import setup_logging, structured_extra
 from noise_filter import is_noise_domain
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - [dns_watcher] %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging(service="log-watcher", logger_name=__name__)
 
 # Configuration from environment variables
 DNSMASQ_LOG_PATH = os.getenv('DNSMASQ_LOG_PATH', '/var/log/dnsmasq.log')
@@ -50,7 +45,10 @@ def load_blocked_domains(config_path: str) -> Set[str]:
     blocked = set()
     try:
         if not os.path.exists(config_path):
-            logger.warning(f"Blocked domains file not found: {config_path}")
+            logger.warning(
+                "Blocked domains file not found",
+                extra=structured_extra("blocked_domains_missing", path=config_path),
+            )
             return blocked
 
         with open(config_path, 'r') as f:
@@ -62,10 +60,11 @@ def load_blocked_domains(config_path: str) -> Set[str]:
                         domain = parts[1]
                         if domain:
                             blocked.add(domain.lower())
-
-        logger.info(f"Loaded {len(blocked)} blocked domains from {config_path}")
     except Exception as e:
-        logger.error(f"Error loading blocked domains: {e}")
+        logger.error(
+            "Failed to load blocked domains",
+            extra=structured_extra("blocked_domains_load_failed", error=str(e)),
+        )
 
     return blocked
 
@@ -78,7 +77,10 @@ def get_last_position(state_file: str) -> int:
                 if content:
                     return int(content)
     except (ValueError, IOError) as e:
-        logger.warning(f"Error reading state file: {e}")
+        logger.warning(
+            "Failed to read log watcher state file",
+            extra=structured_extra("log_watcher_state_read_failed", error=str(e)),
+        )
     return 0
 
 
@@ -90,7 +92,10 @@ def save_position(state_file: str, position: int):
         with open(state_file, 'w') as f:
             f.write(str(position))
     except IOError as e:
-        logger.error(f"Error saving state file: {e}")
+        logger.error(
+            "Failed to save log watcher state file",
+            extra=structured_extra("log_watcher_state_write_failed", error=str(e)),
+        )
 
 
 def parse_timestamp(timestamp_str: str) -> Optional[datetime]:
@@ -166,19 +171,44 @@ def send_to_api(queries: List[Dict[str, Any]], api_url: str) -> bool:
 
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status in (200, 201):
+                blocked_count = sum(1 for q in queries if q.get("blocked"))
+                logger.info(
+                    "DNS ingest batch sent",
+                    extra=structured_extra(
+                        "dns_ingest_batch_ok",
+                        batch_size=len(queries),
+                        blocked_count=blocked_count,
+                    ),
+                )
                 return True
-            logger.error(f"API returned status {response.status}")
+            logger.error(
+                "DNS ingest API error",
+                extra=structured_extra("dns_ingest_failed", status_code=response.status),
+            )
             return False
 
     except urllib.error.HTTPError as e:
         body = e.read().decode('utf-8', errors='replace')
-        logger.error(f"HTTP error: {e.code} - {body}")
+        logger.error(
+            "DNS ingest HTTP error",
+            extra=structured_extra(
+                "dns_ingest_failed",
+                status_code=e.code,
+                body=body[:500],
+            ),
+        )
         return False
     except urllib.error.URLError as e:
-        logger.error(f"URL error: {e.reason}")
+        logger.error(
+            "DNS ingest connection error",
+            extra=structured_extra("dns_ingest_failed", error=str(e.reason)),
+        )
         return False
     except Exception as e:
-        logger.error(f"Error sending to API: {e}")
+        logger.error(
+            "DNS ingest failed",
+            extra=structured_extra("dns_ingest_failed", error=str(e)),
+        )
         return False
 
 
@@ -187,15 +217,26 @@ def wait_for_api(api_url: str, max_retries: int = 30, retry_interval: int = 10):
     import urllib.error
 
     health_url = f"{api_url.rstrip('/')}/health"
-    for _ in range(max_retries):
+    for attempt in range(max_retries):
         try:
             with urllib.request.urlopen(health_url, timeout=5) as response:
                 if response.status == 200:
-                    logger.info("Backend API is available")
+                    logger.info(
+                        "Log watcher connected to backend",
+                        extra=structured_extra("log_watcher_started", api_url=api_url),
+                    )
                     return
         except Exception:
-            logger.info("Waiting for backend API...")
+            if attempt == 0 or (attempt + 1) % 6 == 0:
+                logger.warning(
+                    "Waiting for backend API",
+                    extra=structured_extra("log_watcher_waiting_api", attempt=attempt + 1),
+                )
         time.sleep(retry_interval)
+    logger.error(
+        "Backend API unavailable",
+        extra=structured_extra("log_watcher_api_unavailable", api_url=api_url),
+    )
     raise RuntimeError("Backend API not available")
 
 
@@ -216,7 +257,10 @@ def main():
                 last_reload = now
 
             if not os.path.exists(DNSMASQ_LOG_PATH):
-                logger.warning(f"dnsmasq log not found: {DNSMASQ_LOG_PATH}")
+                logger.warning(
+                    "dnsmasq log not found",
+                    extra=structured_extra("dnsmasq_log_missing", path=DNSMASQ_LOG_PATH),
+                )
                 time.sleep(POLL_INTERVAL)
                 continue
 
@@ -242,10 +286,17 @@ def main():
 
             time.sleep(POLL_INTERVAL)
         except KeyboardInterrupt:
-            logger.info("Shutting down…")
+            logger.info(
+                "Log watcher shutting down",
+                extra=structured_extra("log_watcher_shutdown"),
+            )
             return 0
         except Exception as e:
-            logger.error(f"Watcher error: {e}")
+            logger.error(
+                "Log watcher error",
+                extra=structured_extra("log_watcher_error", error=str(e)),
+                exc_info=True,
+            )
             time.sleep(POLL_INTERVAL)
 
 

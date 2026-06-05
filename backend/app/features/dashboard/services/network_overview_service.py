@@ -14,6 +14,7 @@ from app.features.dns_queries.repositories.dns_query_repository import DnsQueryR
 from app.features.policy.repositories.policy_repository import PolicyRepository
 from app.features.vpn.services.usage_service import UsageService
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -146,10 +147,16 @@ class NetworkOverviewService:
                 llm_model = settings.OLLAMA_MODEL
                 summary = ollama_llm_client.summarize_network_review(snapshot)
                 return [], summary, "llm", llm_model, None
-            logger.warning("Unknown NETWORK_REVIEW_MODE=%s, using template", mode)
+            logger.warning(
+                "Unknown network review mode",
+                extra=structured_extra("network_review_unknown_mode", mode=mode),
+            )
             llm_error = f"Unknown NETWORK_REVIEW_MODE={mode}"
         except Exception as exc:
             llm_error = str(exc)
-            logger.warning("LLM network review failed, using template fallback: %s", exc)
+            logger.warning(
+                "LLM network review failed, using template fallback",
+                extra=structured_extra("network_review_llm_failed", error=str(exc)),
+            )
 
         return build_network_overview_bullets(snapshot), None, "template", None, llm_error

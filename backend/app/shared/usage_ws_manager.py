@@ -1,12 +1,14 @@
 """WebSocket pool for real-time VPN usage / bandwidth dashboard updates."""
 
 import json
-import logging
 from typing import Any, List
 
 from fastapi import WebSocket
 
-logger = logging.getLogger(__name__)
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class UsageConnectionManager:
@@ -16,12 +18,10 @@ class UsageConnectionManager:
     async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self.active_connections.append(websocket)
-        logger.info("Usage WebSocket connected (%s clients)", len(self.active_connections))
 
     def disconnect(self, websocket: WebSocket) -> None:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-        logger.info("Usage WebSocket disconnected (%s clients)", len(self.active_connections))
 
     async def broadcast(self, data: Any) -> None:
         if not self.active_connections:
@@ -32,7 +32,10 @@ class UsageConnectionManager:
             try:
                 await conn.send_text(message)
             except Exception as exc:
-                logger.warning("Usage WebSocket send failed: %s", exc)
+                logger.warning(
+                    "Usage WebSocket broadcast send failed",
+                    extra=structured_extra("usage_ws_send_failed", error=str(exc)),
+                )
                 dead.append(conn)
         for conn in dead:
             self.disconnect(conn)

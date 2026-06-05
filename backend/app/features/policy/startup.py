@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import logging
-
 from app.features.policy.pack_common import REMOTE_PACK_SLUGS
 from app.features.policy.pack_fetch import refresh_remote_pack
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def warmup_policy_packs() -> None:
@@ -17,6 +17,20 @@ def warmup_policy_packs() -> None:
     for slug in REMOTE_PACK_SLUGS:
         try:
             domains = refresh_remote_pack(slug, force=False)
-            log.info("policy pack %s ready (%d domains)", slug, len(domains))
+            logger.info(
+                "Policy pack warmup ready",
+                extra=structured_extra(
+                    "policy_pack_warmup_ready",
+                    slug=slug,
+                    domain_count=len(domains),
+                ),
+            )
         except Exception as e:
-            log.warning("policy pack %s warmup failed: %s", slug, e)
+            logger.warning(
+                "Policy pack warmup failed",
+                extra=structured_extra(
+                    "policy_pack_warmup_failed",
+                    slug=slug,
+                    error=str(e),
+                ),
+            )

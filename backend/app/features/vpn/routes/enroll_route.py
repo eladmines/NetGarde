@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -7,9 +5,11 @@ from app.features.vpn.schemas.enroll import EnrollRequest, EnrollResponse
 from app.features.vpn.services.enroll_service import EnrollService
 from app.shared.dependencies import get_db
 from app.shared.device_auth import verify_enroll_bootstrap
+from app.shared.logging_context import structured_extra
 from app.shared.request_client_ip import client_ip_from_request
+from app.shared.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/v1", tags=["VPN"])
 
@@ -28,13 +28,21 @@ def enroll_endpoint(
             connect_ip=client_ip_from_request(request),
         )
     except ValueError as e:
-        logger.warning("Enroll rejected: %s", e)
+        logger.warning(
+            "Enroll rejected",
+            extra=structured_extra("enroll_rejected", reason=str(e)),
+        )
         raise HTTPException(status_code=409, detail=str(e)) from e
     except RuntimeError as e:
-        # Common misconfig: VPN_ENDPOINT / VPN_SERVER_PUBLIC_KEY not set.
-        logger.exception("Enroll failed due to server configuration")
+        logger.exception(
+            "Enroll failed due to server configuration",
+            extra=structured_extra("enroll_config_error"),
+        )
         raise HTTPException(status_code=500, detail=str(e)) from e
-    except Exception as e:
-        logger.exception("Unexpected enroll error")
-        raise HTTPException(status_code=500, detail="Enroll failed") from e
+    except Exception:
+        logger.exception(
+            "Unexpected enroll error",
+            extra=structured_extra("enroll_error"),
+        )
+        raise HTTPException(status_code=500, detail="Enroll failed") from None
 

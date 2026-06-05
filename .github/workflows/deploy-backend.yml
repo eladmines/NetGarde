@@ -454,3 +454,5 @@ jobs:
 
             echo "AI review: template mode by default. For local Ollama after freeing disk:"
             echo "  sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh"
+            echo "CloudWatch logging (one-time, requires IAM logs permissions on instance role):"
+            echo "  sudo bash ~/netgarde/scripts/ec2-setup-cloudwatch.sh"

@@ -11,6 +11,7 @@ from app.features.vpn.schemas.usage_live import DeviceUsageLiveItem, DeviceUsage
 from app.features.vpn.services import usage_redis_store
 from app.features.vpn.services.usage_broadcast import broadcast_usage_update
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
 from app.shared.redis_client import redis_available
 from app.shared.utils.logging import get_logger
 
@@ -35,7 +36,10 @@ class UsageService:
             try:
                 record_result = usage_redis_store.record_sample(payload)
             except Exception as exc:
-                logger.warning("Redis usage record failed: %s", exc)
+                logger.warning(
+                    "Redis usage record failed",
+                    extra=structured_extra("usage_redis_write_failed", error=str(exc)),
+                )
 
         if settings.USAGE_PERSIST_SAMPLES:
             self.usage_repo.create_sample(
@@ -76,15 +80,15 @@ class UsageService:
             )
             broadcast_usage_update(aggregate_point=record_result.aggregate_point, live=live)
 
-        logger.info(
-            "Usage sample stored",
-            extra={
-                "device_id": payload.device_id,
-                "rate_mib_per_sec": round(rate_mib_per_sec, 2),
-                "alert": alert_created,
-                "redis": record_result is not None,
-            },
-        )
+        if alert_created:
+            logger.warning(
+                "Bandwidth spike detected",
+                extra=structured_extra(
+                    "bandwidth_spike",
+                    device_id=payload.device_id,
+                    rate_mib_per_sec=round(rate_mib_per_sec, 2),
+                ),
+            )
         return UsageReportResponse(
             stored=True,
             alert_created=alert_created,
@@ -96,7 +100,10 @@ class UsageService:
             try:
                 return usage_redis_store.list_live(self.db, max_age_sec=max_age_sec)
             except Exception as exc:
-                logger.warning("Redis usage live read failed: %s", exc)
+                logger.warning(
+                    "Redis usage live read failed",
+                    extra=structured_extra("usage_redis_live_read_failed", error=str(exc)),
+                )
 
         age = max_age_sec if max_age_sec is not None else settings.USAGE_LIVE_MAX_AGE_SEC
         age = max(5, min(age, 300))
@@ -131,5 +138,8 @@ class UsageService:
             try:
                 return usage_redis_store.list_history(minutes=minutes)
             except Exception as exc:
-                logger.warning("Redis usage history read failed: %s", exc)
+                logger.warning(
+                    "Redis usage history read failed",
+                    extra=structured_extra("usage_redis_history_read_failed", error=str(exc)),
+                )
         return UsageHistoryResponse(points=[], minutes=minutes or settings.USAGE_HISTORY_MINUTES)

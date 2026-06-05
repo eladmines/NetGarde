@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.features.devices.schemas.device import DeviceCreate, DeviceUpdate, DhcpSyncRequest
 from app.features.devices.services.device_service_interface import IDeviceService
 from app.features.devices.errors.device import DeviceAlreadyExistsError, DeviceNotFoundError
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -15,7 +16,10 @@ def create_device_controller(data: DeviceCreate, db: Session, service: IDeviceSe
     except DeviceAlreadyExistsError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
-        logger.error("POST /devices - error", exc_info=True)
+        logger.exception(
+            "Device create failed",
+            extra=structured_extra("device_create_failed"),
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -23,7 +27,10 @@ def get_devices_controller(db: Session, service: IDeviceService):
     try:
         return service.get_devices(db)
     except Exception:
-        logger.error("GET /devices - error", exc_info=True)
+        logger.exception(
+            "Device list failed",
+            extra=structured_extra("device_list_failed"),
+        )
         raise HTTPException(status_code=500, detail="Failed to fetch devices")
 
 
@@ -35,7 +42,10 @@ def update_device_controller(device_id: int, data: DeviceUpdate, db: Session, se
     except DeviceAlreadyExistsError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
-        logger.error("PUT /devices/{device_id} - error", exc_info=True)
+        logger.exception(
+            "Device update failed",
+            extra=structured_extra("device_update_failed", device_id=device_id),
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -45,7 +55,10 @@ def delete_device_controller(device_id: int, db: Session, service: IDeviceServic
     except DeviceNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception:
-        logger.error("DELETE /devices/{device_id} - error", exc_info=True)
+        logger.exception(
+            "Device delete failed",
+            extra=structured_extra("device_delete_failed", device_id=device_id),
+        )
         raise HTTPException(status_code=500, detail="Failed to delete device")
 
 
@@ -53,5 +66,8 @@ def sync_dhcp_leases_controller(payload: DhcpSyncRequest, db: Session, service: 
     try:
         return service.sync_from_dhcp_leases(payload, db)
     except Exception as e:
-        logger.error("POST /devices/sync-dhcp - error", exc_info=True)
+        logger.exception(
+            "DHCP sync failed",
+            extra=structured_extra("dhcp_sync_failed"),
+        )
         raise HTTPException(status_code=400, detail=str(e))

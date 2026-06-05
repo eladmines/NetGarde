@@ -13,6 +13,10 @@ from app.features.vpn.services.ip_allocation_service import IpAllocationService
 from app.features.vpn.services.wireguard_agent_client import apply_peer_on_host
 from app.shared.config import settings
 from app.shared.device_identity import DeviceTokenError, create_device_token
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class EnrollService:
@@ -146,6 +150,15 @@ class EnrollService:
             device_token = create_device_token(device_id=device_id, public_key=public_key)
         except DeviceTokenError as exc:
             raise RuntimeError(str(exc)) from exc
+
+        logger.info(
+            "VPN enroll succeeded",
+            extra=structured_extra(
+                "enroll_success",
+                device_id=device_id,
+                lease_ip=lease.ip,
+            ),
+        )
 
         return {
             "address": f"{lease.ip}/32",

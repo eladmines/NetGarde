@@ -11,6 +11,7 @@ from app.features.dns_queries.models.dns_alert import DnsAlert
 from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertRepository
 from app.shared.config import settings
 from app.shared.domain_country import country_display_name
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -62,9 +63,13 @@ class DeviceCountryAlertService:
                 device_id=device_id,
             )
             alerts_created += 1
-            logger.info(
+            logger.warning(
                 "New country region alert",
-                extra={"device_id": device_id, "country_code": code},
+                extra=structured_extra(
+                    "new_country_region_alert",
+                    device_id=device_id,
+                    country_code=code,
+                ),
             )
 
         return alerts_created

@@ -8,6 +8,7 @@ from app.shared.config import settings
 from app.shared.domain_country import country_display_name
 from app.shared.geoip import lookup_geo
 from app.shared.request_client_ip import is_public_ip
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -101,7 +102,11 @@ class VpnLoginGeoBlockService:
         ip = self.resolve_enroll_public_ip(connect_ip, client_reported_ip) or "unknown"
         logger.warning(
             "VPN enroll denied: blocked login country",
-            extra={"country_code": country, "public_ip": ip},
+            extra=structured_extra(
+                "enroll_geo_blocked",
+                country_code=country,
+                public_ip=ip,
+            ),
         )
         raise VpnLoginGeoBlockedError(
             f"VPN enrollment is not allowed from {name} ({country}). "

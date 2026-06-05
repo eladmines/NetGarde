@@ -8,6 +8,7 @@ from typing import Optional
 import httpx
 
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
 from app.shared.request_client_ip import is_public_ip
 from app.shared.utils.logging import get_logger
 
@@ -38,7 +39,10 @@ def lookup_geo(ip: str) -> Optional[GeoLocation]:
     if provider == "none":
         return None
     if provider != "ip_api":
-        logger.warning("Unknown GEOIP_PROVIDER=%s; skipping lookup", provider)
+        logger.warning(
+            "Unknown GEOIP provider; skipping lookup",
+            extra=structured_extra("geoip_unknown_provider", provider=provider),
+        )
         return None
 
     timeout = max(0.5, float(getattr(settings, "GEOIP_TIMEOUT_SEC", 3.0)))
@@ -51,15 +55,13 @@ def lookup_geo(ip: str) -> Optional[GeoLocation]:
             resp.raise_for_status()
             data = resp.json()
     except Exception as exc:
-        logger.warning("GeoIP lookup failed for %s: %s", ip, exc)
+        logger.warning(
+            "GeoIP lookup failed",
+            extra=structured_extra("geoip_lookup_failed", ip=ip, error=str(exc)),
+        )
         return None
 
     if data.get("status") != "success":
-        logger.info(
-            "GeoIP lookup rejected ip=%s message=%s",
-            ip,
-            data.get("message"),
-        )
         return None
 
     code = str(data.get("countryCode") or "").strip().upper()
