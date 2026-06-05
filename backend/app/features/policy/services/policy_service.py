@@ -198,10 +198,10 @@ class PolicyService:
         device = self.device_repo.get_by_id(device_id)
         if not device:
             raise HTTPException(status_code=404, detail="Device not found")
-        if not device.mac_address:
+        if not self._client_vpn_ip(device):
             raise HTTPException(
                 status_code=400,
-                detail="Device has no MAC address; quarantine requires DHCP MAC tagging",
+                detail="Device has no active VPN IP lease; block requires a enrolled WireGuard client",
             )
         self.repo.start_quarantine(device_id, score=None, hours=hours)
         self.db.commit()
