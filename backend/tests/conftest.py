@@ -64,20 +64,6 @@ def db_session():
 
 
 @pytest.fixture
-def sample_blocked_site_data():
-    return {
-        "domain": "example.com",
-        "reason": "Test reason",
-    }
-
-
-@pytest.fixture
-def sample_blocked_site(db_session, sample_blocked_site_data):
-    """Backward-compat fixture kept for older tests; returns dict only."""
-    return sample_blocked_site_data
-
-
-@pytest.fixture
 def seed_policy(db_session):
     return seed_policy_catalog(db_session)
 
