@@ -8,10 +8,10 @@ NetGarde intercepts all DNS traffic through a WireGuard VPN tunnel, blocks unwan
 
 ## 📸 Features
 
-- **DNS-Level Website Blocking** — Block domains via dnsmasq with automatic config sync
-- **Real-Time DNS Monitoring** — Live WebSocket feed of all DNS queries as they happen
-- **Dashboard & Analytics** — Statistics cards, data grid, and grouped site views
-- **Blocked Sites Management** — Full CRUD with categories and search
+- **Policy-Based DNS Blocking** — Block domains via policy packs, profiles, schedules, and behavior rules
+- **Real-Time DNS Monitoring** — Live WebSocket feed of DNS queries as they happen
+- **Dashboard & Analytics** — Network overview, live throughput, DNS alerts, and device insights
+- **Device & VPN Management** — WireGuard enroll, usage tracking, topology, and client profiles
 - **Noise Filtering** — Automatically hides system telemetry, CDN, and OS update noise
 - **VPN Integration** — All client traffic routed through WireGuard for transparent DNS control
 - **Automatic Log Ingestion** — Systemd service continuously parses dnsmasq logs and pushes to the API
@@ -58,7 +58,7 @@ NetGarde intercepts all DNS traffic through a WireGuard VPN tunnel, blocks unwan
 2. **dnsmasq** on the EC2 resolves DNS queries, blocking domains listed in `blocked-domains.conf`
 3. **dns_log_watcher** (systemd service) tails `dnsmasq.log` in real-time, parses new queries, and sends batches to the backend API every 2–3 seconds
 4. **FastAPI backend** broadcasts all queries via **WebSocket** to the live dashboard; by default only **blocked** queries are stored in PostgreSQL (RDS). Set `PERSIST_ALL_DNS=true` for legacy full logging.
-5. **dns-sync container** periodically pulls the blocked sites list from the API and regenerates `blocked-domains.conf` for dnsmasq
+5. **dns-sync container** periodically pulls policy DNS rules from `/policy/dns-sync` and regenerates `blocked-domains.conf` for dnsmasq
 6. **React dashboard** displays live feed, statistics, and management interfaces via CloudFront
 
 ---
@@ -67,7 +67,7 @@ NetGarde intercepts all DNS traffic through a WireGuard VPN tunnel, blocks unwan
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 19, TypeScript, Material UI 7, MUI X Data Grid & Charts |
+| **Frontend** | React 19, TypeScript, Material UI 7, MUI X Charts |
 | **Backend** | Python 3.11, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2 |
 | **Database** | PostgreSQL 16 (AWS RDS) |
 | **DNS Server** | dnsmasq |
@@ -85,24 +85,27 @@ NetGarde/
 ├── frontend/                   # React SPA (dashboard UI)
 │   └── src/
 │       ├── features/
-│       │   ├── dashboard/      # Stats, live feed, data grid, sites view
-│       │   ├── blocked-sites/  # Blocked sites CRUD
-│       │   └── categories/     # Categories management
+│       │   ├── dashboard/      # Network overview, live graphs, DNS alerts
+│       │   ├── policy/         # Policy packs, profiles, geo rules
+│       │   ├── devices/        # Client profiles and device map
+│       │   └── dns-queries/    # DNS types and API helpers
 │       ├── pages/              # Route pages
 │       └── shared/             # Shared utils, hooks, components
 │
 ├── backend/                    # FastAPI REST API + WebSocket
 │   └── app/
 │       ├── features/
-│       │   ├── blocked_sites/  # Models, schemas, repos, services, controllers, routes
-│       │   ├── categories/     # Models, schemas, repos, services, controllers, routes
-│       │   └── dns_queries/    # Models, schemas, repos, services, controllers, routes
+│       │   ├── policy/         # Packs, profiles, DNS sync, geo policy
+│       │   ├── devices/        # Devices, behavior, security policy
+│       │   ├── vpn/            # Enroll, usage, topology
+│       │   ├── dashboard/      # Network overview
+│       │   └── dns_queries/    # DNS ingest, alerts, stats
 │       ├── shared/             # DB config, middleware, utils, WebSocket manager
 │       └── main.py             # FastAPI app entry point
 │
-├── dns-sync/                   # DNS log watcher + blocked sites sync
+├── dns-sync/                   # DNS log watcher + policy DNS sync
 │   ├── dns_log_watcher.py      # Real-time log tail → API (systemd service)
-│   ├── sync.py                 # Pull blocked sites → dnsmasq config
+│   ├── sync.py                 # Pull policy DNS rules → dnsmasq config
 │   ├── noise_filter.py         # Filters telemetry/CDN noise domains
 │   └── netgarde-log-watcher.service  # systemd unit file
 │
@@ -178,28 +181,30 @@ npm start
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check |
-| **Blocked Sites** | | |
-| `GET` | `/blocked-sites` | List blocked sites (paginated) |
-| `POST` | `/blocked-sites` | Add a blocked site |
-| `PUT` | `/blocked-sites/{id}` | Update a blocked site |
-| `DELETE` | `/blocked-sites/{id}` | Delete a blocked site |
-| `GET` | `/blocked-sites/counts-by-category` | Counts grouped by category |
-| **Categories** | | |
-| `GET` | `/categories` | List categories |
-| `POST` | `/categories` | Create a category |
-| `PUT` | `/categories/{id}` | Update a category |
-| `DELETE` | `/categories/{id}` | Delete a category |
+| **Policy** | | |
+| `GET` | `/policy/packs` | List policy packs |
+| `GET` | `/policy/profiles` | List policy profiles |
+| `GET` | `/policy/dns-sync` | Effective DNS block rules for dnsmasq |
+| `POST` | `/policy/apply` | Queue policy sync to dnsmasq |
+| **Devices** | | |
+| `GET` | `/devices` | List devices |
+| `GET` | `/devices/blocked-clients` | Devices with active behavior blocks |
+| `GET` | `/devices/{id}/behavior-profile` | Client behavior profile |
+| **VPN** | | |
+| `POST` | `/v1/enroll` | WireGuard device enrollment |
+| `POST` | `/v1/usage` | Report VPN usage samples |
+| `GET` | `/vpn/topology` | VPN server and peer topology |
 | **DNS Queries** | | |
 | `GET` | `/dns-queries` | List DNS queries (paginated, filterable) |
 | `POST` | `/dns-queries` | Log a single DNS query |
 | `POST` | `/dns-queries/bulk` | Log multiple DNS queries |
 | `GET` | `/dns-queries/stats` | Query statistics (total, blocked, top domains) |
-| `GET` | `/dns-queries/alerts` | Anomaly alerts (blocked, new domain, suspicious, bandwidth) |
-| `GET` | `/dns-queries/whois?domain=` | WHOIS/RDAP lookup for a domain (from alerts UI) |
+| `GET` | `/dns-queries/alerts` | Anomaly alerts |
+| `GET` | `/dns-queries/whois?domain=` | WHOIS/RDAP lookup for a domain |
 | `GET` | `/dns-queries/sites` | Queries grouped by root domain |
-| `GET` | `/dns-queries/clients` | List unique client IPs |
-| `DELETE` | `/dns-queries/cleanup` | Delete records older than N days |
 | `WS` | `/dns-queries/ws` | Real-time WebSocket live feed |
+| **Dashboard** | | |
+| `GET` | `/dashboard/network-overview` | Network overview and review summary |
 
 ---
 
