@@ -29,7 +29,11 @@ from app.features.policy.schemas.policy import (
     PolicySyncStatusRead,
 )
 from app.features.policy.sensitivity import block_threshold_for_sensitivity
-from app.features.vpn.services.wireguard_agent_client import block_client_on_host, unblock_client_on_host
+from app.features.vpn.services.wireguard_agent_client import (
+    block_client_on_host,
+    sync_dns_policy_on_host,
+    unblock_client_on_host,
+)
 from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
@@ -187,11 +191,16 @@ class PolicyService:
         return self.sync_repo.record_sync(success=success, message=message)
 
     def apply_policy_now(self) -> PolicyApplyResponse:
-        """Queue immediate dns-sync via PostgreSQL NOTIFY (fallback if triggers missed)."""
+        """Push dns-sync on the EC2 host via wg-agent (runs run-sync.sh)."""
         self.sync_repo.notify_policy_changed(source="manual_apply")
+        if self._run_host_dns_sync("manual_apply"):
+            return PolicyApplyResponse(
+                queued=True,
+                message="Policy DNS sync completed; dnsmasq reloaded on host",
+            )
         return PolicyApplyResponse(
             queued=True,
-            message="Policy enforcement sync queued; dnsmasq reload follows in ~30 seconds",
+            message="Policy sync queued in DB; host dns-sync failed or WG_AGENT not configured",
         )
 
     def start_device_quarantine(self, device_id: int, *, hours: int = 4) -> QuarantineActionResponse:
@@ -207,12 +216,20 @@ class PolicyService:
         self.db.commit()
         self.sync_repo.notify_policy_changed(source="admin_quarantine")
         self._apply_full_network_block(device)
+        dns_synced = self._run_host_dns_sync("admin_quarantine")
         quarantine = self.repo.get_active_quarantine(device_id)
+        if dns_synced:
+            msg = f"Client blocked for {hours} hour(s); VPN and DNS enforcement applied"
+        else:
+            msg = (
+                f"Client blocked for {hours} hour(s) in database; "
+                "run dns-sync on host if sites are still reachable"
+            )
         return QuarantineActionResponse(
             device_id=device_id,
             in_quarantine=True,
             quarantine_expires_at=quarantine.expires_at if quarantine else None,
-            message=f"Client blocked for {hours} hour(s); all VPN traffic and DNS denied after sync",
+            message=msg,
         )
 
     def end_device_quarantine(self, device_id: int) -> QuarantineActionResponse:
@@ -225,11 +242,16 @@ class PolicyService:
         self.db.commit()
         self.sync_repo.notify_policy_changed(source="admin_quarantine_release")
         self._release_full_network_block(device)
+        dns_synced = self._run_host_dns_sync("admin_quarantine_release")
+        if dns_synced:
+            msg = "Client unblocked; VPN and DNS access restored"
+        else:
+            msg = "Client unblocked in database; run dns-sync on host if DNS rules linger"
         return QuarantineActionResponse(
             device_id=device_id,
             in_quarantine=False,
             quarantine_expires_at=None,
-            message="Client unblocked; normal network access restored after sync",
+            message=msg,
         )
 
     def _client_vpn_ip(self, device) -> Optional[str]:
@@ -237,6 +259,17 @@ class PolicyService:
         if lease is None or not lease.ip:
             return None
         return str(lease.ip).strip()
+
+    def _run_host_dns_sync(self, source: str) -> bool:
+        try:
+            sync_dns_policy_on_host()
+            return True
+        except RuntimeError as exc:
+            logger.warning(
+                "Host DNS sync skipped",
+                extra=structured_extra("host_dns_sync_skipped", source=source, error=str(exc)),
+            )
+            return False
 
     def _apply_full_network_block(self, device) -> None:
         client_ip = self._client_vpn_ip(device)

@@ -15,8 +15,23 @@ It exists because the `netgarde-api` container cannot safely mutate the host `wg
 | `POST` | `/v1/apply-peer` | Set peer `allowed-ips` after enroll |
 | `POST` | `/v1/block-client` | Drop all forwarded VPN traffic for a client IP |
 | `POST` | `/v1/unblock-client` | Remove iptables drops for a client IP |
+| `POST` | `/v1/sync-dns-policy` | Run `run-sync.sh` (pull API → dnsmasq reload) |
 
-Admin **Block client** in the dashboard calls `/v1/block-client` (iptables `NETGARDE_BLOCK` chain) plus full DNS deny via dnsmasq.
+## How block triggers `run-sync.sh`
+
+```
+Dashboard  →  POST /devices/{id}/quarantine  →  Backend (Docker)
+    →  save device_quarantines row
+    →  POST http://172.17.0.1:9109/v1/block-client   (iptables)
+    →  POST http://172.17.0.1:9109/v1/sync-dns-policy  (bash run-sync.sh on host)
+         →  docker compose run dns-sync  →  GET /policy/dns-sync
+         →  write /etc/dnsmasq.d/netgarde-devices/ng-device-*.conf
+         →  systemctl reload dnsmasq
+```
+
+The backend container cannot reload host dnsmasq; the host agent runs as **root** on EC2.
+
+Set `NETGARDE_DNS_SYNC_SCRIPT=/home/ubuntu/netgarde/dns-sync/run-sync.sh` in the agent service.
 
 ## Install (EC2)
 

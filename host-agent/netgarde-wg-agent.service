@@ -9,6 +9,7 @@ Environment=NETGARDE_WG_AGENT_BIND=172.17.0.1
 Environment=NETGARDE_WG_AGENT_PORT=9109
 Environment=NETGARDE_WG_INTERFACE=wg0
 Environment=NETGARDE_WG_POOL_CIDR=10.0.0.0/24
+Environment=NETGARDE_DNS_SYNC_SCRIPT=/home/ubuntu/netgarde/dns-sync/run-sync.sh
 # Set a strong random token and mirror it in backend env WG_AGENT_TOKEN
 Environment=NETGARDE_WG_AGENT_TOKEN=CHANGE_ME
 ExecStart=/usr/bin/python3 /opt/netgarde/netgarde-wg-agent.py
