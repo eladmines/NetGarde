@@ -34,7 +34,8 @@ class PolicyDnsService:
 
         entries: List[PolicyDeviceDnsEntry] = []
         for device in self.policy_repo.list_devices_for_dns_sync():
-            if not device.mac_address:
+            client_ip = self._device_client_ip(device)
+            if not client_ip and not device.mac_address:
                 continue
             profile = None
             if device.policy_profile_id:
@@ -54,7 +55,8 @@ class PolicyDnsService:
                 entries.append(
                     PolicyDeviceDnsEntry(
                         device_id=device.id,
-                        mac_address=device.mac_address,
+                        client_ip=client_ip,
+                        mac_address=device.mac_address or "",
                         tag=f"ng_device_{device.id}",
                         block_domains=[],
                         allowlist_only=True,
@@ -83,7 +85,8 @@ class PolicyDnsService:
             entries.append(
                 PolicyDeviceDnsEntry(
                     device_id=device.id,
-                    mac_address=device.mac_address,
+                    client_ip=client_ip,
+                    mac_address=device.mac_address or "",
                     tag=f"ng_device_{device.id}",
                     block_domains=sorted(domains),
                     allowlist_only=False,
@@ -93,6 +96,13 @@ class PolicyDnsService:
             )
 
         return PolicyDnsSyncResponse(global_domains=global_domains, entries=entries)
+
+    @staticmethod
+    def _device_client_ip(device) -> str:
+        lease = getattr(device, "ip_lease", None)
+        if lease is None or not lease.ip:
+            return ""
+        return str(lease.ip).strip()
 
     def _build_allowlist(self, profile) -> Set[str]:
         allow: Set[str] = set()

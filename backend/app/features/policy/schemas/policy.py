@@ -114,7 +114,9 @@ class ForbiddenCountryPolicyRead(BaseModel):
 
 class PolicyDeviceDnsEntry(BaseModel):
     device_id: int
-    mac_address: str
+    client_ip: str = ""
+    """VPN lease IP — used to tag DNS queries from WireGuard clients."""
+    mac_address: str = ""
     tag: str
     block_domains: List[str]
     allowlist_only: bool = False

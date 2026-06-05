@@ -106,6 +106,21 @@ def domains_to_dnsmasq_lines(
     return entries
 
 
+def _dhcp_host_tag_line(entry: Dict[str, Any], tag: str) -> Optional[str]:
+    """Tag DNS queries by VPN client IP (WireGuard) and/or LAN MAC."""
+    mac = (entry.get('mac_address') or '').strip().lower()
+    client_ip = (entry.get('client_ip') or '').strip()
+    if not mac and not client_ip:
+        return None
+    parts: List[str] = []
+    if mac:
+        parts.append(mac)
+    if client_ip:
+        parts.append(client_ip)
+    parts.append(f"set:{tag}")
+    return f"dhcp-host={','.join(parts)}"
+
+
 def convert_device_entry_to_dnsmasq(
     entry: Dict[str, Any],
     block_ip: str,
@@ -113,16 +128,19 @@ def convert_device_entry_to_dnsmasq(
 ) -> List[str]:
     if block_ipv6_ip is None:
         block_ipv6_ip = BLOCK_IPV6_IP
-    mac = (entry.get('mac_address') or '').strip().lower()
     tag = entry.get('tag') or f"ng_device_{entry.get('device_id')}"
-    if not mac:
+    host_line = _dhcp_host_tag_line(entry, tag)
+    if not host_line:
         return []
 
-    lines = [f"# Device {entry.get('device_id')}", f"dhcp-host={mac},set:{tag}"]
+    lines = [f"# Device {entry.get('device_id')}", host_line]
 
     if entry.get('allowlist_only'):
         lines.append(f"tag:{tag}")
         lines.append(f"address=/#/{block_ip}")
+        if block_ipv6_ip:
+            lines.append(f"tag:{tag}")
+            lines.append(f"address=/#/{block_ipv6_ip}")
         for domain in entry.get('allowlist_domains') or []:
             d = str(domain).strip().lower()
             if not d:

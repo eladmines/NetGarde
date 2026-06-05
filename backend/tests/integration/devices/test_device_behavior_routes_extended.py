@@ -128,13 +128,10 @@ def test_start_and_end_quarantine(api_client, vpn_device, db_session):
     assert assignment2.json()["in_quarantine"] is False
 
 
-def test_quarantine_requires_mac(api_client, db_session):
-    from tests.helpers.factories import create_ip_lease
-
-    lease = create_ip_lease(db_session, ip="10.0.0.99", device_id="no-mac-device")
+def test_quarantine_requires_vpn_ip(api_client, db_session):
     from app.features.devices.models.device import Device
 
-    device = Device(ip_lease_id=lease.id, hostname="no-mac", mac_address=None, source="manual")
+    device = Device(ip_lease_id=999999, hostname="no-lease", mac_address="aa:bb:cc:dd:ee:99", source="manual")
     db_session.add(device)
     db_session.commit()
     db_session.refresh(device)

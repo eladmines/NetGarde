@@ -14,6 +14,7 @@ def test_build_dns_sync_includes_device(db_session):
     assert isinstance(result.global_domains, list)
     entry = next(e for e in result.entries if e.device_id == device.id)
     assert entry.mac_address == "11:22:33:44:55:66"
+    assert entry.client_ip == "10.0.0.10"
     assert entry.allowlist_only is False
 
 
