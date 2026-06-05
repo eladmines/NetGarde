@@ -13,7 +13,6 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
@@ -66,7 +65,6 @@ export default function ClientProfileDetail({
   const [review, setReview] = useState<BehaviorReview | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
-  const [blockDomain, setBlockDomain] = useState('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -199,23 +197,6 @@ export default function ClientProfileDetail({
       await applyPolicyAfterBlock();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to end quarantine');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addDomainBlock = async () => {
-    const domain = blockDomain.trim();
-    if (!domain) return;
-    setSaving(true);
-    setActionMessage(null);
-    try {
-      await devicesApi.createClientBlock(device.id, domain);
-      setBlockDomain('');
-      await load();
-      await applyPolicyAfterBlock();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to block domain');
     } finally {
       setSaving(false);
     }
@@ -357,10 +338,9 @@ export default function ClientProfileDetail({
                 Block client
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Full block denies all VPN traffic and DNS for this device. You can also block
-                individual domains without a full network block.
+                Full block denies all VPN traffic and DNS for this device for 4 hours.
               </Typography>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+              <Stack direction="row" spacing={1}>
                 {policyAssignment?.in_quarantine ? (
                   <Button
                     color="success"
@@ -382,21 +362,6 @@ export default function ClientProfileDetail({
                     Block client (4h)
                   </Button>
                 )}
-                <TextField
-                  size="small"
-                  label="Block domain"
-                  placeholder="example.com"
-                  value={blockDomain}
-                  onChange={(e) => setBlockDomain(e.target.value)}
-                  disabled={saving}
-                  sx={{ minWidth: 220, flex: 1 }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') addDomainBlock();
-                  }}
-                />
-                <Button variant="outlined" onClick={addDomainBlock} disabled={saving || !blockDomain.trim()}>
-                  Block domain
-                </Button>
               </Stack>
             </Box>
 
