@@ -88,9 +88,9 @@ class DeviceService:
             extra=structured_extra(
                 "dhcp_sync_completed",
                 processed=len(payload.leases),
-                created=created,
-                updated=updated,
-                skipped=skipped,
+                created_count=created,
+                updated_count=updated,
+                skipped_count=skipped,
             ),
         )
         return DhcpSyncResult(

@@ -6,6 +6,7 @@ from app.shared.logging_context import (
     bind_request_id,
     generate_request_id,
     reset_request_id,
+    structured_extra,
 )
 from app.shared.utils.logging import JsonFormatter
 
@@ -33,3 +34,15 @@ def test_request_context_filter_adds_request_id(monkeypatch):
         assert payload["service"] == "backend-test"
     finally:
         reset_request_id(token)
+
+
+def test_structured_extra_renames_reserved_log_record_keys():
+    extra = structured_extra("dhcp_sync_completed", created=3, device_id=1)
+    assert extra["event"] == "dhcp_sync_completed"
+    assert extra["ctx_created"] == 3
+    assert extra["device_id"] == 1
+
+
+def test_structured_extra_does_not_raise_on_reserved_keys():
+    logger = logging.getLogger("test.structured_extra")
+    logger.info("ok", extra=structured_extra("test_event", created=1, message="x"))
