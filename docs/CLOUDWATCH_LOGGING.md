@@ -2,6 +2,8 @@
 
 NetGarde ships **structured JSON** operational logs to stdout. On EC2, the **CloudWatch Agent** forwards Docker and systemd logs to CloudWatch Logs.
 
+See also: [ENV_SETUP.md](ENV_SETUP.md) (`LOG_JSON`, `LOG_LEVEL`) · [docs index](README.md)
+
 DNS query history is **not** application logging — it lives in PostgreSQL (blocked queries by default) and the live WebSocket feed.
 
 ## Log sources

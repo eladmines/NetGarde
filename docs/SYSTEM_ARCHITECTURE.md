@@ -1,4 +1,73 @@
-SYSTEM ARCHITECTURE:
-<img width="3840" height="2618" alt="Untitled diagram _ Mermaid Chart-2025-10-07-100928" src="https://github.com/user-attachments/assets/bab37178-52c4-4f6d-b4ac-1500230d0af5" />
+# System architecture
 
+Component topology and data flows for the NetGarde platform. For design principles, security model, and implementation patterns, see [DESIGN.md](DESIGN.md).
 
+---
+
+## Architecture diagram
+
+<img width="3840" height="2618" alt="NetGarde system architecture diagram" src="https://github.com/user-attachments/assets/bab37178-52c4-4f6d-b4ac-1500230d0af5" />
+
+---
+
+## Component overview
+
+| Layer | Components | Role |
+|-------|------------|------|
+| **Clients** | Site router, laptops, phones | DNS traffic tunneled via WireGuard to EC2 |
+| **EC2 host** | WireGuard, dnsmasq, iptables | VPN termination, DNS resolution, traffic blocking |
+| **Host services** | `netgarde-wg-agent`, `netgarde-log-watcher` | Peer apply, quarantine iptables, DNS log ingest, trigger policy sync |
+| **Docker** | FastAPI backend, dns-sync | API, policy computation, dnsmasq config generation |
+| **AWS** | RDS PostgreSQL, S3, CloudFront, ECR | Persistent state, dashboard hosting, image registry |
+| **Redis** | Usage samples (EC2) | Real-time VPN throughput for live charts |
+
+---
+
+## Data flows
+
+### DNS query path
+
+```
+Client → WireGuard → dnsmasq → dnsmasq.log
+                              → log_watcher → POST /dns-queries/bulk → Backend
+                              → WebSocket → Dashboard (live feed)
+                              → RDS (blocked queries only, by default)
+```
+
+### Policy enforcement path
+
+```
+Dashboard → Backend (policy / quarantine / client block)
+         → RDS (source of truth)
+         → wg-agent → iptables (quarantine) + run-sync.sh
+         → dns-sync → GET /policy/dns-sync → dnsmasq conf → reload dnsmasq
+```
+
+### VPN enroll path
+
+```
+NetGardeClient → POST /v1/enroll → Backend → device + IP allocation
+              → wg-agent POST /v1/apply-peer → WireGuard peer on host
+              → WireGuard config returned to client
+```
+
+---
+
+## Trust boundaries
+
+| Boundary | Why it exists |
+|----------|---------------|
+| **Docker ↔ EC2 host** | Containers cannot mutate `wg0`, `iptables`, or reload host `dnsmasq` |
+| **CloudFront ↔ Backend** | HTTPS termination; API proxied to EC2 :8000 |
+| **Token scopes** | Admin, DNS ingest, wg-agent, and device tokens protect different surfaces |
+
+Details: [DESIGN.md § Security model](DESIGN.md#security-model).
+
+---
+
+## Related docs
+
+- [DESIGN.md](DESIGN.md) — full design guide
+- [host-agent/README.md](../host-agent/README.md) — host agent setup
+- [ENV_SETUP.md](ENV_SETUP.md) — configuration
+- [CLOUDWATCH_LOGGING.md](CLOUDWATCH_LOGGING.md) — operational logging
