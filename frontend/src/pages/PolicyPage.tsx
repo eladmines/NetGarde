@@ -9,15 +9,33 @@ import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import PolicyPackDomainsDialog from '../features/policy/components/PolicyPackDomainsDialog';
 import { policyApi } from '../features/policy/config/api';
 import { PolicyPack, PolicyProfile } from '../features/policy/types/policy';
+import { usePolicyDnsSync } from '../features/policy/hooks/usePolicyDnsSync';
 
 export default function PolicyPage() {
   const [packs, setPacks] = useState<PolicyPack[]>([]);
   const [profiles, setProfiles] = useState<PolicyProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
+  const [viewPack, setViewPack] = useState<PolicyPack | null>(null);
+
+  const {
+    syncStatusLabel,
+    applying,
+    applyError,
+    setApplyError,
+    applyInfo,
+    setApplyInfo,
+    applyNow,
+    loadSyncStatus,
+  } = usePolicyDnsSync();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -26,22 +44,31 @@ export default function PolicyPage() {
       const [p, pr] = await Promise.all([policyApi.listPacks(), policyApi.listProfiles()]);
       setPacks(p);
       setProfiles(pr);
+      await loadSyncStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load policy');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadSyncStatus]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  const handlePackUpdated = (updated: PolicyPack) => {
+    setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+  };
+
   const togglePack = async (pack: PolicyPack) => {
     setSavingSlug(pack.slug);
+    setInfo(null);
     try {
       const updated = await policyApi.updatePack(pack.slug, !pack.enabled_globally);
       setPacks((prev) => prev.map((p) => (p.slug === updated.slug ? updated : p)));
+      setInfo(
+        `${updated.name} saved. Enforcement sync runs automatically (dns-sync + dnsmasq reload).`,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update pack');
     } finally {
@@ -59,58 +86,133 @@ export default function PolicyPage() {
 
   return (
     <Box sx={{ maxWidth: 960 }}>
-      <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-        Policy
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Category packs, device profiles (Kids / Teen / Work), schedules, and quarantine replace manual
-        blocked-site lists.
-      </Typography>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
+            Policy
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            List packs and device profiles. Changes sync to dnsmasq via the host listener.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            {syncStatusLabel}
+          </Typography>
+        </Box>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={applyNow}
+          disabled={applying}
+        >
+          Apply now
+        </Button>
+      </Stack>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
+      {info && (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setInfo(null)}>
+          {info}
+        </Alert>
+      )}
+      {applyError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApplyError(null)}>
+          {applyError}
+        </Alert>
+      )}
+      {applyInfo && (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setApplyInfo(null)}>
+          {applyInfo}
+        </Alert>
+      )}
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-          List packs (network-wide)
-        </Typography>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-          Enabled packs apply to every device, merged with each device&apos;s profile.
-        </Typography>
-        <Stack spacing={1}>
-          {packs.map((pack) => (
-            <Stack
-              key={pack.slug}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{ py: 0.5 }}
-            >
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  {pack.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {pack.description} · {pack.domain_count} domains
-                </Typography>
-              </Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={pack.enabled_globally}
-                    disabled={savingSlug === pack.slug}
-                    onChange={() => togglePack(pack)}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+          spacing={1}
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            <Typography variant="subtitle1" fontWeight={600}>
+              List packs (network-wide)
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              View each category to browse blocked domains. Turn packs On to enforce via dnsmasq.
+            </Typography>
+          </Box>
+        </Stack>
+        <Stack spacing={1.5}>
+          {packs.map((pack) => {
+            const packBusy = savingSlug === pack.slug;
+            return (
+              <Stack
+                key={pack.slug}
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                justifyContent="space-between"
+                spacing={1}
+                sx={{
+                  py: 1,
+                  px: 1,
+                  borderRadius: 1,
+                  bgcolor: 'action.hover',
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {pack.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {pack.description}
+                  </Typography>
+                </Box>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                  sx={{ flexShrink: 0 }}
+                >
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<VisibilityIcon />}
+                    disabled={packBusy}
+                    onClick={() => setViewPack(pack)}
+                  >
+                    View list
+                  </Button>
+                  <FormControlLabel
+                    sx={{ m: 0 }}
+                    control={
+                      <Switch
+                        checked={pack.enabled_globally}
+                        disabled={packBusy}
+                        onChange={() => togglePack(pack)}
+                      />
+                    }
+                    label={pack.enabled_globally ? 'On' : 'Off'}
                   />
-                }
-                label={pack.enabled_globally ? 'On' : 'Off'}
-              />
-            </Stack>
-          ))}
+                </Stack>
+              </Stack>
+            );
+          })}
         </Stack>
       </Paper>
+
+      <PolicyPackDomainsDialog
+        pack={viewPack}
+        open={viewPack !== null}
+        onClose={() => setViewPack(null)}
+        onPackUpdated={handlePackUpdated}
+      />
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
@@ -141,7 +243,7 @@ export default function PolicyPage() {
               )}
               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
                 {profile.enabled_pack_slugs.map((slug) => (
-                  <Chip key={slug} label={slug} size="small" />
+                  <Chip key={slug} label={slug} size="small" variant="outlined" />
                 ))}
               </Stack>
               {profile.schedule_rules.length > 0 && (
@@ -150,10 +252,6 @@ export default function PolicyPage() {
                   {profile.schedule_rules[0].pack_slugs.join(', ')})
                 </Typography>
               )}
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Assign on Client profiles or at VPN enroll with{' '}
-                <code>policy_profile_slug</code>.
-              </Typography>
             </Box>
           ))}
         </Stack>

@@ -3,7 +3,6 @@
   transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-
 .MuiDrawer-paper::-webkit-scrollbar {
   width: 8px;
 }
@@ -13,11 +12,10 @@
 }
 
 .MuiDrawer-paper::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--template-palette-action-hover, rgba(0, 0, 0, 0.2));
   border-radius: 4px;
 }
 
 .MuiDrawer-paper::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--template-palette-action-selected, rgba(0, 0, 0, 0.3));
 }
-

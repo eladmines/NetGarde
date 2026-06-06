@@ -79,6 +79,94 @@ def _wg_list_peers(iface: str) -> list[Dict[str, Any]]:
     return peers
 
 
+BLOCK_CHAIN = "NETGARDE_BLOCK"
+
+
+def _ensure_block_chain() -> None:
+    subprocess.run(["iptables", "-N", BLOCK_CHAIN], capture_output=True, text=True)
+    check = subprocess.run(
+        ["iptables", "-C", "FORWARD", "-j", BLOCK_CHAIN],
+        capture_output=True,
+        text=True,
+    )
+    if check.returncode != 0:
+        insert = subprocess.run(
+            ["iptables", "-I", "FORWARD", "1", "-j", BLOCK_CHAIN],
+            capture_output=True,
+            text=True,
+        )
+        if insert.returncode != 0:
+            raise RuntimeError(insert.stderr.strip() or insert.stdout.strip() or "iptables insert failed")
+
+
+def _iptables_add_block(client_ip: str) -> None:
+    _ensure_block_chain()
+    for args in (["-s", client_ip], ["-d", client_ip]):
+        check = subprocess.run(
+            ["iptables", "-C", BLOCK_CHAIN, *args, "-j", "DROP"],
+            capture_output=True,
+            text=True,
+        )
+        if check.returncode != 0:
+            add = subprocess.run(
+                ["iptables", "-A", BLOCK_CHAIN, *args, "-j", "DROP"],
+                capture_output=True,
+                text=True,
+            )
+            if add.returncode != 0:
+                raise RuntimeError(add.stderr.strip() or add.stdout.strip() or "iptables add failed")
+
+
+def _iptables_remove_block(client_ip: str) -> None:
+    for args in (["-s", client_ip], ["-d", client_ip]):
+        while True:
+            check = subprocess.run(
+                ["iptables", "-C", BLOCK_CHAIN, *args, "-j", "DROP"],
+                capture_output=True,
+                text=True,
+            )
+            if check.returncode != 0:
+                break
+            delete = subprocess.run(
+                ["iptables", "-D", BLOCK_CHAIN, *args, "-j", "DROP"],
+                capture_output=True,
+                text=True,
+            )
+            if delete.returncode != 0:
+                raise RuntimeError(delete.stderr.strip() or delete.stdout.strip() or "iptables delete failed")
+
+
+def _resolve_dns_sync_script() -> str:
+    """Path to run-sync.sh on the EC2 host (must be executable by root)."""
+    candidates = [
+        os.getenv("NETGARDE_DNS_SYNC_SCRIPT", "").strip(),
+        "/home/ubuntu/netgarde/dns-sync/run-sync.sh",
+        "/opt/netgarde/dns-sync/run-sync.sh",
+    ]
+    for raw in candidates:
+        if not raw:
+            continue
+        path = os.path.abspath(raw)
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    raise RuntimeError(
+        "DNS sync script not found; set NETGARDE_DNS_SYNC_SCRIPT to run-sync.sh on the host"
+    )
+
+
+def _run_dns_sync_script() -> None:
+    script = _resolve_dns_sync_script()
+    proc = subprocess.run(
+        ["/bin/bash", script],
+        capture_output=True,
+        text=True,
+        timeout=int(os.getenv("NETGARDE_DNS_SYNC_TIMEOUT_SEC", "300")),
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "dns sync script failed").strip()
+        raise RuntimeError(detail[:2000])
+
+
 def _wg_set_peer_allowed_ips(iface: str, pubkey: str, allowed_ip: str) -> None:
     # `wg set` updates are in-memory; persistence is intentionally out of scope here.
     cmd = ["wg", "set", iface, "peer", pubkey, "allowed-ips", f"{allowed_ip}/32"]
@@ -125,13 +213,28 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         server: "AgentServer" = self.server  # type: ignore[assignment]
         parsed = urlparse(self.path)
-        if parsed.path != "/v1/apply-peer":
+        allowed_paths = (
+            "/v1/apply-peer",
+            "/v1/block-client",
+            "/v1/unblock-client",
+            "/v1/sync-dns-policy",
+        )
+        if parsed.path not in allowed_paths:
             self._json(404, {"detail": "not found"})
             return
 
         auth = self.headers.get("Authorization", "")
         if auth != f"Bearer {server.token}":
             self._json(401, {"detail": "unauthorized"})
+            return
+
+        if parsed.path == "/v1/sync-dns-policy":
+            try:
+                _run_dns_sync_script()
+            except Exception as e:
+                self._json(500, {"detail": str(e)})
+                return
+            self._json(200, {"synced": True, "script": _resolve_dns_sync_script()})
             return
 
         length = int(self.headers.get("Content-Length", "0") or "0")
@@ -148,6 +251,23 @@ class Handler(BaseHTTPRequestHandler):
 
         if not isinstance(data, dict):
             self._json(400, {"detail": "invalid json"})
+            return
+
+        if parsed.path in ("/v1/block-client", "/v1/unblock-client"):
+            try:
+                client_ip = _validate_ipv4(str(data.get("client_ip", "")), server.pool_cidr)
+            except Exception as e:
+                self._json(400, {"detail": str(e)})
+                return
+            try:
+                if parsed.path == "/v1/block-client":
+                    _iptables_add_block(client_ip)
+                else:
+                    _iptables_remove_block(client_ip)
+            except Exception as e:
+                self._json(500, {"detail": str(e)})
+                return
+            self._json(200, {"applied": True, "client_ip": client_ip, "blocked": parsed.path == "/v1/block-client"})
             return
 
         try:

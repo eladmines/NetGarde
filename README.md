@@ -1,300 +1,147 @@
-# 🛡️ NetGarde
+# NetGarde
 
-**Network-level DNS firewall and monitoring dashboard for home and small office networks.**
+**Self-hosted network security platform** — secure VPN access, DNS policy enforcement, real-time monitoring, behavior analytics, and optional AI-assisted operations.
 
-NetGarde intercepts all DNS traffic through a WireGuard VPN tunnel, blocks unwanted domains via dnsmasq, and provides a real-time dashboard to monitor and manage network activity.
+Built end-to-end: React dashboard, FastAPI backend, WireGuard enrollment client, host-level enforcement agents, and AWS production deployment with CI/CD.
 
----
-
-## 📸 Features
-
-- **DNS-Level Website Blocking** — Block domains via dnsmasq with automatic config sync
-- **Real-Time DNS Monitoring** — Live WebSocket feed of all DNS queries as they happen
-- **Dashboard & Analytics** — Statistics cards, data grid, and grouped site views
-- **Blocked Sites Management** — Full CRUD with categories and search
-- **Noise Filtering** — Automatically hides system telemetry, CDN, and OS update noise
-- **VPN Integration** — All client traffic routed through WireGuard for transparent DNS control
-- **Automatic Log Ingestion** — Systemd service continuously parses dnsmasq logs and pushes to the API
+**Repository:** [github.com/eladmines/NetGarde](https://github.com/eladmines/NetGarde) · **Client:** [NetGardeClient](https://github.com/eladmines/NetGardeClient) · **Docs:** [docs/README.md](docs/README.md)
 
 ---
 
-## 🏗️ Architecture
+## Overview
+
+Most network security tools are either enterprise appliances with heavy lock-in, or consumer DNS blockers with no real visibility. NetGarde sits in between: a **self-hosted SASE-style stack** you operate on your own infrastructure.
+
+Clients enroll over **WireGuard**. DNS flows through a central policy engine (dnsmasq + custom sync). The dashboard streams live queries over **WebSocket**, scores per-device behavior against baselines, and can quarantine clients at the network layer (iptables + DNS deny). Optional **LLM summaries** (OpenAI or Ollama) explain network and device state — detection stays rules-based.
+
+The system is deployed on **AWS** (EC2, RDS, S3, CloudFront, ECR) with GitHub Actions pipelines, structured CloudWatch logging, and a deliberate **container vs. host** split for WireGuard and dnsmasq operations.
+
+---
+
+## Platform at a glance
+
+| Capability | Implementation |
+|------------|----------------|
+| Secure access | WireGuard VPN, device enrollment API, IP pool allocation |
+| DNS policy | Policy packs, per-device profiles, schedules, geo/country rules |
+| Real-time monitoring | WebSocket live feed, Redis-backed throughput charts |
+| Behavior intelligence | Per-device baselines, abnormal scoring, auto-block |
+| Enforcement | Host agent (iptables quarantine), dns-sync → dnsmasq reload |
+| AI operations | Network overview + behavior review (template / OpenAI / Ollama) |
+| Production ops | Structured JSON logs → CloudWatch, Alembic migrations, ECR deploy |
+
+---
+
+## Screenshots
+
+> Add PNG/WebP captures to `docs/images/` (see [docs/images/README.md](docs/images/README.md)). Recommended width ~1400px, dark theme.
+
+### Dashboard & monitoring
+
+| Network overview | Live DNS & throughput |
+|------------------|------------------------|
+| ![Network overview — AI summary, live stats, and alerts](docs/images/dashboard-home.png) | ![Live clients and bandwidth charts](docs/images/dashboard-live.png) |
+
+### Policy & clients
+
+| Policy management | Client behavior profile |
+|-------------------|-------------------------|
+| ![Policy packs and device assignments](docs/images/policy.png) | ![Behavior baseline, score, and quarantine](docs/images/client-profiles.png) |
+
+### Operations
+
+| Client world map | Blocked clients |
+|------------------|-----------------|
+| ![Geographic client map](docs/images/client-map.png) | ![Quarantine and DNS block admin view](docs/images/blocked-clients.png) |
+
+---
+
+## Architecture
+
+NetGarde runs as a **control plane on EC2**. Application logic lives in Docker; network enforcement runs on the host — containers cannot safely mutate WireGuard, iptables, or dnsmasq.
+
+<p align="center">
+  <img width="90%" alt="NetGarde system architecture" src="https://github.com/user-attachments/assets/bab37178-52c4-4f6d-b4ac-1500230d0af5" />
+</p>
+
+| Layer | Components | Responsibility |
+|-------|------------|----------------|
+| **Edge clients** | Laptops, phones, enrolled devices | DNS and traffic via WireGuard tunnel |
+| **EC2 host** | WireGuard, dnsmasq, iptables | VPN termination, DNS resolution, quarantine |
+| **Host agents** | `netgarde-wg-agent`, `netgarde-log-watcher` | Peer apply, block/unblock, log ingest, policy sync trigger |
+| **Application** | FastAPI, dns-sync, React (S3/CloudFront) | Policy engine, REST + WebSocket API, admin UI |
+| **Data** | PostgreSQL (RDS), Redis, ECR | Policy state, live usage windows, container images |
+
+**Request flows**
 
 ```
-┌──────────────┐     WireGuard VPN      ┌──────────────────────────────────────┐
-│              │◄──────────────────────► │           EC2 Instance               │
-│  Home Router │     (UDP 51820)         │                                      │
-│  + Clients   │                         │  ┌──────────┐    ┌───────────────┐   │
-│              │  DNS queries ──────────►│  │ dnsmasq  │───►│ dnsmasq.log   │   │
-└──────────────┘                         │  └──────────┘    └───────┬───────┘   │
-                                         │       │                  │           │
-                                         │       │ blocked-         │ tail      │
-                                         │       │ domains.conf     │           │
-                                         │       │                  ▼           │
-                                         │  ┌────┴─────┐   ┌───────────────┐   │
-                                         │  │ dns-sync │   │ log_watcher   │   │
-                                         │  │container │   │ (systemd)     │   │
-                                         │  └────┬─────┘   └───────┬───────┘   │
-                                         │       │                  │           │
-                                         │       ▼                  ▼           │
-                                         │  ┌──────────────────────────────┐   │
-                                         │  │    FastAPI Backend (Docker)   │   │
-                                         │  │    :8000                      │   │
-                                         │  └──────────────┬───────────────┘   │
-                                         │                 │                    │
-                                         └─────────────────┼────────────────────┘
-                                                           │
-                                                           ▼
-┌──────────────────────┐                          ┌────────────────┐
-│   React Dashboard    │◄── CloudFront (HTTPS) ──►│   AWS RDS      │
-│   (S3 + CloudFront)  │                          │   PostgreSQL   │
-│                      │◄── WebSocket (/ws) ──────┤                │
-└──────────────────────┘                          └────────────────┘
+DNS:     Client → WireGuard → dnsmasq → log_watcher → API → WebSocket → Dashboard
+Policy:  Dashboard → API → RDS → wg-agent → dns-sync → dnsmasq reload
+Enroll:  NetGardeClient → POST /v1/enroll → wg-agent → WireGuard config
 ```
 
-### Data Flow
+**Design decisions worth noting**
 
-1. **Client devices** connect to the home router, which tunnels DNS traffic via **WireGuard** to the EC2 instance
-2. **dnsmasq** on the EC2 resolves DNS queries, blocking domains listed in `blocked-domains.conf`
-3. **dns_log_watcher** (systemd service) tails `dnsmasq.log` in real-time, parses new queries, and sends batches to the backend API every 2–3 seconds
-4. **FastAPI backend** broadcasts all queries via **WebSocket** to the live dashboard; by default only **blocked** queries are stored in PostgreSQL (RDS). Set `PERSIST_ALL_DNS=true` for legacy full logging.
-5. **dns-sync container** periodically pulls the blocked sites list from the API and regenerates `blocked-domains.conf` for dnsmasq
-6. **React dashboard** displays live feed, statistics, and management interfaces via CloudFront
+- **Generated dnsmasq config** — RDS is source of truth; config files are never hand-edited in production.
+- **Selective DNS persistence** — Only blocked queries stored by default; full logging is opt-in (`PERSIST_ALL_DNS`).
+- **Rules-based security, LLM for explanation** — Scoring and blocking are deterministic; AI summarizes for operators.
+- **Feature-module monorepo** — Backend and frontend organized by domain (`policy`, `devices`, `dns_queries`, `vpn`).
+
+Full write-up: [docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md) · [docs/DESIGN.md](docs/DESIGN.md)
 
 ---
 
-## 🧰 Tech Stack
+## Tech stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 19, TypeScript, Material UI 7, MUI X Data Grid & Charts |
-| **Backend** | Python 3.11, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2 |
-| **Database** | PostgreSQL 16 (AWS RDS) |
-| **DNS Server** | dnsmasq |
-| **VPN** | WireGuard |
-| **Infrastructure** | AWS EC2, CloudFront, S3, ECR |
-| **CI/CD** | GitHub Actions |
-| **Containers** | Docker, Docker Compose |
-
----
-
-## 📁 Project Structure
-
-```
-NetGarde/
-├── frontend/                   # React SPA (dashboard UI)
-│   └── src/
-│       ├── features/
-│       │   ├── dashboard/      # Stats, live feed, data grid, sites view
-│       │   ├── blocked-sites/  # Blocked sites CRUD
-│       │   └── categories/     # Categories management
-│       ├── pages/              # Route pages
-│       └── shared/             # Shared utils, hooks, components
-│
-├── backend/                    # FastAPI REST API + WebSocket
-│   └── app/
-│       ├── features/
-│       │   ├── blocked_sites/  # Models, schemas, repos, services, controllers, routes
-│       │   ├── categories/     # Models, schemas, repos, services, controllers, routes
-│       │   └── dns_queries/    # Models, schemas, repos, services, controllers, routes
-│       ├── shared/             # DB config, middleware, utils, WebSocket manager
-│       └── main.py             # FastAPI app entry point
-│
-├── dns-sync/                   # DNS log watcher + blocked sites sync
-│   ├── dns_log_watcher.py      # Real-time log tail → API (systemd service)
-│   ├── sync.py                 # Pull blocked sites → dnsmasq config
-│   ├── noise_filter.py         # Filters telemetry/CDN noise domains
-│   └── netgarde-log-watcher.service  # systemd unit file
-│
-├── aws/                        # AWS setup scripts (S3, CloudFront, ECR)
-├── .github/workflows/          # CI/CD pipelines
-│   ├── deploy-backend.yml      # Build & deploy backend to EC2
-│   ├── deploy-frontend.yml     # Build & deploy frontend to S3/CloudFront
-│   └── deploy-develop.yml      # Develop branch pipeline
-│
-├── docker-compose.yml          # Production compose (backend + dns-sync)
-├── docker-compose.dev.yml      # Development compose (backend + frontend + db + dns-sync)
-└── docs/                       # Documentation
-    ├── ENV_SETUP.md             # Environment variables guide
-    ├── SYSTEM_ARCHITECTURE.md   # Architecture diagram
-    └── DEVELOP.md               # Developer guide
-```
+| Area | Technologies |
+|------|----------------|
+| Frontend | React 19, TypeScript, Material UI 7, MUI X Charts |
+| Backend | Python 3.11, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2 |
+| Real-time | WebSocket, Redis |
+| Data | PostgreSQL 16 (RDS) |
+| Network | WireGuard, dnsmasq, iptables |
+| Infrastructure | AWS EC2, RDS, S3, CloudFront, ECR |
+| Observability | Structured JSON logging, CloudWatch Logs Insights |
+| CI/CD | GitHub Actions (test → build → deploy) |
+| Containers | Docker, Docker Compose |
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) & Docker Compose
-- [Node.js 18+](https://nodejs.org/) (for frontend development)
-- [Python 3.11+](https://www.python.org/) (for local backend development)
-
-### Local Development
-
-**1. Clone the repository:**
+## Quick start
 
 ```bash
-git clone https://github.com/your-username/NetGarde.git
+git clone https://github.com/eladmines/NetGarde.git
 cd NetGarde
-```
-
-**2. Set up environment files:**
-
-```bash
-# Backend
 cp backend/.env.example backend/.env.development
-
-# Frontend
 cp frontend/.env.example frontend/.env.development
-```
-
-See [docs/ENV_SETUP.md](docs/ENV_SETUP.md) for detailed environment variable configuration.
-
-**3. Start all services with Docker Compose:**
-
-```bash
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-This starts:
-- **Backend API** at `http://localhost:8000`
-- **Frontend** at `http://localhost:3000`
-- **PostgreSQL** at `localhost:5432`
-- **dns-sync** container (run on demand)
+| Service | URL |
+|---------|-----|
+| Dashboard | http://localhost:3000 |
+| API + OpenAPI | http://localhost:8000/docs |
 
-**4. Or run frontend separately (hot reload):**
+Enroll a device with [NetGardeClient](https://github.com/eladmines/NetGardeClient).
 
-```bash
-cd frontend
-npm install
-npm start
-```
+**Developers:** [docs/DEVELOP.md](docs/DEVELOP.md) (tests, migrations) · [docs/ENV_SETUP.md](docs/ENV_SETUP.md) (configuration)
 
 ---
 
-## 🔌 API Endpoints
+## Documentation
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| **Blocked Sites** | | |
-| `GET` | `/blocked-sites` | List blocked sites (paginated) |
-| `POST` | `/blocked-sites` | Add a blocked site |
-| `PUT` | `/blocked-sites/{id}` | Update a blocked site |
-| `DELETE` | `/blocked-sites/{id}` | Delete a blocked site |
-| `GET` | `/blocked-sites/counts-by-category` | Counts grouped by category |
-| **Categories** | | |
-| `GET` | `/categories` | List categories |
-| `POST` | `/categories` | Create a category |
-| `PUT` | `/categories/{id}` | Update a category |
-| `DELETE` | `/categories/{id}` | Delete a category |
-| **DNS Queries** | | |
-| `GET` | `/dns-queries` | List DNS queries (paginated, filterable) |
-| `POST` | `/dns-queries` | Log a single DNS query |
-| `POST` | `/dns-queries/bulk` | Log multiple DNS queries |
-| `GET` | `/dns-queries/stats` | Query statistics (total, blocked, top domains) |
-| `GET` | `/dns-queries/alerts` | Anomaly alerts (blocked, new domain, suspicious, bandwidth) |
-| `GET` | `/dns-queries/whois?domain=` | WHOIS/RDAP lookup for a domain (from alerts UI) |
-| `GET` | `/dns-queries/sites` | Queries grouped by root domain |
-| `GET` | `/dns-queries/clients` | List unique client IPs |
-| `DELETE` | `/dns-queries/cleanup` | Delete records older than N days |
-| `WS` | `/dns-queries/ws` | Real-time WebSocket live feed |
+| Document | Description |
+|----------|-------------|
+| [docs/README.md](docs/README.md) | Documentation index |
+| [docs/DESIGN.md](docs/DESIGN.md) | Architecture, domain model, code conventions |
+| [docs/DEVELOP.md](docs/DEVELOP.md) | Local development, pytest, Alembic |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | AWS production deployment |
+| [docs/API.md](docs/API.md) | REST and WebSocket API reference |
+| [docs/ENV_SETUP.md](docs/ENV_SETUP.md) | Environment variables and secrets |
+| [host-agent/README.md](host-agent/README.md) | EC2 host agent (WireGuard + enforcement) |
 
 ---
 
-## 🏠 Production Deployment
+## License
 
-### AWS Infrastructure
-
-| Service | Purpose |
-|---------|---------|
-| **EC2** | Hosts backend (Docker), dnsmasq, WireGuard, log watcher |
-| **RDS** | PostgreSQL database |
-| **S3** | Frontend static files |
-| **CloudFront** | CDN for frontend + HTTPS proxy for backend API |
-| **ECR** | Docker image registry |
-
-### CI/CD
-
-Pushes to `main` or `develop` trigger GitHub Actions workflows:
-
-- **`deploy-backend.yml`** — Builds Docker image, pushes to ECR, SSHs into EC2 to pull and restart
-- **`deploy-frontend.yml`** — Builds React app, syncs to S3, invalidates CloudFront cache
-
-### Host Services
-
-On the EC2 instance, two systemd services run alongside Docker:
-
-```bash
-# Real-time DNS log watcher (parses dnsmasq logs → API)
-sudo systemctl status netgarde-log-watcher
-
-# DNS server
-sudo systemctl status dnsmasq
-
-# WireGuard VPN
-sudo systemctl status wg-quick@wg0
-```
-
----
-
-## 🧱 Backend Architecture
-
-The backend follows a **layered OOP architecture**:
-
-```
-Route (FastAPI endpoint)
-  └── Depends() → IDnsQueryService (Protocol interface)
-  └── Depends() → Session (database)
-  └── Controller (wires HTTP to service)
-       └── Service (business logic)
-            └── Repository (database operations)
-                 └── SQLAlchemy Model
-```
-
-Each feature (`blocked_sites`, `categories`, `dns_queries`) follows the same structure:
-- **Model** — SQLAlchemy ORM class
-- **Schema** — Pydantic validation models (Create, Response)
-- **Repository** — Database CRUD operations
-- **Service** — Business logic (implements a Protocol interface)
-- **Controller** — Thin layer mapping HTTP requests to service calls
-- **Route** — FastAPI router with dependency injection
-- **Errors** — Custom domain exception classes
-
----
-
-## 🔧 Key Configuration
-
-### dnsmasq
-
-```bash
-# Blocked domains config (auto-generated by dns-sync)
-/etc/dnsmasq.d/blocked-domains.conf
-
-# Main dnsmasq config
-/etc/dnsmasq.conf
-```
-
-### WireGuard
-
-```bash
-# VPN config
-/etc/wireguard/wg0.conf
-```
-
-### Log Watcher
-
-```bash
-# Systemd service config
-/etc/systemd/system/netgarde-log-watcher.service
-
-# State file (tracks log read position)
-/var/lib/netgarde/log_parser_state
-```
-
----
-
-## 📄 License
-
-This project is for educational and personal use.
+Portfolio and educational use. See repository for terms.

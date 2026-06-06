@@ -11,6 +11,7 @@ from app.features.devices.schemas.device import (
     DhcpSyncResult,
 )
 from app.features.devices.errors.device import DeviceAlreadyExistsError, DeviceNotFoundError
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -36,11 +37,13 @@ class DeviceService:
     def create_device(self, data: DeviceCreate, db: Session) -> DeviceRead:
         repository = DeviceRepository(db)
         try:
-            logger.info("Creating device", extra={"ip_lease_id": data.ip_lease_id})
             device = repository.create(data)
             return self._to_read(device)
         except IntegrityError as exc:
-            logger.warning("Device already exists", extra={"ip_lease_id": data.ip_lease_id})
+            logger.warning(
+                "Device already exists",
+                extra=structured_extra("device_already_exists", ip_lease_id=data.ip_lease_id),
+            )
             raise DeviceAlreadyExistsError(str(data.ip_lease_id)) from exc
 
     def get_devices(self, db: Session) -> List[DeviceRead]:
@@ -82,12 +85,13 @@ class DeviceService:
 
         logger.info(
             "DHCP device sync completed",
-            extra={
-                "processed_count": len(payload.leases),
-                "created_count": created,
-                "updated_count": updated,
-                "skipped_count": skipped,
-            },
+            extra=structured_extra(
+                "dhcp_sync_completed",
+                processed=len(payload.leases),
+                created_count=created,
+                updated_count=updated,
+                skipped_count=skipped,
+            ),
         )
         return DhcpSyncResult(
             processed=len(payload.leases),

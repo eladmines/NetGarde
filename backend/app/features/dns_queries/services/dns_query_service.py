@@ -10,9 +10,11 @@ from app.features.dns_queries.dns_persist import filter_queries_to_persist, shou
 from app.features.dns_queries.dns_ingest_stats import ingest_stats
 from app.features.dns_queries.services.dns_anomaly_service import DnsAnomalyService
 from app.features.client_behavior.services.client_behavior_aggregator import ClientBehaviorAggregator
+from app.features.policy.services.forbidden_country_service import ForbiddenCountryService
 from app.features.client_behavior.services.behavior_scoring_service import BehaviorScoringService
 from app.features.devices.repositories.device_repository import DeviceRepository
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -37,15 +39,12 @@ class DnsQueryService:
         ingest_stats.record([dns_query_data])
         DnsAnomalyService(db).process_queries([dns_query_data])
         ClientBehaviorAggregator(db).process_queries([dns_query_data])
+        forbidden_alerts = ForbiddenCountryService(db).process_queries([dns_query_data])
         behavior_alerts = BehaviorScoringService(db).process_queries([dns_query_data])
-        if behavior_alerts:
+        if forbidden_alerts or behavior_alerts:
             db.commit()
 
         if not should_persist_query(dns_query_data):
-            logger.debug(
-                "DNS query not persisted (allowed traffic)",
-                extra={"domain": dns_query_data.domain},
-            )
             return DnsQueryResponse(
                 id=0,
                 timestamp=dns_query_data.timestamp,
@@ -58,9 +57,17 @@ class DnsQueryService:
             )
 
         repository = DnsQueryRepository(db)
-        logger.info("Creating DNS query", extra={"domain": dns_query_data.domain})
         dns_query = repository.create(dns_query_data)
-        logger.info("DNS query created", extra={"id": getattr(dns_query, "id", None)})
+        logger.info(
+            "DNS query persisted",
+            extra=structured_extra(
+                "dns_query_persisted",
+                domain=dns_query_data.domain,
+                blocked=dns_query_data.blocked,
+                client_ip=dns_query_data.client_ip,
+                id=getattr(dns_query, "id", None),
+            ),
+        )
         return DnsQueryResponse.model_validate(dns_query)
 
     def bulk_create_queries(self, queries: List[DnsQueryCreate], db: Session) -> dict:
@@ -69,6 +76,7 @@ class DnsQueryService:
         ingest_stats.record(queries)
         alerts_created = DnsAnomalyService(db).process_queries(queries)
         ClientBehaviorAggregator(db).process_queries(queries)
+        alerts_created += ForbiddenCountryService(db).process_queries(queries)
         alerts_created += BehaviorScoringService(db).process_queries(queries)
         db.commit()
 
@@ -76,16 +84,18 @@ class DnsQueryService:
         inserted = 0
         if to_persist:
             repository = DnsQueryRepository(db)
-            logger.info(
-                "Bulk creating DNS queries",
-                extra={"received": len(queries), "persisting": len(to_persist)},
-            )
             inserted = repository.bulk_create(to_persist)
-        else:
-            logger.debug(
-                "Bulk DNS ingest: no queries persisted",
-                extra={"received": len(queries)},
-            )
+
+        logger.info(
+            "DNS bulk ingest processed",
+            extra=structured_extra(
+                "dns_bulk_ingest",
+                received=len(queries),
+                inserted=inserted,
+                skipped=len(queries) - inserted,
+                alerts_created=alerts_created,
+            ),
+        )
 
         return {
             "received": len(queries),
@@ -117,7 +127,6 @@ class DnsQueryService:
         )
         client_ips = list({item.client_ip for item in items})
         identity_map = DeviceRepository(db).get_identity_map_by_client_ips(client_ips)
-        logger.info("Fetched DNS queries", extra={"count": len(items), "total": total, "page": page})
         return {
             "items": [
                 DnsQueryResponse.model_validate(item).model_copy(
@@ -141,11 +150,9 @@ class DnsQueryService:
         end_date: Optional[datetime] = None
     ) -> dict:
         if _use_live_aggregates(start_date, end_date):
-            logger.info("Fetching live DNS stats")
             return ingest_stats.get_stats()
 
         repository = DnsQueryRepository(db)
-        logger.info("Fetching DNS stats from database")
         stats = repository.get_stats(start_date=start_date, end_date=end_date)
         stats["source"] = "database"
         return stats
@@ -157,7 +164,6 @@ class DnsQueryService:
             return sorted(live_clients | db_clients)
 
         repository = DnsQueryRepository(db)
-        logger.info("Fetching unique clients")
         return repository.get_unique_clients()
 
     def get_alerts(
@@ -185,9 +191,15 @@ class DnsQueryService:
 
     def cleanup_old_records(self, db: Session, days: int = 30) -> dict:
         repository = DnsQueryRepository(db)
-        logger.info("Cleaning up old DNS records", extra={"days": days})
+        logger.info(
+            "Cleaning up old DNS records",
+            extra=structured_extra("dns_cleanup_started", days=days),
+        )
         count = repository.delete_old_records(days=days)
-        logger.info("Old DNS records deleted", extra={"deleted": count})
+        logger.info(
+            "Old DNS records deleted",
+            extra=structured_extra("dns_cleanup_completed", deleted=count),
+        )
         return {"deleted": count}
 
     def get_grouped_by_site(
@@ -201,7 +213,6 @@ class DnsQueryService:
         limit: int = 50
     ) -> dict:
         if _use_live_aggregates(start_date, end_date) and client_ip is None:
-            logger.info("Fetching live grouped sites")
             return ingest_stats.get_grouped_sites(
                 blocked_only=blocked_only,
                 filter_noise=filter_noise,
@@ -209,7 +220,6 @@ class DnsQueryService:
             )
 
         repository = DnsQueryRepository(db)
-        logger.info("Fetching grouped sites from database")
         result = repository.get_grouped_by_site(
             start_date=start_date,
             end_date=end_date,

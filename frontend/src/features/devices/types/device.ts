@@ -9,6 +9,79 @@ export interface Device {
   updated_at?: string | null;
 }
 
+export type BehaviorReviewSource = 'template' | 'llm';
+
+export interface BehaviorReview {
+  device_id: number;
+  generated_at: string;
+  summary: string;
+  source: BehaviorReviewSource;
+  review_mode: string;
+  llm_model?: string | null;
+  llm_error?: string | null;
+}
+
+export interface CountryCountItem {
+  country_code: string;
+  country_name: string;
+  query_count: number;
+  share_percent: number;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+  is_new?: boolean;
+}
+
+export interface DeviceCountryBreakdown {
+  device_id: number;
+  period_hours: number;
+  total_queries: number;
+  primary_country_code: string | null;
+  primary_country_name: string | null;
+  countries: CountryCountItem[];
+  note?: string | null;
+  known_regions_count?: number;
+}
+
+export interface DeviceCountrySummary {
+  device_id: number;
+  primary_country_code: string | null;
+  primary_country_name: string | null;
+}
+
+export interface DeviceCountrySummaryList {
+  items: DeviceCountrySummary[];
+  period_hours: number;
+}
+
+export interface DeviceLoginGeoObservation {
+  device_id: number;
+  public_ip: string;
+  country_code: string | null;
+  country_name: string | null;
+  region_name?: string | null;
+  city?: string | null;
+  observed_at: string;
+  source: string;
+}
+
+export interface DeviceLoginGeo {
+  device_id: number;
+  latest: DeviceLoginGeoObservation | null;
+  history: DeviceLoginGeoObservation[];
+}
+
+export interface DeviceLoginGeoSummary {
+  device_id: number;
+  country_code: string | null;
+  country_name: string | null;
+  public_ip: string | null;
+  observed_at: string | null;
+}
+
+export interface DeviceLoginGeoSummaryList {
+  items: DeviceLoginGeoSummary[];
+}
+
 export interface BehaviorProfile {
   device_id: number;
   profile_ready: boolean;
@@ -32,9 +105,19 @@ export interface BlockedClientSummary {
   mac_address: string | null;
   last_score: number | null;
   last_scored_at: string | null;
+  in_quarantine: boolean;
+  quarantine_expires_at: string | null;
   active_block_count: number;
   latest_blocked_domain: string | null;
   latest_block_at: string | null;
+  latest_block_source: string | null;
+}
+
+export interface QuarantineActionResult {
+  device_id: number;
+  in_quarantine: boolean;
+  quarantine_expires_at: string | null;
+  message: string;
 }
 
 export interface BlockedClientsListResponse {

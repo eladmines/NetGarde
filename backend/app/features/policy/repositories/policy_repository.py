@@ -106,3 +106,23 @@ class PolicyRepository:
         for row in rows:
             row.ended_at = now
         return len(rows)
+
+    def end_quarantine(self, device_id: int) -> bool:
+        """End active quarantine early (admin release)."""
+        row = self.get_active_quarantine(device_id)
+        if not row:
+            return False
+        row.ended_at = datetime.now(timezone.utc)
+        return True
+
+    def list_active_quarantines(self) -> List[DeviceQuarantine]:
+        now = datetime.now(timezone.utc)
+        return (
+            self.db.query(DeviceQuarantine)
+            .filter(
+                DeviceQuarantine.ended_at.is_(None),
+                DeviceQuarantine.expires_at > now,
+            )
+            .order_by(DeviceQuarantine.started_at.desc())
+            .all()
+        )

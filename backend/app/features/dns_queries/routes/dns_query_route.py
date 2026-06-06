@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
-import logging
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryBulkCreate
 from app.features.dns_queries.controllers.dns_query_controller import (
     create_dns_query_controller,
@@ -22,8 +21,10 @@ from app.shared.websocket_manager import ws_manager
 from app.shared.config import settings
 from app.shared.service_auth import verify_dns_ingest_service
 from app.shared.admin_auth import verify_admin_api_token
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/dns-queries", tags=["DNS Queries"])
 
@@ -198,7 +199,9 @@ async def dns_queries_websocket(websocket: WebSocket):
                 await websocket.send_text("pong")
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
-        logger.info("WebSocket client disconnected normally")
     except Exception as e:
         ws_manager.disconnect(websocket)
-        logger.warning(f"WebSocket connection error: {e}")
+        logger.warning(
+            "DNS WebSocket connection error",
+            extra=structured_extra("dns_ws_error", error=str(e)),
+        )

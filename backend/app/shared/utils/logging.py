@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import json
 
+from app.shared.logging_context import RequestContextFilter
+
 
 def _get_log_level() -> int:
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -17,7 +19,10 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
             "time": self.formatTime(record, datefmt="%Y-%m-%dT%H:%M:%S%z"),
+            "service": getattr(record, "service", os.getenv("LOG_SERVICE", "backend")),
         }
+        if getattr(record, "request_id", None):
+            payload["request_id"] = record.request_id
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
         # Include any structured extras
@@ -43,6 +48,8 @@ class JsonFormatter(logging.Formatter):
                 "threadName",
                 "processName",
                 "process",
+                "service",
+                "request_id",
             }:
                 payload[key] = value
         return json.dumps(payload, ensure_ascii=False)
@@ -66,6 +73,7 @@ def setup_logging() -> None:
         return
 
     root_logger.setLevel(_get_log_level())
+    root_logger.addFilter(RequestContextFilter())
 
     use_json = os.getenv("LOG_JSON", "0") == "1"
     to_file = os.getenv("LOG_TO_FILE", "1") != "0"

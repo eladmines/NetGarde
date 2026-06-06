@@ -13,6 +13,7 @@ from app.features.vpn.repositories.ip_pool_repository import IpPoolRepository
 from app.features.vpn.schemas.topology import VpnPeerNodeRead, VpnServerRead, VpnTopologyRead
 from app.features.vpn.services.wireguard_agent_client import list_peers_on_host
 from app.shared.config import settings
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -33,7 +34,10 @@ def _wg_peer_map() -> Dict[str, dict]:
     try:
         rows = list_peers_on_host()
     except Exception as exc:
-        logger.warning("WireGuard agent peer list unavailable: %s", exc)
+        logger.warning(
+            "WireGuard agent peer list unavailable",
+            extra=structured_extra("wg_agent_unavailable", error=str(exc)),
+        )
         return {}
     return {row["public_key"]: row for row in rows}
 

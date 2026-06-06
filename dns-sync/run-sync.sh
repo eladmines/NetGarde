@@ -16,26 +16,43 @@ if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
 fi
 
-# Get DNSMASQ_RESTART_CMD from environment or use default
-DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-killall -HUP dnsmasq}
-# Redirect blocked domains to this server by default (for block page)
-BLOCK_PAGE_IP=${BLOCK_PAGE_IP:-$(hostname -I | awk '{print $1}')}
+# Reload host dnsmasq (signals root-owned process on EC2)
+DNSMASQ_RESTART_CMD=${DNSMASQ_RESTART_CMD:-sudo systemctl reload dnsmasq}
+
+# Block page on WireGuard gateway (docker block-page :80). Not 172.31.x.x (VPC — unreachable from VPN).
+BLOCK_PAGE_IP=${BLOCK_PAGE_IP:-10.0.0.1}
+BLOCK_IP=${BLOCK_IP:-${BLOCK_PAGE_IP}}
 
 # Run the DNS sync container once (SYNC_INTERVAL=0 means run once and exit)
 # Note: We disable the internal reload since it can't access host dnsmasq
 # Use --no-deps to skip starting dependencies (backend should already be running)
-docker compose run --rm --no-deps -e SYNC_INTERVAL=0 -e DNSMASQ_RESTART_CMD="" -e BLOCK_PAGE_IP="$BLOCK_PAGE_IP" dns-sync
+BLOCK_IPV6_IP=${BLOCK_IPV6_IP:-::}
+
+docker compose run --rm --no-deps \
+  -e SYNC_INTERVAL=0 \
+  -e DNSMASQ_RESTART_CMD="" \
+  -e BLOCK_IP="$BLOCK_IP" \
+  -e BLOCK_IPV6_IP="$BLOCK_IPV6_IP" \
+  dns-sync
 
 # Reload dnsmasq on the host after container completes
 if [ $? -eq 0 ]; then
-    echo "Reloading dnsmasq on host..."
-    $DNSMASQ_RESTART_CMD || {
-        # Try alternative methods if killall fails
+    echo "Reloading dnsmasq on host (BLOCK_IP=$BLOCK_IP)..."
+    if eval "$DNSMASQ_RESTART_CMD"; then
+        echo "dnsmasq reloaded."
+    else
         sudo systemctl reload dnsmasq 2>/dev/null || \
-        sudo service dnsmasq reload 2>/dev/null || \
-        sudo killall -HUP dnsmasq 2>/dev/null || \
-        echo "Warning: Could not reload dnsmasq. You may need to reload manually."
-    }
+        sudo systemctl restart dnsmasq 2>/dev/null || \
+        sudo killall -HUP dnsmasq 2>/dev/null || {
+            echo "Could not reload dnsmasq. Run: sudo systemctl restart dnsmasq"
+            exit 1
+        }
+    fi
+    if [[ -x "$PROJECT_DIR/scripts/refresh-block-page-after-sync.sh" ]]; then
+        echo "Refreshing block-page TLS SANs for HTTPS..."
+        bash "$PROJECT_DIR/scripts/refresh-block-page-after-sync.sh" || \
+            echo "warning: block-page TLS refresh failed (HTTPS may use fallback cert)"
+    fi
 fi
 
 exit $?

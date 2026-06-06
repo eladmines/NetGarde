@@ -3,11 +3,19 @@ import { DnsAlertListResponse } from '../../dns-queries/types/dnsQuery';
 import {
   Device,
   BehaviorProfile,
+  BehaviorReview,
+  DeviceCountryBreakdown,
+  DeviceCountrySummaryList,
+  DeviceLoginGeo,
+  DeviceLoginGeoSummaryList,
   DeviceSecurityPolicy,
   ClientBlockedDomain,
   BlockedClientsListResponse,
+  QuarantineActionResult,
 } from '../types/device';
 import { DevicePolicyAssignment } from '../../policy/types/policy';
+import { UsageHistoryResponse } from '../../dashboard/types/usageHistory';
+import { DeviceUsageLiveResponse } from '../../dashboard/types/usageLive';
 
 import { API_BASE_URL } from '../../../shared/config/apiBaseUrl';
 
@@ -29,6 +37,12 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const devicesApi = {
   list: () => apiFetch<Device[]>('/devices'),
+  listUsageLive: (maxAgeSec?: number) => {
+    const q = maxAgeSec != null ? `?max_age_sec=${maxAgeSec}` : '';
+    return apiFetch<DeviceUsageLiveResponse>(`/devices/usage/live${q}`);
+  },
+  listUsageHistory: (minutes = 60) =>
+    apiFetch<UsageHistoryResponse>(`/devices/usage/history?minutes=${minutes}`),
   listBlockedClients: () => apiFetch<BlockedClientsListResponse>('/devices/blocked-clients'),
   getPolicyAssignment: (deviceId: number) =>
     apiFetch<DevicePolicyAssignment>(`/devices/${deviceId}/policy-assignment`),
@@ -40,6 +54,20 @@ export const devicesApi = {
     }),
   getBehaviorProfile: (deviceId: number) =>
     apiFetch<BehaviorProfile>(`/devices/${deviceId}/behavior-profile`),
+  getDnsCountries: (deviceId: number, periodHours = 168) =>
+    apiFetch<DeviceCountryBreakdown>(
+      `/devices/${deviceId}/dns-countries?period_hours=${periodHours}`,
+    ),
+  listCountrySummaries: (periodHours = 168) =>
+    apiFetch<DeviceCountrySummaryList>(`/devices/countries/summary?period_hours=${periodHours}`),
+  getLoginLocation: (deviceId: number) =>
+    apiFetch<DeviceLoginGeo>(`/devices/${deviceId}/login-location`),
+  listLoginLocationSummaries: () =>
+    apiFetch<DeviceLoginGeoSummaryList>('/devices/login-locations/summary'),
+  getBehaviorReview: (deviceId: number, refresh = false) => {
+    const q = refresh ? '?refresh=true' : '';
+    return apiFetch<BehaviorReview>(`/devices/${deviceId}/behavior-review${q}`);
+  },
   getSecurityPolicy: (deviceId: number) =>
     apiFetch<DeviceSecurityPolicy>(`/devices/${deviceId}/security-policy`),
   updateSecurityPolicy: (deviceId: number, body: Partial<DeviceSecurityPolicy>) =>
@@ -52,6 +80,16 @@ export const devicesApi = {
     apiFetch<ClientBlockedDomain[]>(`/devices/${deviceId}/client-blocks`),
   revokeClientBlock: (deviceId: number, blockId: number) =>
     apiFetch<{ revoked: boolean }>(`/devices/${deviceId}/client-blocks/${blockId}`, {
+      method: 'DELETE',
+    }),
+  startQuarantine: (deviceId: number, hours = 4) =>
+    apiFetch<QuarantineActionResult>(`/devices/${deviceId}/quarantine`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hours }),
+    }),
+  endQuarantine: (deviceId: number) =>
+    apiFetch<QuarantineActionResult>(`/devices/${deviceId}/quarantine`, {
       method: 'DELETE',
     }),
   getBehaviorEvents: (deviceId: number, page = 1, pageSize = 20) =>

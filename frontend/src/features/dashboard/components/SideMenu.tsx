@@ -36,9 +36,12 @@ const Drawer = styled(MuiDrawer, {
       duration: theme.transitions.duration.enteringScreen,
     }),
     overflowX: 'hidden',
-    marginTop: '48px', // Below the horizontal navbar
-    backgroundColor: '#f3f3f3',
-    borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+    marginTop: '48px',
+    backgroundColor: (theme.vars || theme).palette.background.paper,
+    borderRight: `1px solid ${(theme.vars || theme).palette.divider}`,
+    ...theme.applyStyles('dark', {
+      backgroundColor: (theme.vars || theme).palette.background.default,
+    }),
   },
 }));
 
@@ -64,7 +67,8 @@ export default function SideMenu() {
           justifyContent: open ? 'space-between' : 'center',
           p: 2,
           minHeight: 64,
-          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          borderBottom: 1,
+          borderColor: 'divider',
         }}
       >
         {open && (
@@ -85,7 +89,7 @@ export default function SideMenu() {
           sx={{
             color: 'text.secondary',
             '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              backgroundColor: 'action.hover',
             },
           }}
         >
@@ -104,7 +108,7 @@ export default function SideMenu() {
         <MenuContent open={open} />
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(0, 0, 0, 0.12)' }} />
+      <Divider />
       <Stack
         direction="row"
         sx={{
@@ -113,13 +117,13 @@ export default function SideMenu() {
           alignItems: 'center',
           justifyContent: open ? 'flex-start' : 'center',
           minHeight: 72,
-          borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+          borderTop: 1,
+          borderColor: 'divider',
         }}
       >
         <Avatar
           sizes="small"
           alt="Riley Carter"
-          src="/static/images/avatar/7.jpg"
           sx={{ width: open ? 36 : 32, height: open ? 36 : 32 }}
         />
         {open && (

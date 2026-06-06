@@ -5,6 +5,52 @@ export interface PolicyPack {
   description: string | null;
   enabled_globally: boolean;
   domain_count: number;
+  blocked_sites_count?: number;
+  domain_list_source?: 'snapshot' | 'seed' | 'empty';
+}
+
+export interface PolicyPackDomainsPage {
+  slug: string;
+  domains: string[];
+  total: number;
+  skip: number;
+  limit: number;
+  domain_list_source: string;
+  query: string;
+}
+
+export interface ForbiddenCountryRule {
+  user_country: string;
+  user_country_name: string;
+  blocked_countries: string[];
+  blocked_country_names: string[];
+}
+
+export interface CountryChoice {
+  code: string;
+  name: string;
+}
+
+export interface DestinationCountryRuleUpdate {
+  user_country: string;
+  blocked_countries: string[];
+}
+
+export interface GeoCountryPolicyUpdate {
+  vpn_login_block_enabled: boolean;
+  destination_rules_enabled: boolean;
+  vpn_login_denied_countries: string[];
+  destination_rules: DestinationCountryRuleUpdate[];
+}
+
+export interface ForbiddenCountryPolicy {
+  enabled: boolean;
+  user_country_source: string;
+  rules: ForbiddenCountryRule[];
+  vpn_login_block_enabled: boolean;
+  blocked_vpn_login_countries: string[];
+  blocked_vpn_login_country_names: string[];
+  managed_in_database: boolean;
 }
 
 export interface PolicyProfile {
@@ -27,6 +73,17 @@ export interface ScheduleRule {
   start: string;
   end: string;
   pack_slugs: string[];
+}
+
+export interface PolicySyncStatus {
+  last_sync_at: string | null;
+  last_success: boolean | null;
+  last_message: string | null;
+}
+
+export interface PolicyApplyResult {
+  queued: boolean;
+  message: string;
 }
 
 export interface DevicePolicyAssignment {

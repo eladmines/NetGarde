@@ -90,6 +90,10 @@ class ClientBlockedDomainRepository:
 
     def list_active_behavior_auto_blocks(self) -> List[ClientBlockedDomain]:
         """Active auto-blocks with device loaded (for admin blocked-clients list)."""
+        return self.list_active_blocks_for_admin()
+
+    def list_active_blocks_for_admin(self) -> List[ClientBlockedDomain]:
+        """Active per-device blocks (any source) with device loaded."""
         now = datetime.now(timezone.utc)
         return (
             self.db.query(ClientBlockedDomain)
@@ -98,7 +102,6 @@ class ClientBlockedDomainRepository:
                 joinedload(ClientBlockedDomain.device).joinedload(Device.ip_lease),  # type: ignore[arg-type]
             )
             .filter(
-                ClientBlockedDomain.source == "behavior_auto",
                 ClientBlockedDomain.revoked_at.is_(None),
                 or_(ClientBlockedDomain.expires_at.is_(None), ClientBlockedDomain.expires_at > now),
             )

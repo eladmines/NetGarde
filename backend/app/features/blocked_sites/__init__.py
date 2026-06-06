@@ -1,4 +1,0 @@
-"""
-Blocked Sites feature module.
-"""
-

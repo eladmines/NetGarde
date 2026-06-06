@@ -1,5 +1,5 @@
 import asyncio
-import logging
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional, List
@@ -7,9 +7,11 @@ from datetime import datetime
 from app.features.dns_queries.services.dns_query_service_interface import IDnsQueryService
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate, DnsQueryBulkCreate
 from app.features.dns_queries.services.whois_service import WhoisLookupError, lookup_domain_whois
+from app.shared.logging_context import structured_extra
+from app.shared.utils.logging import get_logger
 from app.shared.websocket_manager import ws_manager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_dns_query_controller(dns_query_data: DnsQueryCreate, db: Session, service: IDnsQueryService):
@@ -52,7 +54,10 @@ def _broadcast_queries(queries: List[DnsQueryCreate]):
         # If no event loop exists, create one
         asyncio.run(ws_manager.broadcast(data))
     except Exception as e:
-        logger.warning(f"Failed to broadcast DNS queries via WebSocket: {e}")
+        logger.warning(
+            "Failed to broadcast DNS queries via WebSocket",
+            extra=structured_extra("dns_ws_broadcast_failed", error=str(e)),
+        )
 
 
 def get_dns_queries_controller(
@@ -139,5 +144,8 @@ def get_domain_whois_controller(domain: str):
     except WhoisLookupError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        logger.exception("WHOIS lookup failed", extra={"domain": domain})
+        logger.exception(
+            "WHOIS lookup failed",
+            extra=structured_extra("whois_lookup_failed", domain=domain),
+        )
         raise HTTPException(status_code=502, detail="WHOIS lookup failed") from e

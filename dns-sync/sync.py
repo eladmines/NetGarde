@@ -8,20 +8,19 @@ import os
 import sys
 import subprocess
 import time
-import logging
 import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from log_config import setup_logging, structured_extra
+
+logger = setup_logging(service="dns-sync", logger_name=__name__)
 
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 POLICY_DNS_SYNC_ENDPOINT = os.getenv('POLICY_DNS_SYNC_ENDPOINT', '/policy/dns-sync')
+POLICY_SYNC_REPORT_ENDPOINT = os.getenv('POLICY_SYNC_REPORT_ENDPOINT', '/policy/sync-report')
 BLOCK_IP = os.getenv('BLOCK_IP', '0.0.0.0')
+BLOCK_IPV6_IP = os.getenv('BLOCK_IPV6_IP', '::')
 DNS_CONFIG_PATH = os.getenv('DNS_CONFIG_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
 SYNC_INTERVAL = int(os.getenv('SYNC_INTERVAL', '3600'))
 DNSMASQ_RESTART_CMD = os.getenv('DNSMASQ_RESTART_CMD', 'killall -HUP dnsmasq')
@@ -44,50 +43,104 @@ def _api_headers(admin: bool = False, ingest: bool = False) -> Dict[str, str]:
 
 def fetch_policy_dns_sync(api_url: str, endpoint: str) -> Optional[Dict[str, Any]]:
     if not api_url:
-        logger.error("API_BASE_URL environment variable is not set")
+        logger.error(
+            "API_BASE_URL not set",
+            extra=structured_extra("policy_sync_config_error"),
+        )
         return None
     try:
         import urllib.request
 
         url = f"{api_url.rstrip('/')}{endpoint}"
-        logger.info(f"Fetching policy DNS sync from {url}")
         req = urllib.request.Request(url, headers=_api_headers(ingest=True))
         with urllib.request.urlopen(req, timeout=60) as response:
             if response.status != 200:
-                logger.error(f"Policy DNS sync API returned status {response.status}")
+                logger.error(
+                    "Policy DNS sync API error",
+                    extra=structured_extra("policy_sync_fetch_failed", status_code=response.status),
+                )
                 return None
             return json.loads(response.read().decode('utf-8'))
-    except Exception as e:
-        logger.error(f"Error fetching policy DNS sync: {e}", exc_info=True)
+    except Exception:
+        logger.error(
+            "Policy DNS sync fetch failed",
+            extra=structured_extra("policy_sync_fetch_failed"),
+            exc_info=True,
+        )
         return None
 
 
-def domains_to_dnsmasq_lines(domains: List[str], block_ip: str) -> List[str]:
+def _normalize_blocked_domain(site: str) -> str:
+    domain = str(site).strip().lower()
+    domain = domain.replace('http://', '').replace('https://', '').replace('www.', '')
+    return domain.split('/')[0].split('?')[0]
+
+
+def block_domain_dnsmasq_lines(
+    domain: str,
+    block_ip: str,
+    block_ipv6_ip: str,
+) -> List[str]:
+    """IPv4 + IPv6 sinkhole lines (AAAA bypass fix for dual-stack clients)."""
+    lines = [f"address=/{domain}/{block_ip}"]
+    if block_ipv6_ip:
+        lines.append(f"address=/{domain}/{block_ipv6_ip}")
+    return lines
+
+
+def domains_to_dnsmasq_lines(
+    domains: List[str],
+    block_ip: str,
+    block_ipv6_ip: Optional[str] = None,
+) -> List[str]:
+    if block_ipv6_ip is None:
+        block_ipv6_ip = BLOCK_IPV6_IP
     entries = []
     seen = set()
     for site in domains:
-        domain = str(site).strip().lower()
+        domain = _normalize_blocked_domain(site)
         if not domain or domain in seen:
             continue
         seen.add(domain)
-        domain = domain.replace('http://', '').replace('https://', '').replace('www.', '')
-        domain = domain.split('/')[0].split('?')[0]
-        if domain:
-            entries.append(f"address=/{domain}/{block_ip}")
+        entries.extend(block_domain_dnsmasq_lines(domain, block_ip, block_ipv6_ip))
     return entries
 
 
-def convert_device_entry_to_dnsmasq(entry: Dict[str, Any], block_ip: str) -> List[str]:
+def _dhcp_host_tag_line(entry: Dict[str, Any], tag: str) -> Optional[str]:
+    """Tag DNS queries by VPN client IP (WireGuard) and/or LAN MAC."""
     mac = (entry.get('mac_address') or '').strip().lower()
+    client_ip = (entry.get('client_ip') or '').strip()
+    if not mac and not client_ip:
+        return None
+    parts: List[str] = []
+    if mac:
+        parts.append(mac)
+    if client_ip:
+        parts.append(client_ip)
+    parts.append(f"set:{tag}")
+    return f"dhcp-host={','.join(parts)}"
+
+
+def convert_device_entry_to_dnsmasq(
+    entry: Dict[str, Any],
+    block_ip: str,
+    block_ipv6_ip: Optional[str] = None,
+) -> List[str]:
+    if block_ipv6_ip is None:
+        block_ipv6_ip = BLOCK_IPV6_IP
     tag = entry.get('tag') or f"ng_device_{entry.get('device_id')}"
-    if not mac:
+    host_line = _dhcp_host_tag_line(entry, tag)
+    if not host_line:
         return []
 
-    lines = [f"# Device {entry.get('device_id')}", f"dhcp-host={mac},set:{tag}"]
+    lines = [f"# Device {entry.get('device_id')}", host_line]
 
     if entry.get('allowlist_only'):
         lines.append(f"tag:{tag}")
         lines.append(f"address=/#/{block_ip}")
+        if block_ipv6_ip:
+            lines.append(f"tag:{tag}")
+            lines.append(f"address=/#/{block_ipv6_ip}")
         for domain in entry.get('allowlist_domains') or []:
             d = str(domain).strip().lower()
             if not d:
@@ -95,12 +148,22 @@ def convert_device_entry_to_dnsmasq(entry: Dict[str, Any], block_ip: str) -> Lis
             lines.append(f"tag:{tag}")
             lines.append(f"address=/{d}/#")
     else:
+        for pattern in entry.get('block_country_tlds') or []:
+            p = str(pattern).strip().lower()
+            if not p:
+                continue
+            if not p.startswith('.'):
+                p = f'.{p}'
+            for addr_line in block_domain_dnsmasq_lines(p, block_ip, block_ipv6_ip):
+                lines.append(f"tag:{tag}")
+                lines.append(addr_line)
         for domain in entry.get('block_domains') or []:
             d = str(domain).strip().lower()
             if not d:
                 continue
-            lines.append(f"tag:{tag}")
-            lines.append(f"address=/{d}/{block_ip}")
+            for addr_line in block_domain_dnsmasq_lines(d, block_ip, block_ipv6_ip):
+                lines.append(f"tag:{tag}")
+                lines.append(addr_line)
     return lines
 
 
@@ -115,10 +178,13 @@ def write_dns_config(entries: List[str], config_path: str) -> bool:
         ]
         content = '\n'.join(header + entries) + '\n'
         config_file.write_text(content)
-        logger.info(f"Wrote {len(entries)} global DNS entries to {config_path}")
         return True
-    except Exception as e:
-        logger.error(f"Error writing DNS config: {e}", exc_info=True)
+    except Exception:
+        logger.error(
+            "Failed to write DNS config",
+            extra=structured_extra("policy_dns_write_failed", path=config_path),
+            exc_info=True,
+        )
         return False
 
 
@@ -128,21 +194,31 @@ def write_client_block_configs(files: Dict[str, List[str]], config_dir: str) -> 
         config_path.mkdir(parents=True, exist_ok=True)
 
         active_names = set(files.keys())
+        removed = 0
         for existing in config_path.glob('ng-device-*.conf'):
             if existing.name not in active_names:
                 existing.unlink()
-                logger.info(f"Removed stale client block config {existing}")
+                removed += 1
 
         for filename, lines in files.items():
             content = '\n'.join(lines) + '\n'
             (config_path / filename).write_text(content)
-            logger.info(f"Wrote {len(lines)} lines to {config_path / filename}")
 
-        if not files:
-            logger.info("No per-device policy configs to write")
+        logger.info(
+            "Per-device DNS configs written",
+            extra=structured_extra(
+                "policy_device_configs_written",
+                device_count=len(files),
+                removed_stale=removed,
+            ),
+        )
         return True
-    except Exception as e:
-        logger.error(f"Error writing client block configs: {e}", exc_info=True)
+    except Exception:
+        logger.error(
+            "Failed to write per-device DNS configs",
+            extra=structured_extra("policy_device_configs_failed", path=config_dir),
+            exc_info=True,
+        )
         return False
 
 
@@ -151,15 +227,16 @@ def reload_dnsmasq(cmd: str) -> bool:
         return True
     try:
         subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
-        logger.info("dnsmasq reloaded successfully")
         return True
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to reload dnsmasq: {e.stderr}")
+        logger.error(
+            "dnsmasq reload failed",
+            extra=structured_extra("dnsmasq_reload_failed", stderr=(e.stderr or "")[:500]),
+        )
         return False
 
 
 def sync_policy_dns():
-    logger.info("Starting policy DNS sync...")
     data = fetch_policy_dns_sync(API_BASE_URL, POLICY_DNS_SYNC_ENDPOINT)
     if data is None:
         return False
@@ -178,9 +255,21 @@ def sync_policy_dns():
     if not write_client_block_configs(files, CLIENT_BLOCKS_CONFIG_DIR):
         return False
 
+    logger.info(
+        "Policy DNS config updated",
+        extra=structured_extra(
+            "policy_dns_sync_ok",
+            global_entries=len(global_lines),
+            device_configs=len(files),
+        ),
+    )
+
     if DNSMASQ_RESTART_CMD:
         if not reload_dnsmasq(DNSMASQ_RESTART_CMD):
-            logger.warning("Failed to reload dnsmasq, but config was updated")
+            logger.warning(
+                "dnsmasq reload failed after config update",
+                extra=structured_extra("dnsmasq_reload_failed_after_sync"),
+            )
             return False
     return True
 
@@ -188,7 +277,10 @@ def sync_policy_dns():
 def parse_dhcp_leases(leases_path: str) -> List[Dict[str, Any]]:
     lease_file = Path(leases_path)
     if not lease_file.exists():
-        logger.warning(f"DHCP lease file not found: {leases_path}")
+        logger.warning(
+            "DHCP lease file not found",
+            extra=structured_extra("dhcp_leases_missing", path=leases_path),
+        )
         return []
 
     leases: List[Dict[str, Any]] = []
@@ -210,25 +302,26 @@ def parse_dhcp_leases(leases_path: str) -> List[Dict[str, Any]]:
                 'hostname': hostname,
                 'mac_address': mac,
             })
-    except Exception as e:
-        logger.error(f"Error parsing DHCP leases: {e}", exc_info=True)
+    except Exception:
+        logger.error(
+            "Failed to parse DHCP leases",
+            extra=structured_extra("dhcp_leases_parse_failed", path=leases_path),
+            exc_info=True,
+        )
         return []
 
-    logger.info(f"Parsed {len(leases)} DHCP lease records")
     return leases
 
 
 def sync_devices_from_dhcp(api_url: str, endpoint: str, leases_path: str) -> bool:
     leases = parse_dhcp_leases(leases_path)
     if not leases:
-        logger.info("No DHCP leases available to sync")
         return True
     try:
         import urllib.request
 
         url = f"{api_url.rstrip('/')}{endpoint}"
         data = json.dumps({'leases': leases}).encode('utf-8')
-        logger.info(f"Syncing {len(leases)} DHCP leases to {url}")
         req = urllib.request.Request(url, data=data, method='POST')
         for key, value in _api_headers(ingest=True).items():
             req.add_header(key, value)
@@ -236,13 +329,50 @@ def sync_devices_from_dhcp(api_url: str, endpoint: str, leases_path: str) -> boo
         with urllib.request.urlopen(req, timeout=30) as response:
             body = response.read().decode('utf-8')
             if response.status not in (200, 201):
-                logger.error(f"Device sync failed with status {response.status}: {body}")
+                logger.error(
+                    "DHCP device sync API error",
+                    extra=structured_extra(
+                        "dhcp_sync_failed",
+                        status_code=response.status,
+                        body=body[:500],
+                    ),
+                )
                 return False
-            logger.info(f"Device sync completed: {body}")
+            logger.info(
+                "DHCP device sync completed",
+                extra=structured_extra("dhcp_sync_ok", lease_count=len(leases)),
+            )
             return True
-    except Exception as e:
-        logger.error(f"Failed to sync DHCP leases: {e}", exc_info=True)
+    except Exception:
+        logger.error(
+            "DHCP device sync failed",
+            extra=structured_extra("dhcp_sync_failed", lease_count=len(leases)),
+            exc_info=True,
+        )
         return False
+
+
+def report_policy_sync(success: bool, message: str = "") -> None:
+    if not API_BASE_URL:
+        return
+    try:
+        import urllib.request
+
+        url = f"{API_BASE_URL.rstrip('/')}{POLICY_SYNC_REPORT_ENDPOINT}"
+        body = json.dumps({"success": success, "message": message or None}).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={**_api_headers(ingest=True), "Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=15):
+            pass
+    except Exception as e:
+        logger.warning(
+            "Failed to report policy sync status",
+            extra=structured_extra("policy_sync_report_failed", error=str(e)),
+        )
 
 
 def sync_cycle() -> bool:
@@ -250,17 +380,37 @@ def sync_cycle() -> bool:
     devices_ok = True
     if DEVICE_SYNC_ENABLED:
         devices_ok = sync_devices_from_dhcp(API_BASE_URL, DEVICE_SYNC_ENDPOINT, DHCP_LEASES_PATH)
-    if policy_ok and devices_ok:
-        logger.info("Sync cycle completed successfully")
+    overall = policy_ok and devices_ok
+    report_policy_sync(
+        overall,
+        "Policy DNS sync completed" if overall else "Policy DNS sync completed with issues",
+    )
+    if overall:
+        logger.info(
+            "DNS sync cycle completed",
+            extra=structured_extra("dns_sync_cycle_ok"),
+        )
         return True
-    logger.warning(f"Sync cycle completed with issues (policy_ok={policy_ok}, devices_ok={devices_ok})")
+    logger.warning(
+        "DNS sync cycle completed with issues",
+        extra=structured_extra(
+            "dns_sync_cycle_partial",
+            policy_ok=policy_ok,
+            devices_ok=devices_ok,
+        ),
+    )
     return False
 
 
 def main():
-    logger.info("DNS Sync Container Started")
-    logger.info(f"  API_BASE_URL: {API_BASE_URL}")
-    logger.info(f"  POLICY_DNS_SYNC_ENDPOINT: {POLICY_DNS_SYNC_ENDPOINT}")
+    logger.info(
+        "DNS sync service started",
+        extra=structured_extra(
+            "dns_sync_started",
+            api_base_url=API_BASE_URL,
+            sync_interval_sec=SYNC_INTERVAL,
+        ),
+    )
     first_ok = sync_cycle()
     if SYNC_INTERVAL > 0:
         while True:

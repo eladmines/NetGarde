@@ -44,7 +44,6 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
             <Avatar
               sizes="small"
               alt="Riley Carter"
-              src="/static/images/avatar/7.jpg"
               sx={{ width: 24, height: 24 }}
             />
             <Typography component="p" variant="h6">

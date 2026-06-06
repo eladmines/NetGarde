@@ -19,6 +19,8 @@ Environment=API_BASE_URL=http://localhost:8000
 Environment=BATCH_SIZE=50
 Environment=POLL_INTERVAL=2
 Environment=FLUSH_INTERVAL=3
+Environment=LOG_JSON=1
+Environment=LOG_LEVEL=INFO
 # Zero Trust: require this when backend DNS_INGEST_TOKEN is set
 # Environment=DNS_INGEST_TOKEN=REPLACE_WITH_LONG_RANDOM_SECRET
 

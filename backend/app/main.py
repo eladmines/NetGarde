@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+import threading
+
 from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
@@ -6,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 import os
 
+from app.shared.request_logging_middleware import RequestLoggingMiddleware
 from app.shared.utils.logging import setup_logging
 from app.shared.dependencies import get_db
 from app.features.dns_queries.routes.dns_query_route import router as dns_query_router
@@ -14,22 +18,38 @@ from app.features.devices.routes.device_route import router as device_router
 from app.features.vpn.routes.enroll_route import router as vpn_router
 from app.features.vpn.routes.usage_route import router as usage_router
 from app.features.vpn.routes.topology_route import router as vpn_topology_router
+from app.features.dashboard.routes.dashboard_route import router as dashboard_router
+from app.features.policy.startup import warmup_policy_packs
+from app.shared.redis_client import close_redis
+from app.shared.config import settings
 
 # Initialize logging early
 setup_logging()
 
-_allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
-ALLOWED_ORIGINS = (
-    [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
-    if _allowed_origins_env
-    else [
-        # Production frontend (S3 website endpoint)
+
+def _build_allowed_origins() -> list[str]:
+    """Merge env, settings.CORS_ORIGINS, and known production frontends."""
+    origins: set[str] = {
         "http://netgarde-frontend.s3-website-us-east-1.amazonaws.com",
-        # Local dev
         "http://localhost:3000",
         "http://localhost:3001",
-    ]
-)
+    }
+    env = os.getenv("ALLOWED_ORIGINS", "").strip()
+    if env:
+        origins.update(o.strip() for o in env.split(",") if o.strip())
+    origins.update(settings.cors_origins_list)
+    return sorted(origins)
+
+
+ALLOWED_ORIGINS = _build_allowed_origins()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if settings.POLICY_PACK_FETCH_ENABLED and settings.POLICY_PACK_REFRESH_ON_STARTUP:
+        threading.Thread(target=warmup_policy_packs, name="policy-pack-warmup", daemon=True).start()
+    yield
+    close_redis()
 
 # Middleware to ensure redirects use HTTPS when behind CloudFront
 class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
@@ -79,6 +99,7 @@ class StableCORSHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="NetGarde API",
     redirect_slashes=False,  # allow redirects for trailing slash handling
+    lifespan=lifespan,
 )
 
 # Add HTTPS redirect middleware first (before other middleware)
@@ -102,6 +123,9 @@ app.add_middleware(
 # Add a stable CORS header layer to handle CDN forwarding edge-cases.
 app.add_middleware(StableCORSHeadersMiddleware)
 
+# Request ID + access logging (added last so it runs first on incoming requests).
+app.add_middleware(RequestLoggingMiddleware)
+
 @app.get("/health")
 def health(db: Session = Depends(get_db)):
     return {"status": "ok"}
@@ -113,3 +137,4 @@ app.include_router(device_router)
 app.include_router(vpn_router)
 app.include_router(usage_router)
 app.include_router(vpn_topology_router)
+app.include_router(dashboard_router)

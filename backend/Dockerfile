@@ -41,7 +41,8 @@ RUN apt-get update && \
 
 COPY . .
 
-RUN chown -R appuser:appuser /app
+RUN mkdir -p /var/lib/netgarde/policy-snapshots && \
+    chown -R appuser:appuser /app /var/lib/netgarde/policy-snapshots
 
 USER appuser
 

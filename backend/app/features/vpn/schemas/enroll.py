@@ -12,6 +12,11 @@ class EnrollRequest(BaseModel):
         max_length=32,
         description="Policy profile: kids, teen, or work",
     )
+    client_public_ip: Optional[str] = Field(
+        None,
+        max_length=45,
+        description="Optional public IP reported by the client before VPN tunnel is up",
+    )
 
     @field_validator("hostname")
     @classmethod

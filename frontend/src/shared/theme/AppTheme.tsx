@@ -25,6 +25,7 @@ export default function AppTheme(props: AppThemeProps) {
             cssVarPrefix: 'template',
           },
           colorSchemes,
+          defaultColorScheme: 'dark',
           typography,
           shadows,
           shape,
@@ -42,7 +43,7 @@ export default function AppTheme(props: AppThemeProps) {
     return <Fragment>{children}</Fragment>;
   }
   return (
-    <ThemeProvider theme={theme} disableTransitionOnChange>
+    <ThemeProvider theme={theme} disableTransitionOnChange defaultMode="dark">
       {children}
     </ThemeProvider>
   );

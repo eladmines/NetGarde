@@ -13,3 +13,9 @@ pydantic-settings==2.5.2
 
 # Environment
 python-dotenv==1.0.1
+
+# Real-time usage metrics (60-minute rolling window)
+redis>=5.0.0,<6
+
+# Dashboard AI review (OpenAI / Ollama HTTP)
+httpx>=0.27.0,<1

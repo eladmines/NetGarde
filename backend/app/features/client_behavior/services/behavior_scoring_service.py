@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from app.features.client_behavior.behavior_whitelist import is_whitelisted_root
+from app.features.client_behavior.services.behavior_review_templates import explain_alert_message
 from app.features.client_behavior.repositories.behavior_profile_repository import BehaviorProfileRepository
 from app.features.client_behavior.repositories.behavior_rollup_repository import BehaviorRollupRepository
 from app.features.client_behavior.repositories.client_blocked_domain_repository import ClientBlockedDomainRepository
@@ -18,6 +19,7 @@ from app.features.dns_queries.repositories.dns_alert_repository import DnsAlertR
 from app.features.dns_queries.schemas.dns_query import DnsQueryCreate
 from app.shared.config import settings
 from app.shared.domain_utils import extract_root_domain, is_noise_domain
+from app.shared.logging_context import structured_extra
 from app.shared.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -58,12 +60,12 @@ class BehaviorScoringService:
 
     def _score_device(self, device_id: int, entries: List[Tuple[str, str, str]]) -> int:
         profile = self.profile_repo.get_by_device_id(device_id)
+        if self._should_recompute_baseline(profile):
+            self.baseline_service.recompute_device(device_id)
+            profile = self.profile_repo.get_by_device_id(device_id)
+
         if not profile or not profile.profile_ready:
-            if self._should_recompute_baseline(profile):
-                self.baseline_service.recompute_device(device_id)
-                profile = self.profile_repo.get_by_device_id(device_id)
-            if not profile or not profile.profile_ready:
-                return 0
+            return 0
 
         baseline = self.profile_repo.parse_baseline(profile)
         window_min = settings.BEHAVIOR_SCORE_WINDOW_MINUTES
@@ -98,9 +100,14 @@ class BehaviorScoringService:
         events = 0
         if not recent_alert:
             client_ip = entries[0][0]
-            message = f"Behavior score {score}: " + "; ".join(reasons)
+            technical = f"Behavior score {score}: " + "; ".join(reasons)
             if top_domain:
-                message += f" (top domain: {top_domain})"
+                technical += f" (top domain: {top_domain})"
+            mode = settings.BEHAVIOR_REVIEW_MODE.strip().lower()
+            if mode == "template":
+                message = explain_alert_message(technical, domain=top_domain)
+            else:
+                message = technical
 
             self.alert_repo.create(
                 timestamp=datetime.now(timezone.utc),
@@ -112,6 +119,9 @@ class BehaviorScoringService:
                 message=message,
                 device_id=device_id,
             )
+            from app.features.client_behavior.services.behavior_review_cache import delete_cached_review
+
+            delete_cached_review(device_id)
             events = 1
 
         blocks_added = self._apply_auto_blocks_if_needed(device_id, score, entries)
@@ -144,15 +154,34 @@ class BehaviorScoringService:
             return False
         hours = max(1, int(policy_profile.quarantine_hours or 4))
         self.policy_repo.start_quarantine(device_id, score, hours)
-        logger.info(
-            "Device quarantine started (allowlist-only DNS)",
-            extra={"device_id": device_id, "score": score, "hours": hours},
+        logger.warning(
+            "Device quarantine started",
+            extra=structured_extra(
+                "device_quarantine_started",
+                device_id=device_id,
+                score=score,
+                hours=hours,
+            ),
         )
         return True
 
     def _should_recompute_baseline(self, profile) -> bool:
+        """True when baseline is missing or older than BEHAVIOR_BASELINE_RECOMPUTE_HOURS."""
         if profile is None:
             return True
+
+        baseline = self.profile_repo.parse_baseline(profile) if profile.baseline_json else {}
+        computed_raw = baseline.get("computed_at")
+        if isinstance(computed_raw, str) and computed_raw.strip():
+            try:
+                computed = datetime.fromisoformat(computed_raw.replace("Z", "+00:00"))
+                if computed.tzinfo is None:
+                    computed = computed.replace(tzinfo=timezone.utc)
+                age = datetime.now(timezone.utc) - computed
+                return age > timedelta(hours=settings.BEHAVIOR_BASELINE_RECOMPUTE_HOURS)
+            except ValueError:
+                pass
+
         if profile.updated_at is None:
             return True
         age = datetime.now(timezone.utc) - profile.updated_at
@@ -240,7 +269,10 @@ class BehaviorScoringService:
 
         remaining = policy.max_blocks_per_day - self.block_repo.count_blocks_today(device_id)
         if remaining <= 0:
-            logger.info("Auto-block skipped: daily limit", extra={"device_id": device_id})
+            logger.warning(
+                "Auto-block skipped: daily limit",
+                extra=structured_extra("auto_block_daily_limit", device_id=device_id),
+            )
             return 0
 
         domains = self._domains_for_auto_block(entries)[:remaining]
@@ -265,8 +297,13 @@ class BehaviorScoringService:
             score=score,
             expires_at=expires,
         )
-        logger.info(
+        logger.warning(
             "Behavior auto-block created",
-            extra={"device_id": device_id, "domain": domain, "score": score},
+            extra=structured_extra(
+                "behavior_auto_block",
+                device_id=device_id,
+                domain=domain,
+                score=score,
+            ),
         )
         return True
