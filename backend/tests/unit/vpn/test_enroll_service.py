@@ -37,6 +37,31 @@ def test_enroll_creates_peer_lease_and_device(mock_geo, mock_wg, db_session, enr
 
 
 @patch("app.features.vpn.services.enroll_service.apply_peer_on_host")
+def test_enroll_reuses_device_when_mac_already_registered(mock_wg, db_session, enroll_env, seed_policy):
+    svc = EnrollService(db_session)
+    svc.enroll(
+        EnrollRequest(
+            device_id="device-a",
+            public_key="clientPubKeyA=",
+            mac_address="aa:bb:cc:dd:ee:01",
+        )
+    )
+
+    result = svc.enroll(
+        EnrollRequest(
+            device_id="device-b",
+            public_key="clientPubKeyB=",
+            mac_address="aa:bb:cc:dd:ee:01",
+        )
+    )
+
+    assert result["device_token"]
+    devices = db_session.query(Device).filter(Device.mac_address == "aa:bb:cc:dd:ee:01").all()
+    assert len(devices) == 1
+    assert mock_wg.call_count == 2
+
+
+@patch("app.features.vpn.services.enroll_service.apply_peer_on_host")
 def test_enroll_rejects_conflicting_public_key(mock_wg, db_session, enroll_env, seed_policy):
     svc = EnrollService(db_session)
     svc.enroll(EnrollRequest(device_id="device-a", public_key="sameKey="))
