@@ -34,25 +34,19 @@ The system is deployed on **AWS** (EC2, RDS, S3, CloudFront, ECR) with GitHub Ac
 
 ## Screenshots
 
-> Add PNG/WebP captures to `docs/images/` (see [docs/images/README.md](docs/images/README.md)). Recommended width ~1400px, dark theme.
+> More captures: [docs/images/README.md](docs/images/README.md) (recommended width ~1400px, dark theme).
 
 ### Dashboard & monitoring
 
-| Network overview | Live DNS & throughput |
-|------------------|------------------------|
-| ![Network overview — AI summary, live stats, and alerts](docs/images/dashboard-home.png) | ![Live clients and bandwidth charts](docs/images/dashboard-live.png) |
+![Network overview — AI summary, live stats, and alerts](docs/images/dashboard-home.png)
 
 ### Policy & clients
 
-| Policy management | Client behavior profile |
-|-------------------|-------------------------|
-| ![Policy packs and device assignments](docs/images/policy.png) | ![Behavior baseline, score, and quarantine](docs/images/client-profiles.png) |
+![Behavior baseline, score, and quarantine](docs/images/client-profiles.png)
 
 ### Operations
 
-| Client world map | Blocked clients |
-|------------------|-----------------|
-| ![Geographic client map](docs/images/client-map.png) | ![Quarantine and DNS block admin view](docs/images/blocked-clients.png) |
+![Geographic client map](docs/images/client-map.png)
 
 ---
 
