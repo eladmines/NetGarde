@@ -1,6 +1,6 @@
 # NetGarde — Technical documentation
 
-Engineering documentation for the [NetGarde](https://github.com/eladmines/NetGarde) platform. The [root README](../README.md) is the portfolio overview; this folder is for implementation detail.
+Engineering documentation for the [NetGarde platform](https://github.com/NetGarde/NetGarde) ([organization](https://github.com/NetGarde)). The [root README](../README.md) is the portfolio overview; this folder is for implementation detail.
 
 ---
 
@@ -59,4 +59,5 @@ Engineering documentation for the [NetGarde](https://github.com/eladmines/NetGar
 | Backend env catalog | [backend/.env.example](../backend/.env.example) |
 | Frontend env catalog | [frontend/.env.example](../frontend/.env.example) |
 | Screenshot assets | [images/README.md](images/README.md) |
-| VPN enroll client | [NetGardeClient](https://github.com/eladmines/NetGardeClient) |
+| VPN enroll client | [NetGardeClient](https://github.com/NetGarde/NetGardeClient) |
+| GitHub organization | [NetGarde](https://github.com/NetGarde) |

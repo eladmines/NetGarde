@@ -4,7 +4,7 @@
 
 Built end-to-end: React dashboard, FastAPI backend, WireGuard enrollment client, host-level enforcement agents, and AWS production deployment with CI/CD.
 
-**Repository:** [github.com/eladmines/NetGarde](https://github.com/eladmines/NetGarde) · **Client:** [NetGardeClient](https://github.com/eladmines/NetGardeClient) · **Docs:** [docs/README.md](docs/README.md)
+**Organization:** [github.com/NetGarde](https://github.com/NetGarde) · **Platform:** [NetGarde](https://github.com/NetGarde/NetGarde) · **Client:** [NetGardeClient](https://github.com/NetGarde/NetGardeClient) · **Docs:** [docs/README.md](docs/README.md)
 
 ---
 
@@ -104,7 +104,7 @@ Full write-up: [docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md) · [do
 ## Quick start
 
 ```bash
-git clone https://github.com/eladmines/NetGarde.git
+git clone https://github.com/NetGarde/NetGarde.git
 cd NetGarde
 cp backend/.env.example backend/.env.development
 cp frontend/.env.example frontend/.env.development
@@ -116,7 +116,7 @@ docker compose -f docker-compose.dev.yml up --build
 | Dashboard | http://localhost:3000 |
 | API + OpenAPI | http://localhost:8000/docs |
 
-Enroll a device with [NetGardeClient](https://github.com/eladmines/NetGardeClient).
+Enroll a device with [NetGardeClient](https://github.com/NetGarde/NetGardeClient).
 
 **Developers:** [docs/DEVELOP.md](docs/DEVELOP.md) (tests, migrations) · [docs/ENV_SETUP.md](docs/ENV_SETUP.md) (configuration)
 
