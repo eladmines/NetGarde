@@ -18,7 +18,7 @@ EC2_PUBLIC_DNS="${BACKEND_EC2_PUBLIC_DNS:?Set BACKEND_EC2_PUBLIC_DNS in aws/.env
 BACKEND_PORT="${BACKEND_PORT:?Set BACKEND_PORT in aws/.env}"
 DISTRIBUTION_COMMENT="${BACKEND_CLOUDFRONT_COMMENT:?Set BACKEND_CLOUDFRONT_COMMENT in aws/.env}"
 
-echo "Setting up CloudFront distribution for NetGarde backend..."
+echo "Setting up CloudFront distribution for TrustEdge backend..."
 echo "EC2 IP: $EC2_IP"
 echo "EC2 Public DNS: $EC2_PUBLIC_DNS"
 echo "Backend Port: $BACKEND_PORT"
@@ -29,10 +29,10 @@ echo "Step 1: Creating CloudFront distribution configuration..."
 
 cat > /tmp/cloudfront-backend-config.json <<EOF
 {
-  "CallerReference": "netgarde-backend-$(date +%Y%m%d%H%M%S)",
+  "CallerReference": "trustedge-backend-$(date +%Y%m%d%H%M%S)",
   "Comment": "$DISTRIBUTION_COMMENT",
   "DefaultCacheBehavior": {
-    "TargetOriginId": "netgarde-backend-origin",
+    "TargetOriginId": "trustedge-backend-origin",
     "ViewerProtocolPolicy": "redirect-to-https",
     "AllowedMethods": {
       "Quantity": 7,
@@ -61,7 +61,7 @@ cat > /tmp/cloudfront-backend-config.json <<EOF
     "Quantity": 1,
     "Items": [
       {
-        "Id": "netgarde-backend-origin",
+        "Id": "trustedge-backend-origin",
         "DomainName": "$EC2_PUBLIC_DNS",
         "CustomOriginConfig": {
           "HTTPPort": $BACKEND_PORT,

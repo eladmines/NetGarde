@@ -30,7 +30,7 @@ setup_logging()
 def _build_allowed_origins() -> list[str]:
     """Merge env, settings.CORS_ORIGINS, and known production frontends."""
     origins: set[str] = {
-        "http://netgarde-frontend.s3-website-us-east-1.amazonaws.com",
+        "http://trustedge-frontend.s3-website-us-east-1.amazonaws.com",
         "http://localhost:3000",
         "http://localhost:3001",
     }
@@ -97,7 +97,7 @@ class StableCORSHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app = FastAPI(
-    title="NetGarde API",
+    title="TrustEdge API",
     redirect_slashes=False,  # allow redirects for trailing slash handling
     lifespan=lifespan,
 )

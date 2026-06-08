@@ -108,7 +108,7 @@ def snapshot_age_seconds(slug: str) -> Optional[float]:
 
 
 def fetch_remote_hosts(url: str, timeout: float) -> Set[str]:
-    req = urllib.request.Request(url, headers={"User-Agent": "NetGarde-PolicyPack/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "TrustEdge-PolicyPack/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         text = resp.read().decode("utf-8", errors="replace")
     domains = parse_pack_text(text)

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Ensure NetGarde block-page is reachable on the WireGuard gateway (10.0.0.1:80 and :443).
+# Ensure TrustEdge block-page is reachable on the WireGuard gateway (10.0.0.1:80 and :443).
 # Run on EC2 after docker compose up: sudo bash scripts/setup-block-page-wg.sh
 set -euo pipefail
 
-REPO_ROOT="${NETGARDE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+REPO_ROOT="${TRUSTEDGE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 WG_IF="${WG_IF:-wg0}"
 BLOCK_PAGE_IP="${BLOCK_PAGE_IP:-10.0.0.1}"
 
@@ -30,8 +30,8 @@ docker compose build block-page
 docker compose up -d block-page
 
 if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
-  ufw allow in on "$WG_IF" to any port 80 proto tcp comment "NetGarde block page HTTP" || true
-  ufw allow in on "$WG_IF" to any port 443 proto tcp comment "NetGarde block page HTTPS" || true
+  ufw allow in on "$WG_IF" to any port 80 proto tcp comment "TrustEdge block page HTTP" || true
+  ufw allow in on "$WG_IF" to any port 443 proto tcp comment "TrustEdge block page HTTPS" || true
 fi
 
 if curl -sf --max-time 3 "http://${BLOCK_PAGE_IP}/" >/dev/null; then
@@ -49,5 +49,5 @@ fi
 echo "Set BLOCK_IP=${BLOCK_PAGE_IP} in .env and run ./dns-sync/run-sync.sh"
 echo ""
 echo "For HTTPS block page on Mac, trust the CA once:"
-echo "  scp ubuntu@SERVER:/etc/netgarde/block-page-tls/ca.crt ."
+echo "  scp ubuntu@SERVER:/etc/trustedge/block-page-tls/ca.crt ."
 echo "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ca.crt"

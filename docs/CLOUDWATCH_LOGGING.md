@@ -1,6 +1,6 @@
-# CloudWatch logging (NetGarde EC2)
+# CloudWatch logging (TrustEdge EC2)
 
-NetGarde ships **structured JSON** operational logs to stdout. On EC2, the **CloudWatch Agent** forwards Docker and systemd logs to CloudWatch Logs.
+TrustEdge ships **structured JSON** operational logs to stdout. On EC2, the **CloudWatch Agent** forwards Docker and systemd logs to CloudWatch Logs.
 
 See also: [ENV_SETUP.md](ENV_SETUP.md) (`LOG_JSON`, `LOG_LEVEL`) · [docs index](README.md)
 
@@ -10,14 +10,14 @@ DNS query history is **not** application logging — it lives in PostgreSQL (blo
 
 | Log group | Source | Retention |
 |-----------|--------|-----------|
-| `/netgarde/prod/backend` | Docker `netgarde-api` | **30 days** |
-| `/netgarde/prod/dns-sync` | Docker `netgarde-dns-sync` | **14 days** |
-| `/netgarde/prod/log-watcher` | systemd `netgarde-log-watcher` | **14 days** |
-| `/netgarde/prod/wg-agent` | systemd `netgarde-wg-agent` | **14 days** |
+| `/trustedge/prod/backend` | Docker `trustedge-api` | **30 days** |
+| `/trustedge/prod/dns-sync` | Docker `trustedge-dns-sync` | **14 days** |
+| `/trustedge/prod/log-watcher` | systemd `trustedge-log-watcher` | **14 days** |
+| `/trustedge/prod/wg-agent` | systemd `trustedge-wg-agent` | **14 days** |
 
 ## Backend environment
 
-In `/etc/netgarde/backend.env`:
+In `/etc/trustedge/backend.env`:
 
 ```env
 LOG_JSON=1
@@ -42,7 +42,7 @@ Each HTTP request gets an `X-Request-ID` header and `request_id` on log lines. A
 **Install agent** (after deploy):
 
 ```bash
-cd ~/netgarde
+cd ~/trustedge
 sudo bash scripts/ec2-setup-cloudwatch.sh
 ```
 

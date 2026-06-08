@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # Device identity (issued at VPN enroll, used for /v1/usage and future device APIs)
     DEVICE_TOKEN_SECRET: str = ""
     DEVICE_TOKEN_TTL_DAYS: int = 365
-    # Optional: require Bearer token on POST /v1/enroll (NetGardeClient --api-token)
+    # Optional: require Bearer token on POST /v1/enroll (TrustEdgeClient --api-token)
     ENROLL_BOOTSTRAP_TOKEN: str = ""
 
     # Service identity: dns_log_watcher / automation posting DNS queries

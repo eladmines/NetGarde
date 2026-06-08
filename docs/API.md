@@ -1,6 +1,6 @@
 # API reference
 
-NetGarde exposes a FastAPI backend. Interactive docs: **http://localhost:8000/docs** (local) or your EC2 `:8000/docs` in production.
+TrustEdge exposes a FastAPI backend. Interactive docs: **http://localhost:8000/docs** (local) or your EC2 `:8000/docs` in production.
 
 Admin endpoints require `Authorization: Bearer <ADMIN_API_TOKEN>` when the token is configured. DNS ingest uses `DNS_INGEST_TOKEN`. See [ENV_SETUP.md](ENV_SETUP.md).
 

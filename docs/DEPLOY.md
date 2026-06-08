@@ -1,6 +1,6 @@
 # Production deployment
 
-NetGarde production runs on **AWS** with **GitHub Actions** CI/CD. This document covers infrastructure layout and host services.
+TrustEdge production runs on **AWS** with **GitHub Actions** CI/CD. This document covers infrastructure layout and host services.
 
 **See also:** [ENV_SETUP.md](ENV_SETUP.md) · [host-agent/README.md](../host-agent/README.md) · [CLOUDWATCH_LOGGING.md](CLOUDWATCH_LOGGING.md)
 
@@ -33,13 +33,13 @@ NetGarde production runs on **AWS** with **GitHub Actions** CI/CD. This document
 Run alongside Docker on the instance:
 
 ```bash
-sudo systemctl status netgarde-wg-agent      # peers, quarantine, DNS sync trigger
-sudo systemctl status netgarde-log-watcher   # dnsmasq log → API ingest
+sudo systemctl status trustedge-wg-agent      # peers, quarantine, DNS sync trigger
+sudo systemctl status trustedge-log-watcher   # dnsmasq log → API ingest
 sudo systemctl status dnsmasq
 sudo systemctl status wg-quick@wg0
 ```
 
-Configuration: `/etc/netgarde/backend.env` (survives deploys). See [ENV_SETUP.md](ENV_SETUP.md).
+Configuration: `/etc/trustedge/backend.env` (survives deploys). See [ENV_SETUP.md](ENV_SETUP.md).
 
 ---
 
@@ -48,9 +48,9 @@ Configuration: `/etc/netgarde/backend.env` (survives deploys). See [ENV_SETUP.md
 | Path | Purpose |
 |------|---------|
 | `/etc/dnsmasq.d/blocked-domains.conf` | Global block list (dns-sync generated) |
-| `/etc/dnsmasq.d/netgarde-devices/` | Per-device block configs |
+| `/etc/dnsmasq.d/trustedge-devices/` | Per-device block configs |
 | `/etc/wireguard/wg0.conf` | WireGuard server |
-| `/var/lib/netgarde/log_parser_state` | Log watcher offset |
+| `/var/lib/trustedge/log_parser_state` | Log watcher offset |
 
 ---
 

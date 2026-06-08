@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-NetGarde DNS Log Watcher — Real-time log tail and API push.
+TrustEdge DNS Log Watcher — Real-time log tail and API push.
 
 Continuously watches /var/log/dnsmasq.log for new DNS queries
-and sends them to the NetGarde backend API in near real-time.
+and sends them to the TrustEdge backend API in near real-time.
 Designed to run as a systemd service on the host machine.
 """
 
@@ -22,7 +22,7 @@ logger = setup_logging(service="log-watcher", logger_name=__name__)
 
 # Configuration from environment variables
 DNSMASQ_LOG_PATH = os.getenv('DNSMASQ_LOG_PATH', '/var/log/dnsmasq.log')
-STATE_FILE_PATH = os.getenv('STATE_FILE_PATH', '/var/lib/netgarde/log_parser_state')
+STATE_FILE_PATH = os.getenv('STATE_FILE_PATH', '/var/lib/trustedge/log_parser_state')
 BLOCKED_DOMAINS_PATH = os.getenv('BLOCKED_DOMAINS_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 DNS_INGEST_TOKEN = os.getenv('DNS_INGEST_TOKEN', '').strip()
@@ -147,7 +147,7 @@ def parse_log_lines(lines: List[str], blocked_domains: Set[str]) -> List[Dict[st
 
 
 def send_to_api(queries: List[Dict[str, Any]], api_url: str) -> bool:
-    """Send parsed queries to the NetGarde API via POST /dns-queries/bulk."""
+    """Send parsed queries to the TrustEdge API via POST /dns-queries/bulk."""
     import urllib.request
     import urllib.error
 

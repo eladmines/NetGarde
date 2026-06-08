@@ -62,7 +62,7 @@ def setup_logging(
     use_json = os.getenv("LOG_JSON", "0") == "1"
 
     root = logging.getLogger()
-    if not getattr(root, "_netgarde_configured", False):
+    if not getattr(root, "_trustedge_configured", False):
         root.handlers.clear()
         root.setLevel(level)
         handler = logging.StreamHandler(sys.stdout)
@@ -76,6 +76,6 @@ def setup_logging(
                 )
             )
         root.addHandler(handler)
-        setattr(root, "_netgarde_configured", True)
+        setattr(root, "_trustedge_configured", True)
 
     return logging.getLogger(logger_name or service)

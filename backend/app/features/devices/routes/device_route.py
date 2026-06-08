@@ -98,7 +98,7 @@ def list_live_device_usage(
     db: Session = Depends(get_db),
     _: None = Depends(verify_admin_api_token),
 ):
-    """Latest per-device VPN throughput from netgarde-wg /v1/usage reports."""
+    """Latest per-device VPN throughput from trustedge-wg /v1/usage reports."""
     return UsageService(db).list_live_bandwidth(max_age_sec=max_age_sec)
 
 

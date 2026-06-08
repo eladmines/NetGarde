@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-NetGarde WireGuard host agent (runs on the EC2 host as root).
+TrustEdge WireGuard host agent (runs on the EC2 host as root).
 
 Purpose:
   Apply WireGuard peer AllowedIPs updates to the host wg interface after /v1/enroll.
 
 Security:
-  - Binds only to NETGARDE_WG_AGENT_BIND (default: 172.17.0.1)
-  - Requires Authorization: Bearer <NETGARDE_WG_AGENT_TOKEN>
+  - Binds only to TRUSTEDGE_WG_AGENT_BIND (default: 172.17.0.1)
+  - Requires Authorization: Bearer <TRUSTEDGE_WG_AGENT_TOKEN>
   - Validates WireGuard public keys and IPv4 addresses strictly
 """
 
@@ -79,7 +79,7 @@ def _wg_list_peers(iface: str) -> list[Dict[str, Any]]:
     return peers
 
 
-BLOCK_CHAIN = "NETGARDE_BLOCK"
+BLOCK_CHAIN = "TRUSTEDGE_BLOCK"
 
 
 def _ensure_block_chain() -> None:
@@ -139,9 +139,9 @@ def _iptables_remove_block(client_ip: str) -> None:
 def _resolve_dns_sync_script() -> str:
     """Path to run-sync.sh on the EC2 host (must be executable by root)."""
     candidates = [
-        os.getenv("NETGARDE_DNS_SYNC_SCRIPT", "").strip(),
-        "/home/ubuntu/netgarde/dns-sync/run-sync.sh",
-        "/opt/netgarde/dns-sync/run-sync.sh",
+        os.getenv("TRUSTEDGE_DNS_SYNC_SCRIPT", "").strip(),
+        "/home/ubuntu/trustedge/dns-sync/run-sync.sh",
+        "/opt/trustedge/dns-sync/run-sync.sh",
     ]
     for raw in candidates:
         if not raw:
@@ -150,7 +150,7 @@ def _resolve_dns_sync_script() -> str:
         if os.path.isfile(path) and os.access(path, os.X_OK):
             return path
     raise RuntimeError(
-        "DNS sync script not found; set NETGARDE_DNS_SYNC_SCRIPT to run-sync.sh on the host"
+        "DNS sync script not found; set TRUSTEDGE_DNS_SYNC_SCRIPT to run-sync.sh on the host"
     )
 
 
@@ -160,7 +160,7 @@ def _run_dns_sync_script() -> None:
         ["/bin/bash", script],
         capture_output=True,
         text=True,
-        timeout=int(os.getenv("NETGARDE_DNS_SYNC_TIMEOUT_SEC", "300")),
+        timeout=int(os.getenv("TRUSTEDGE_DNS_SYNC_TIMEOUT_SEC", "300")),
     )
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "dns sync script failed").strip()
@@ -176,7 +176,7 @@ def _wg_set_peer_allowed_ips(iface: str, pubkey: str, allowed_ip: str) -> None:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "NetGardeWgAgent/1.0"
+    server_version = "TrustEdgeWgAgent/1.0"
 
     def _json(self, code: int, payload: Dict[str, Any]) -> None:
         body = json.dumps(payload).encode("utf-8")
@@ -295,11 +295,11 @@ class AgentServer(HTTPServer):
 
 
 def main() -> int:
-    bind = os.getenv("NETGARDE_WG_AGENT_BIND", "172.17.0.1")
-    port = int(os.getenv("NETGARDE_WG_AGENT_PORT", "9109"))
-    token = _env("NETGARDE_WG_AGENT_TOKEN")
-    iface = os.getenv("NETGARDE_WG_INTERFACE", "wg0")
-    pool_cidr = os.getenv("NETGARDE_WG_POOL_CIDR", "10.0.0.0/24")
+    bind = os.getenv("TRUSTEDGE_WG_AGENT_BIND", "172.17.0.1")
+    port = int(os.getenv("TRUSTEDGE_WG_AGENT_PORT", "9109"))
+    token = _env("TRUSTEDGE_WG_AGENT_TOKEN")
+    iface = os.getenv("TRUSTEDGE_WG_INTERFACE", "wg0")
+    pool_cidr = os.getenv("TRUSTEDGE_WG_POOL_CIDR", "10.0.0.0/24")
 
     httpd = AgentServer((bind, port), Handler, token=token, iface=iface, pool_cidr=pool_cidr)
     httpd.serve_forever()

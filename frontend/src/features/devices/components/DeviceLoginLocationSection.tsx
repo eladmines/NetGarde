@@ -83,7 +83,7 @@ export default function DeviceLoginLocationSection({ deviceId }: DeviceLoginLoca
       )}
       {!loading && !latest && !error && (
         <Typography variant="body2" color="text.secondary">
-          No VPN enroll location recorded yet. Re-start the NetGarde client to enroll again.
+          No VPN enroll location recorded yet. Re-start the TrustEdge client to enroll again.
         </Typography>
       )}
       {!loading && latest && (

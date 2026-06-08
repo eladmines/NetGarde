@@ -15,7 +15,7 @@ BUCKET_NAME="${FRONTEND_S3_BUCKET:?Set FRONTEND_S3_BUCKET in aws/.env}"
 AWS_REGION="${AWS_REGION:?Set AWS_REGION in aws/.env}"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
-echo "Setting up S3 bucket for NetGarde frontend..."
+echo "Setting up S3 bucket for TrustEdge frontend..."
 echo "Bucket name: $BUCKET_NAME"
 echo "Region: $AWS_REGION"
 echo "Account ID: $ACCOUNT_ID"

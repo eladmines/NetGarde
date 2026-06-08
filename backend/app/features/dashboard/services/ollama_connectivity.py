@@ -63,7 +63,7 @@ def ensure_model_available(base_url: str) -> None:
     if not names:
         raise RuntimeError(
             f"Model '{model}' not found on Ollama (no models pulled). Run: "
-            f"docker exec netgarde-ollama ollama pull {model}"
+            f"docker exec trustedge-ollama ollama pull {model}"
         )
     raise RuntimeError(
         f"Model '{model}' not found on Ollama. Available: {', '.join(sorted(names)[:8])}"

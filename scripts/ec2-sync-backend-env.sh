@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Merge deploy-time keys into /etc/netgarde/backend.env without wiping manual settings.
+# Merge deploy-time keys into /etc/trustedge/backend.env without wiping manual settings.
 # Used by .github/workflows/deploy-backend.yml on EC2.
 set -euo pipefail
 
-ENV_FILE="${NETGARDE_ENV_FILE:-/etc/netgarde/backend.env}"
-REPO_ROOT="${NETGARDE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+ENV_FILE="${TRUSTEDGE_ENV_FILE:-/etc/trustedge/backend.env}"
+REPO_ROOT="${TRUSTEDGE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 
 # docker compose (ubuntu user, docker group) must read env_file; root-only 600 breaks compose.
 fix_env_permissions() {
@@ -18,7 +18,7 @@ fix_env_permissions() {
   fi
 }
 
-sudo mkdir -p /etc/netgarde
+sudo mkdir -p /etc/trustedge
 
 # Bootstrap when the host env file does not exist yet.
 if ! sudo test -f "$ENV_FILE"; then
@@ -34,7 +34,7 @@ fi
 
 token_file_for_key() {
   local key="$1"
-  echo "/etc/netgarde/$(echo "$key" | tr '[:upper:]_' '[:lower:]-').token"
+  echo "/etc/trustedge/$(echo "$key" | tr '[:upper:]_' '[:lower:]-').token"
 }
 
 # Generate stable secrets for placeholder values (first deploy only).
