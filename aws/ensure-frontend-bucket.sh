@@ -16,17 +16,18 @@ BUCKET_NAME="${FRONTEND_S3_BUCKET:-trustedge-frontend}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 
 if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-    echo "[OK] Bucket '$BUCKET_NAME' exists"
-else
-    echo "Creating bucket '$BUCKET_NAME'..."
-    if [ "$AWS_REGION" = "us-east-1" ]; then
-        aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$AWS_REGION"
-    else
-        aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$AWS_REGION" \
-            --create-bucket-configuration "LocationConstraint=$AWS_REGION"
-    fi
-    echo "[OK] Bucket created"
+    echo "[OK] Bucket '$BUCKET_NAME' exists (skipping bootstrap — run aws/s3-setup.sh locally if needed)"
+    exit 0
 fi
+
+echo "Creating bucket '$BUCKET_NAME'..."
+if [ "$AWS_REGION" = "us-east-1" ]; then
+    aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$AWS_REGION"
+else
+    aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$AWS_REGION" \
+        --create-bucket-configuration "LocationConstraint=$AWS_REGION"
+fi
+echo "[OK] Bucket created"
 
 aws s3 website "s3://$BUCKET_NAME/" \
     --index-document index.html \

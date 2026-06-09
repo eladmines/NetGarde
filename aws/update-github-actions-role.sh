@@ -67,7 +67,7 @@ cat > /tmp/github-actions-policy.json <<EOF
         "s3:CreateBucket",
         "s3:PutBucketWebsite",
         "s3:PutBucketPolicy",
-        "s3:PutPublicAccessBlock",
+        "s3:PutBucketPublicAccessBlock",
         "s3:PutBucketCors"
       ],
       "Resource": "arn:aws:s3:::${S3_BUCKET_NAME}"
