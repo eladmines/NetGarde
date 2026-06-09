@@ -69,7 +69,7 @@ def build_device_review_template(snapshot: dict[str, Any]) -> str:
     if not ready:
         return (
             f"{label} is still learning normal DNS patterns. "
-            "After a few days of typical use, NetGarde can explain unusual activity more clearly."
+            "After a few days of typical use, TrustEdge can explain unusual activity more clearly."
         )
 
     parts: List[str] = []

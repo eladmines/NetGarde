@@ -9,7 +9,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  S3_BUCKET: netgarde-frontend
+  S3_BUCKET: trustedge-frontend
   CLOUDFRONT_DISTRIBUTION_ID: E26UGOT5YUPFRY
   # Must be the FastAPI origin (not the S3/CloudFront UI URL).
   BACKEND_API_URL: http://44.218.45.174:8000
@@ -35,7 +35,7 @@ jobs:
       - name: Verify build secrets
         run: |
           if [ -z "${{ secrets.ADMIN_API_TOKEN }}" ]; then
-            echo "::error::GitHub secret ADMIN_API_TOKEN is not set (must match /etc/netgarde/backend.env on EC2)."
+            echo "::error::GitHub secret ADMIN_API_TOKEN is not set (must match /etc/trustedge/backend.env on EC2)."
             exit 1
           fi
 

@@ -174,7 +174,7 @@ export default function LiveNetworkGraph({
         </Typography>
       ) : !chartReady ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-          Collecting samples for the last 60 minutes… Run netgarde-wg with{' '}
+          Collecting samples for the last 60 minutes… Run trustedge-wg with{' '}
           <Typography component="span" variant="body2" sx={{ fontFamily: 'monospace' }}>
             --stats-interval 5
           </Typography>{' '}
@@ -234,15 +234,15 @@ export default function LiveNetworkGraph({
           ]}
           sx={{
             '& .MuiAreaElement-series-download': {
-              fill: "url('#netgarde-down')",
+              fill: "url('#trustedge-down')",
             },
             '& .MuiAreaElement-series-upload': {
-              fill: "url('#netgarde-up')",
+              fill: "url('#trustedge-up')",
             },
           }}
         >
-          <AreaGradient color={downColor} id="netgarde-down" />
-          <AreaGradient color={upColor} id="netgarde-up" />
+          <AreaGradient color={downColor} id="trustedge-down" />
+          <AreaGradient color={upColor} id="trustedge-up" />
         </LineChart>
       )}
     </Box>

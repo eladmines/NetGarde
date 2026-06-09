@@ -1,6 +1,6 @@
-# NetGarde Design Guide
+# TrustEdge Design Guide
 
-This document describes how NetGarde is designed: product goals, system topology, domain concepts, UI conventions, and backend patterns. Use it when adding features, reviewing PRs, or onboarding.
+This document describes how TrustEdge is designed: product goals, system topology, domain concepts, UI conventions, and backend patterns. Use it when adding features, reviewing PRs, or onboarding.
 
 For setup and deployment, see the [main README](../README.md). For environment variables, see [ENV_SETUP.md](ENV_SETUP.md).
 
@@ -8,7 +8,7 @@ For setup and deployment, see the [main README](../README.md). For environment v
 
 ## Product goals
 
-NetGarde is a **self-hosted network security platform** (VPN + DNS policy + behavior intelligence + optional AI summaries) for teams, branch sites, and operators who want SASE-style control without enterprise complexity. The core promise:
+TrustEdge is a **self-hosted network security platform** (VPN + DNS policy + behavior intelligence + optional AI summaries) for teams, branch sites, and operators who want SASE-style control without enterprise complexity. The core promise:
 
 1. **Secure access** — Clients enroll on WireGuard; DNS and policy enforcement run on a central server you control.
 2. **Policy, not lists** — Domains are blocked via policy packs, device profiles, schedules, geo rules, and behavior scoring — not ad-hoc block lists in the UI.
@@ -23,7 +23,7 @@ NetGarde is a **self-hosted network security platform** (VPN + DNS policy + beha
 
 | Principle | What it means in practice |
 |-----------|---------------------------|
-| **Host vs container boundary** | The FastAPI backend runs in Docker and owns policy state in PostgreSQL. WireGuard peer updates, iptables drops, and dnsmasq reloads run on the EC2 host via `netgarde-wg-agent` and `dns-sync`. |
+| **Host vs container boundary** | The FastAPI backend runs in Docker and owns policy state in PostgreSQL. WireGuard peer updates, iptables drops, and dnsmasq reloads run on the EC2 host via `trustedge-wg-agent` and `dns-sync`. |
 | **Single source of truth** | Policy and device state live in RDS. dnsmasq config files are **generated artifacts**, never edited manually in production. |
 | **Selective persistence** | By default only **blocked** DNS queries are stored in PostgreSQL. Full query logging is opt-in (`PERSIST_ALL_DNS=true`). |
 | **Feature modules** | Both frontend and backend are organized by domain feature (`policy`, `devices`, `dns_queries`, etc.), not by technical layer alone. |
@@ -38,8 +38,8 @@ NetGarde is a **self-hosted network security platform** (VPN + DNS policy + beha
 ┌──────────────┐     WireGuard      ┌─────────────────────────────────────────┐
 │ Site clients │◄──────────────────►│ EC2 host                                 │
 │ + router     │     DNS → VPN      │  dnsmasq · WireGuard · iptables         │
-└──────────────┘                    │  netgarde-wg-agent (systemd)            │
-                                    │  netgarde-log-watcher (systemd)         │
+└──────────────┘                    │  trustedge-wg-agent (systemd)            │
+                                    │  trustedge-log-watcher (systemd)         │
                                     │  ┌─────────────────────────────────┐    │
                                     │  │ Docker: FastAPI backend :8000   │    │
                                     │  │ Docker: dns-sync (on demand)    │    │
@@ -61,7 +61,7 @@ NetGarde is a **self-hosted network security platform** (VPN + DNS policy + beha
 | **FastAPI backend** | Docker on EC2 | REST + WebSocket API, policy computation, ingest pipeline |
 | **dns-sync** | Docker (triggered) | Pull `/policy/dns-sync` → write dnsmasq conf → reload |
 | **dns_log_watcher** | systemd on host | Tail dnsmasq log → batch POST to API |
-| **netgarde-wg-agent** | systemd on host | Apply WG peers, iptables block/unblock, trigger `run-sync.sh` |
+| **trustedge-wg-agent** | systemd on host | Apply WG peers, iptables block/unblock, trigger `run-sync.sh` |
 | **dnsmasq** | host | Authoritative DNS for VPN clients; serves block rules |
 | **WireGuard** | host | VPN tunnel; all client traffic routed through EC2 |
 
@@ -128,7 +128,7 @@ Dashboard action (quarantine, policy apply, client block)
 | `ADMIN_API_TOKEN` | Dashboard, admin scripts | Policy CRUD, device management, quarantine |
 | `DNS_INGEST_TOKEN` | dns_log_watcher, dns-sync | Bulk DNS ingest, policy DNS sync read |
 | `WG_AGENT_TOKEN` | Backend → host agent | Peer apply, block/unblock, DNS sync trigger |
-| Device enroll token | NetGarde client | `POST /v1/enroll` bootstrap |
+| Device enroll token | TrustEdge client | `POST /v1/enroll` bootstrap |
 
 - Admin auth is **disabled when `ADMIN_API_TOKEN` is empty** (local dev convenience).
 - The host agent binds to the Docker bridge IP (`172.17.0.1`) — not the public interface.
@@ -307,7 +307,7 @@ No global event bus. Services import peer services explicitly:
 | DNS queries (blocked) | PostgreSQL | Default; full logging opt-in |
 | Live VPN usage | Redis | Real-time throughput charts |
 | dnsmasq config | Host filesystem | Generated by dns-sync |
-| Log watcher offset | `/var/lib/netgarde/log_parser_state` | Host state file |
+| Log watcher offset | `/var/lib/trustedge/log_parser_state` | Host state file |
 
 ---
 
@@ -320,8 +320,8 @@ No global event bus. Services import peer services explicitly:
 
 Host systemd services on EC2:
 
-- `netgarde-wg-agent` — peer apply, block/unblock, DNS sync trigger
-- `netgarde-log-watcher` — DNS log tail → API
+- `trustedge-wg-agent` — peer apply, block/unblock, DNS sync trigger
+- `trustedge-log-watcher` — DNS log tail → API
 - `dnsmasq` — DNS resolver
 - `wg-quick@wg0` — WireGuard
 

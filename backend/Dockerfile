@@ -41,8 +41,8 @@ RUN apt-get update && \
 
 COPY . .
 
-RUN mkdir -p /var/lib/netgarde/policy-snapshots && \
-    chown -R appuser:appuser /app /var/lib/netgarde/policy-snapshots
+RUN mkdir -p /var/lib/trustedge/policy-snapshots && \
+    chown -R appuser:appuser /app /var/lib/trustedge/policy-snapshots
 
 USER appuser
 

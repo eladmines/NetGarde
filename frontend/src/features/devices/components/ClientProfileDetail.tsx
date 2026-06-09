@@ -321,7 +321,7 @@ export default function ClientProfileDetail({
                 <BaselineSummary baseline={profile.baseline} />
               ) : (
                 <Alert severity="info" variant="outlined">
-                  Profile is still learning. NetGarde needs more DNS history before a baseline is
+                  Profile is still learning. TrustEdge needs more DNS history before a baseline is
                   computed. (This threshold is configurable by the server.)
                 </Alert>
               )}
@@ -466,7 +466,7 @@ export default function ClientProfileDetail({
                     label="Auto-block domains on abnormal behavior"
                   />
                   <Tooltip
-                    title="When the behavior score is very high, NetGarde can temporarily block domains seen in that burst (in addition to policy packs)."
+                    title="When the behavior score is very high, TrustEdge can temporarily block domains seen in that burst (in addition to policy packs)."
                     arrow
                   >
                     <IconButton size="small" aria-label="About auto-block" sx={{ p: 0.25, ...chromelessIconButtonSx }}>

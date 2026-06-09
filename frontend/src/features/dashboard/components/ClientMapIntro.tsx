@@ -17,7 +17,7 @@ export default function ClientMapIntro() {
             Why this map is useful
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            NetGarde records each client&apos;s <strong>physical location at VPN enroll</strong>{' '}
+            TrustEdge records each client&apos;s <strong>physical location at VPN enroll</strong>{' '}
             (public IP → GeoIP). That is the same signal used for{' '}
             <strong>Country access</strong> rules (who may enroll, and what destinations they may
             reach). This map gives you a geographic view of your fleet—not which websites look

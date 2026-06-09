@@ -1,6 +1,6 @@
-# NetGarde — Technical documentation
+# TrustEdge — Technical documentation
 
-Engineering documentation for the [NetGarde platform](https://github.com/NetGarde/NetGarde) ([organization](https://github.com/NetGarde)). The [root README](../README.md) is the portfolio overview; this folder is for implementation detail.
+Engineering documentation for the [TrustEdge platform](https://github.com/TrustEdge/TrustEdge) ([organization](https://github.com/TrustEdge)). The [root README](../README.md) is the portfolio overview; this folder is for implementation detail.
 
 ---
 
@@ -59,5 +59,5 @@ Engineering documentation for the [NetGarde platform](https://github.com/NetGard
 | Backend env catalog | [backend/.env.example](../backend/.env.example) |
 | Frontend env catalog | [frontend/.env.example](../frontend/.env.example) |
 | Screenshot assets | [images/README.md](images/README.md) |
-| VPN enroll client | [NetGardeClient](https://github.com/NetGarde/NetGardeClient) |
-| GitHub organization | [NetGarde](https://github.com/NetGarde) |
+| VPN enroll client | [TrustEdgeClient](https://github.com/TrustEdge/TrustEdgeClient) |
+| GitHub organization | [TrustEdge](https://github.com/TrustEdge) |

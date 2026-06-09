@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install and configure CloudWatch Agent for NetGarde EC2 (Docker + systemd logs).
+# Install and configure CloudWatch Agent for TrustEdge EC2 (Docker + systemd logs).
 # Requires EC2 instance IAM role with logs:CreateLogGroup, PutLogEvents, etc.
 #
 # Run on the host after deploy:
@@ -7,14 +7,14 @@
 #
 # Optional env:
 #   AWS_REGION=us-east-1
-#   NETGARDE_ENV_FILE=/etc/netgarde/backend.env
+#   TRUSTEDGE_ENV_FILE=/etc/trustedge/backend.env
 set -euo pipefail
 
-REPO_ROOT="${NETGARDE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+REPO_ROOT="${TRUSTEDGE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$REPO_ROOT"
 
 AWS_REGION="${AWS_REGION:-us-east-1}"
-ENV_FILE="${NETGARDE_ENV_FILE:-/etc/netgarde/backend.env}"
+ENV_FILE="${TRUSTEDGE_ENV_FILE:-/etc/trustedge/backend.env}"
 AGENT_CONFIG_SRC="${REPO_ROOT}/scripts/cloudwatch/amazon-cloudwatch-agent.json"
 AGENT_CONFIG_DST="/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json"
 
@@ -48,8 +48,8 @@ set_env_kv LOG_TO_FILE 0
 set_env_kv LOG_SERVICE backend
 
 echo "Ensuring fixed Docker container name for dns-sync..."
-if ! grep -q 'container_name: netgarde-dns-sync' docker-compose.yml; then
-  echo "WARNING: netgarde-dns-sync container_name missing from docker-compose.yml; update repo and redeploy"
+if ! grep -q 'container_name: trustedge-dns-sync' docker-compose.yml; then
+  echo "WARNING: trustedge-dns-sync container_name missing from docker-compose.yml; update repo and redeploy"
 fi
 
 echo "Starting CloudWatch Agent..."
@@ -60,7 +60,7 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -s
 
 echo "Applying log group retention policies..."
-for spec in "/netgarde/prod/backend:30" "/netgarde/prod/dns-sync:14" "/netgarde/prod/log-watcher:14" "/netgarde/prod/wg-agent:14"; do
+for spec in "/trustedge/prod/backend:30" "/trustedge/prod/dns-sync:14" "/trustedge/prod/log-watcher:14" "/trustedge/prod/wg-agent:14"; do
   group="${spec%%:*}"
   days="${spec##*:}"
   aws logs create-log-group --log-group-name "$group" --region "$AWS_REGION" 2>/dev/null || true
@@ -71,5 +71,5 @@ echo "Recreating backend to pick up LOG_JSON (if running)..."
 docker compose -f docker-compose.yml up -d --force-recreate backend 2>/dev/null || true
 
 echo "CloudWatch logging enabled."
-echo "  Log groups: /netgarde/prod/backend (30d), dns-sync (14d), log-watcher (14d), wg-agent (14d)"
+echo "  Log groups: /trustedge/prod/backend (30d), dns-sync (14d), log-watcher (14d), wg-agent (14d)"
 echo "  Example query (Logs Insights): fields @timestamp, level, event, message | filter level = \"ERROR\""

@@ -47,7 +47,7 @@ export default function DeviceCountriesSection({ deviceId }: DeviceCountriesSect
           DNS countries (last 7 days)
         </Typography>
         <Tooltip
-          title="Estimated from domain endings (e.g. .il, .de, .co.uk). Global sites (.com) count as Global. Based on all DNS seen by NetGarde, not only blocked queries."
+          title="Estimated from domain endings (e.g. .il, .de, .co.uk). Global sites (.com) count as Global. Based on all DNS seen by TrustEdge, not only blocked queries."
           arrow
         >
           <Box

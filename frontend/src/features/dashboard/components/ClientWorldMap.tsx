@@ -241,7 +241,7 @@ export default function ClientWorldMap({
       )}
       {!loading && clients.length > 0 && countryMarkers.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-          No VPN login location recorded yet. Re-enroll with netgarde-wg to populate the map.
+          No VPN login location recorded yet. Re-enroll with trustedge-wg to populate the map.
         </Typography>
       )}
     </Paper>

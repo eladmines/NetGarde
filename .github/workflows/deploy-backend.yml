@@ -9,9 +9,9 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: netgarde-backend
+  ECR_REPOSITORY: trustedge-backend
   ECR_REGISTRY: 804012660077.dkr.ecr.us-east-1.amazonaws.com
-  RDS_INSTANCE_ID: ${{ secrets.RDS_INSTANCE_ID || 'netgarde' }}
+  RDS_INSTANCE_ID: ${{ secrets.RDS_INSTANCE_ID || 'trustedge' }}
 
 jobs:
   test:
@@ -80,11 +80,11 @@ jobs:
           script: |
             set -e
             echo "Checking deployment directory..."
-            if [ ! -d ~/netgarde ]; then
-              echo "Directory ~/netgarde does not exist. Creating it..."
-              mkdir -p ~/netgarde
+            if [ ! -d ~/trustedge ]; then
+              echo "Directory ~/trustedge does not exist. Creating it..."
+              mkdir -p ~/trustedge
             fi
-            cd ~/netgarde || { echo "Failed to change to ~/netgarde directory"; exit 1; }
+            cd ~/trustedge || { echo "Failed to change to ~/trustedge directory"; exit 1; }
             echo "Current directory: $(pwd)"
             
             # Check and fix DNS resolution
@@ -126,8 +126,8 @@ jobs:
             # Fetch RDS credentials from AWS Secrets Manager
             echo "Fetching RDS credentials from AWS Secrets Manager..."
             
-            # Use RDS instance ID from environment variable or default to 'netgarde'
-            DB_INSTANCE_ID="${RDS_INSTANCE_ID:-netgarde}"
+            # Use RDS instance ID from environment variable or default to 'trustedge'
+            DB_INSTANCE_ID="${RDS_INSTANCE_ID:-trustedge}"
             echo "Using RDS instance identifier: $DB_INSTANCE_ID"
             
             # Verify AWS CLI is configured
@@ -166,7 +166,7 @@ jobs:
                 echo "  1. Unknown error - see AWS CLI output above"
               fi
               echo ""
-              echo "  2. Verify the RDS instance identifier is correct (you said it's 'netgarde')"
+              echo "  2. Verify the RDS instance identifier is correct (you said it's 'trustedge')"
               echo "  3. Verify the region is correct (currently checking us-east-1)"
               echo ""
               echo "To fix IAM permissions:"
@@ -302,20 +302,20 @@ jobs:
             echo "Database name: ${DB_NAME:-postgres}"
             
             # Merge deploy keys into host env file (never truncate backend/.env.production).
-            # docker-compose.yml loads /etc/netgarde/backend.env — see scripts/ec2-sync-backend-env.sh
+            # docker-compose.yml loads /etc/trustedge/backend.env — see scripts/ec2-sync-backend-env.sh
             chmod +x scripts/ec2-sync-backend-env.sh
 
             # WireGuard enroll + host agent token (required by docker-compose.yml interpolation)
             # Keep token on the host so it is stable across deploys.
-            sudo mkdir -p /etc/netgarde
-            if [ -f /etc/netgarde/wg-agent.token ]; then
-              WG_AGENT_TOKEN="$(sudo cat /etc/netgarde/wg-agent.token | tr -d '\r\n')"
-              echo "Loaded existing WG_AGENT_TOKEN from /etc/netgarde/wg-agent.token"
+            sudo mkdir -p /etc/trustedge
+            if [ -f /etc/trustedge/wg-agent.token ]; then
+              WG_AGENT_TOKEN="$(sudo cat /etc/trustedge/wg-agent.token | tr -d '\r\n')"
+              echo "Loaded existing WG_AGENT_TOKEN from /etc/trustedge/wg-agent.token"
             else
               WG_AGENT_TOKEN="$(openssl rand -hex 32)"
-              echo "$WG_AGENT_TOKEN" | sudo tee /etc/netgarde/wg-agent.token >/dev/null
-              sudo chmod 600 /etc/netgarde/wg-agent.token
-              echo "Generated new WG_AGENT_TOKEN (stored in /etc/netgarde/wg-agent.token)"
+              echo "$WG_AGENT_TOKEN" | sudo tee /etc/trustedge/wg-agent.token >/dev/null
+              sudo chmod 600 /etc/trustedge/wg-agent.token
+              echo "Generated new WG_AGENT_TOKEN (stored in /etc/trustedge/wg-agent.token)"
             fi
 
             WG_AGENT_URL="${WG_AGENT_URL:-http://172.17.0.1:9109}"
@@ -354,7 +354,7 @@ jobs:
               SYNC_ARGS+=("VPN_ENDPOINT=$VPN_ENDPOINT")
             fi
             bash scripts/ec2-sync-backend-env.sh "${SYNC_ARGS[@]}"
-            echo "Synced /etc/netgarde/backend.env (manual keys preserved)"
+            echo "Synced /etc/trustedge/backend.env (manual keys preserved)"
 
             # docker compose reads repo-root `.env` for ${VAR} substitution; keep it in sync for required keys
             {
@@ -383,24 +383,24 @@ jobs:
             echo "Using BLOCK_IP=$BLOCK_IP BLOCK_IPV6_IP=$BLOCK_IPV6_IP for blocked domains"
             for kv in "BLOCK_PAGE_IP=$BLOCK_PAGE_IP" "BLOCK_IP=$BLOCK_IP" "BLOCK_IPV6_IP=$BLOCK_IPV6_IP"; do
               key="${kv%%=*}"
-              grep -q "^${key}=" "$HOME/netgarde/.env" 2>/dev/null && \
-                sed -i.bak "s|^${key}=.*|${kv}|" "$HOME/netgarde/.env" && rm -f "$HOME/netgarde/.env.bak" || \
-                echo "$kv" >> "$HOME/netgarde/.env"
+              grep -q "^${key}=" "$HOME/trustedge/.env" 2>/dev/null && \
+                sed -i.bak "s|^${key}=.*|${kv}|" "$HOME/trustedge/.env" && rm -f "$HOME/trustedge/.env.bak" || \
+                echo "$kv" >> "$HOME/trustedge/.env"
             done
 
             # Install WireGuard host agent (applies wg set for /v1/enroll)
             if command -v wg >/dev/null 2>&1; then
-              echo "Installing netgarde-wg-agent systemd service..."
-              sudo mkdir -p /opt/netgarde
-              sudo cp /home/ubuntu/netgarde/host-agent/netgarde-wg-agent.py /opt/netgarde/netgarde-wg-agent.py
-              sudo chmod 755 /opt/netgarde/netgarde-wg-agent.py
-              sudo cp /home/ubuntu/netgarde/host-agent/netgarde-wg-agent.service /etc/systemd/system/netgarde-wg-agent.service
+              echo "Installing trustedge-wg-agent systemd service..."
+              sudo mkdir -p /opt/trustedge
+              sudo cp /home/ubuntu/trustedge/host-agent/trustedge-wg-agent.py /opt/trustedge/trustedge-wg-agent.py
+              sudo chmod 755 /opt/trustedge/trustedge-wg-agent.py
+              sudo cp /home/ubuntu/trustedge/host-agent/trustedge-wg-agent.service /etc/systemd/system/trustedge-wg-agent.service
               # Inject token into unit file (avoid sed delimiter/special-char footguns)
-              sudo perl -pi -e 'BEGIN { $t = shift @ARGV } s/^Environment=NETGARDE_WG_AGENT_TOKEN=.*/Environment=NETGARDE_WG_AGENT_TOKEN=$t/m' "$WG_AGENT_TOKEN" /etc/systemd/system/netgarde-wg-agent.service || true
+              sudo perl -pi -e 'BEGIN { $t = shift @ARGV } s/^Environment=TRUSTEDGE_WG_AGENT_TOKEN=.*/Environment=TRUSTEDGE_WG_AGENT_TOKEN=$t/m' "$WG_AGENT_TOKEN" /etc/systemd/system/trustedge-wg-agent.service || true
               sudo systemctl daemon-reload
-              sudo systemctl enable --now netgarde-wg-agent
+              sudo systemctl enable --now trustedge-wg-agent
             else
-              echo "WARNING: wg not found; skipping netgarde-wg-agent install"
+              echo "WARNING: wg not found; skipping trustedge-wg-agent install"
             fi
             
             # Handle image source based on branch
@@ -438,14 +438,14 @@ jobs:
             docker compose -f docker-compose.yml up -d --remove-orphans
 
             echo "Ensuring block-page on WireGuard gateway..."
-            sudo chmod +x /home/ubuntu/netgarde/scripts/setup-block-page-wg.sh
-            sudo bash /home/ubuntu/netgarde/scripts/setup-block-page-wg.sh || true
+            sudo chmod +x /home/ubuntu/trustedge/scripts/setup-block-page-wg.sh
+            sudo bash /home/ubuntu/trustedge/scripts/setup-block-page-wg.sh || true
 
             echo "Applying policy DNS (block page IP)..."
             export BLOCK_PAGE_IP="${BLOCK_PAGE_IP:-10.0.0.1}"
             export BLOCK_IP="${BLOCK_IP:-$BLOCK_PAGE_IP}"
             export BLOCK_IPV6_IP="${BLOCK_IPV6_IP:-::}"
-            bash /home/ubuntu/netgarde/dns-sync/run-sync.sh || true
+            bash /home/ubuntu/trustedge/dns-sync/run-sync.sh || true
 
             # Show status
             echo "Service status:"
@@ -453,6 +453,6 @@ jobs:
             # NOTE: The old LISTEN/NOTIFY host listener was removed; dns-sync is run via cron/compose.
 
             echo "AI review: template mode by default. For local Ollama after freeing disk:"
-            echo "  sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh"
+            echo "  sudo bash ~/trustedge/scripts/ec2-setup-ollama.sh"
             echo "CloudWatch logging (one-time, requires IAM logs permissions on instance role):"
-            echo "  sudo bash ~/netgarde/scripts/ec2-setup-cloudwatch.sh"
+            echo "  sudo bash ~/trustedge/scripts/ec2-setup-cloudwatch.sh"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DNS Sync Script for dnsmasq
-Fetches policy DNS rules from NetGarde API and updates dnsmasq configuration.
+Fetches policy DNS rules from TrustEdge API and updates dnsmasq configuration.
 """
 
 import os
@@ -29,7 +29,7 @@ DHCP_LEASES_PATH = os.getenv('DHCP_LEASES_PATH', '/var/lib/misc/dnsmasq.leases')
 DEVICE_SYNC_ENABLED = os.getenv('DEVICE_SYNC_ENABLED', '1').lower() not in ('0', 'false', 'no')
 DNS_INGEST_TOKEN = os.getenv('DNS_INGEST_TOKEN', '').strip()
 ADMIN_API_TOKEN = os.getenv('ADMIN_API_TOKEN', '').strip()
-CLIENT_BLOCKS_CONFIG_DIR = os.getenv('CLIENT_BLOCKS_CONFIG_DIR', '/etc/dnsmasq.d/netgarde-devices')
+CLIENT_BLOCKS_CONFIG_DIR = os.getenv('CLIENT_BLOCKS_CONFIG_DIR', '/etc/dnsmasq.d/trustedge-devices')
 
 
 def _api_headers(admin: bool = False, ingest: bool = False) -> Dict[str, str]:
@@ -172,7 +172,7 @@ def write_dns_config(entries: List[str], config_path: str) -> bool:
         config_file = Path(config_path)
         config_file.parent.mkdir(parents=True, exist_ok=True)
         header = [
-            "# NetGarde global policy blocks (auto-generated)",
+            "# TrustEdge global policy blocks (auto-generated)",
             f"# Generated at: {time.strftime('%Y-%m-%d %H:%M:%S')}",
             "",
         ]

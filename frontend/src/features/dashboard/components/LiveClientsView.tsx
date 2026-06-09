@@ -75,7 +75,7 @@ function BandwidthDetail({ client }: { client: LiveClientRow }) {
     if (client.source === 'vpn_enroll') {
       return (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Waiting for usage — run netgarde-wg with{' '}
+          Waiting for usage — run trustedge-wg with{' '}
           <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace' }}>
             --stats-interval 5
           </Typography>
@@ -310,7 +310,7 @@ export default function LiveClientsView({ live }: LiveClientsViewProps) {
             }}
           >
             <Typography variant="body2">
-              No clients are sending DNS through the VPN right now. Connect with the NetGarde client
+              No clients are sending DNS through the VPN right now. Connect with the TrustEdge client
               and browse to appear here.
             </Typography>
           </Box>
