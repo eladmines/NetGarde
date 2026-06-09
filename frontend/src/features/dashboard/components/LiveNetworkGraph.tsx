@@ -23,8 +23,9 @@ import {
   THROUGHPUT_HISTORY_WINDOW_MS,
 } from '../utils/throughputHistory';
 
-const Y_AXIS_HEADROOM = 1.1;
-const Y_AXIS_MIN = 0.1;
+const Y_AXIS_HEADROOM = 1.15;
+/** Floor when peak is ~0 so the chart still has a readable scale. */
+const Y_AXIS_MIN = 0.001;
 
 function AreaGradient({ color, id }: { color: string; id: string }) {
   return (
@@ -173,7 +174,7 @@ export default function LiveNetworkGraph({
         </Typography>
       ) : !chartReady ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-          Collecting samples for the last 60 minutes… Run netgarde-wg with{' '}
+          Collecting samples for the last 60 minutes… Run trustedge-wg with{' '}
           <Typography component="span" variant="body2" sx={{ fontFamily: 'monospace' }}>
             --stats-interval 5
           </Typography>{' '}
@@ -203,11 +204,12 @@ export default function LiveNetworkGraph({
           ]}
           yAxis={[
             {
-              width: 48,
+              width: 56,
               label: 'MiB/s',
               min: 0,
               max: yAxisMax,
               domainLimit: 'strict',
+              valueFormatter: (value) => formatMibPerSec(value as number),
             },
           ]}
           series={[
@@ -232,15 +234,15 @@ export default function LiveNetworkGraph({
           ]}
           sx={{
             '& .MuiAreaElement-series-download': {
-              fill: "url('#netgarde-down')",
+              fill: "url('#trustedge-down')",
             },
             '& .MuiAreaElement-series-upload': {
-              fill: "url('#netgarde-up')",
+              fill: "url('#trustedge-up')",
             },
           }}
         >
-          <AreaGradient color={downColor} id="netgarde-down" />
-          <AreaGradient color={upColor} id="netgarde-up" />
+          <AreaGradient color={downColor} id="trustedge-down" />
+          <AreaGradient color={upColor} id="trustedge-up" />
         </LineChart>
       )}
     </Box>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-DNS Log Parser for NetGarde
-Parses dnsmasq query logs and sends them to the NetGarde API.
+DNS Log Parser for TrustEdge
+Parses dnsmasq query logs and sends them to the TrustEdge API.
 Designed to run as a cron job on the host machine.
 """
 
@@ -18,7 +18,7 @@ from noise_filter import is_noise_domain
 logger = setup_logging(service="log-parser", logger_name=__name__)
 
 DNSMASQ_LOG_PATH = os.getenv('DNSMASQ_LOG_PATH', '/var/log/dnsmasq.log')
-STATE_FILE_PATH = os.getenv('STATE_FILE_PATH', '/var/lib/netgarde/log_parser_state')
+STATE_FILE_PATH = os.getenv('STATE_FILE_PATH', '/var/lib/trustedge/log_parser_state')
 BLOCKED_DOMAINS_PATH = os.getenv('BLOCKED_DOMAINS_PATH', '/etc/dnsmasq.d/blocked-domains.conf')
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:8000')
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '100'))

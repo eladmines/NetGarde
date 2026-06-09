@@ -1,16 +1,16 @@
-# NetGarde
+# TrustEdge
 
 **Self-hosted network security platform** — secure VPN access, DNS policy enforcement, real-time monitoring, behavior analytics, and optional AI-assisted operations.
 
 Built end-to-end: React dashboard, FastAPI backend, WireGuard enrollment client, host-level enforcement agents, and AWS production deployment with CI/CD.
 
-**Repository:** [github.com/eladmines/NetGarde](https://github.com/eladmines/NetGarde) · **Client:** [NetGardeClient](https://github.com/eladmines/NetGardeClient) · **Docs:** [docs/README.md](docs/README.md)
+**Organization:** [github.com/TrustEdge](https://github.com/TrustEdge) · **Platform:** [TrustEdge](https://github.com/TrustEdge/TrustEdge) · **Client:** [TrustEdgeClient](https://github.com/TrustEdge/TrustEdgeClient) · **Docs:** [docs/README.md](docs/README.md)
 
 ---
 
 ## Overview
 
-Most network security tools are either enterprise appliances with heavy lock-in, or consumer DNS blockers with no real visibility. NetGarde sits in between: a **self-hosted SASE-style stack** you operate on your own infrastructure.
+Most network security tools are either enterprise appliances with heavy lock-in, or consumer DNS blockers with no real visibility. TrustEdge sits in between: a **self-hosted SASE-style stack** you operate on your own infrastructure.
 
 Clients enroll over **WireGuard**. DNS flows through a central policy engine (dnsmasq + custom sync). The dashboard streams live queries over **WebSocket**, scores per-device behavior against baselines, and can quarantine clients at the network layer (iptables + DNS deny). Optional **LLM summaries** (OpenAI or Ollama) explain network and device state — detection stays rules-based.
 
@@ -34,41 +34,35 @@ The system is deployed on **AWS** (EC2, RDS, S3, CloudFront, ECR) with GitHub Ac
 
 ## Screenshots
 
-> Add PNG/WebP captures to `docs/images/` (see [docs/images/README.md](docs/images/README.md)). Recommended width ~1400px, dark theme.
+> More captures: [docs/images/README.md](docs/images/README.md) (recommended width ~1400px, dark theme).
 
 ### Dashboard & monitoring
 
-| Network overview | Live DNS & throughput |
-|------------------|------------------------|
-| ![Network overview — AI summary, live stats, and alerts](docs/images/dashboard-home.png) | ![Live clients and bandwidth charts](docs/images/dashboard-live.png) |
+![Network overview — AI summary, live stats, and alerts](docs/images/dashboard-home.png)
 
 ### Policy & clients
 
-| Policy management | Client behavior profile |
-|-------------------|-------------------------|
-| ![Policy packs and device assignments](docs/images/policy.png) | ![Behavior baseline, score, and quarantine](docs/images/client-profiles.png) |
+![Behavior baseline, score, and quarantine](docs/images/client-profiles.png)
 
 ### Operations
 
-| Client world map | Blocked clients |
-|------------------|-----------------|
-| ![Geographic client map](docs/images/client-map.png) | ![Quarantine and DNS block admin view](docs/images/blocked-clients.png) |
+![Geographic client map](docs/images/client-map.png)
 
 ---
 
 ## Architecture
 
-NetGarde runs as a **control plane on EC2**. Application logic lives in Docker; network enforcement runs on the host — containers cannot safely mutate WireGuard, iptables, or dnsmasq.
+TrustEdge runs as a **control plane on EC2**. Application logic lives in Docker; network enforcement runs on the host — containers cannot safely mutate WireGuard, iptables, or dnsmasq.
 
 <p align="center">
-  <img width="90%" alt="NetGarde system architecture" src="https://github.com/user-attachments/assets/bab37178-52c4-4f6d-b4ac-1500230d0af5" />
+  <img width="90%" alt="TrustEdge system architecture" src="https://github.com/user-attachments/assets/bab37178-52c4-4f6d-b4ac-1500230d0af5" />
 </p>
 
 | Layer | Components | Responsibility |
 |-------|------------|----------------|
 | **Edge clients** | Laptops, phones, enrolled devices | DNS and traffic via WireGuard tunnel |
 | **EC2 host** | WireGuard, dnsmasq, iptables | VPN termination, DNS resolution, quarantine |
-| **Host agents** | `netgarde-wg-agent`, `netgarde-log-watcher` | Peer apply, block/unblock, log ingest, policy sync trigger |
+| **Host agents** | `trustedge-wg-agent`, `trustedge-log-watcher` | Peer apply, block/unblock, log ingest, policy sync trigger |
 | **Application** | FastAPI, dns-sync, React (S3/CloudFront) | Policy engine, REST + WebSocket API, admin UI |
 | **Data** | PostgreSQL (RDS), Redis, ECR | Policy state, live usage windows, container images |
 
@@ -77,7 +71,7 @@ NetGarde runs as a **control plane on EC2**. Application logic lives in Docker; 
 ```
 DNS:     Client → WireGuard → dnsmasq → log_watcher → API → WebSocket → Dashboard
 Policy:  Dashboard → API → RDS → wg-agent → dns-sync → dnsmasq reload
-Enroll:  NetGardeClient → POST /v1/enroll → wg-agent → WireGuard config
+Enroll:  TrustEdgeClient → POST /v1/enroll → wg-agent → WireGuard config
 ```
 
 **Design decisions worth noting**
@@ -110,8 +104,8 @@ Full write-up: [docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md) · [do
 ## Quick start
 
 ```bash
-git clone https://github.com/eladmines/NetGarde.git
-cd NetGarde
+git clone https://github.com/TrustEdge/TrustEdge.git
+cd TrustEdge
 cp backend/.env.example backend/.env.development
 cp frontend/.env.example frontend/.env.development
 docker compose -f docker-compose.dev.yml up --build
@@ -122,7 +116,7 @@ docker compose -f docker-compose.dev.yml up --build
 | Dashboard | http://localhost:3000 |
 | API + OpenAPI | http://localhost:8000/docs |
 
-Enroll a device with [NetGardeClient](https://github.com/eladmines/NetGardeClient).
+Enroll a device with [TrustEdgeClient](https://github.com/TrustEdge/TrustEdgeClient).
 
 **Developers:** [docs/DEVELOP.md](docs/DEVELOP.md) (tests, migrations) · [docs/ENV_SETUP.md](docs/ENV_SETUP.md) (configuration)
 

@@ -17,7 +17,7 @@ export default function Copyright(props: TypographyProps) {
     >
       {'Copyright © '}
       <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-        NetGarde
+        TrustEdge
       </Box>
       {` ${year}. VPN network monitoring & DNS security.`}
     </Typography>

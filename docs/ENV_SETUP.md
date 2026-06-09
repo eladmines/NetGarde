@@ -1,6 +1,6 @@
 # Environment Variables Setup Guide
 
-How to configure NetGarde for local development and production.
+How to configure TrustEdge for local development and production.
 
 **Canonical references:** [backend/.env.example](../backend/.env.example) and [frontend/.env.example](../frontend/.env.example) list every variable. This guide covers setup steps and the most important groups.
 
@@ -10,7 +10,7 @@ How to configure NetGarde for local development and production.
 |-------------|--------------|---------------|
 | Development | `backend/.env.development` | `frontend/.env.development` |
 | Production (Docker) | `backend/.env.production` | `frontend/.env.production` |
-| Production (EC2 host) | `/etc/netgarde/backend.env` | Built into S3 deploy |
+| Production (EC2 host) | `/etc/trustedge/backend.env` | Built into S3 deploy |
 
 `.env` files are gitignored. Copy from `.env.example` templates.
 
@@ -25,8 +25,8 @@ Create `backend/.env.development`:
 # Database Configuration
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=12345
-POSTGRES_DB=netgarde
-DB_URL=postgresql+psycopg2://postgres:12345@db:5432/netgarde
+POSTGRES_DB=trustedge
+DB_URL=postgresql+psycopg2://postgres:12345@db:5432/trustedge
 
 # Application Configuration
 PYTHONUNBUFFERED=1
@@ -52,8 +52,8 @@ Create `backend/.env.production`:
 # Database Configuration
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=CHANGE_ME_IN_PRODUCTION
-POSTGRES_DB=netgarde
-DB_URL=postgresql+psycopg2://postgres:CHANGE_ME_IN_PRODUCTION@db:5432/netgarde
+POSTGRES_DB=trustedge
+DB_URL=postgresql+psycopg2://postgres:CHANGE_ME_IN_PRODUCTION@db:5432/trustedge
 
 # Application Configuration
 PYTHONUNBUFFERED=1
@@ -129,8 +129,8 @@ GENERATE_SOURCEMAP=false
 # Development Environment Variables
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=12345
-POSTGRES_DB=netgarde
-DB_URL=postgresql+psycopg2://postgres:12345@db:5432/netgarde
+POSTGRES_DB=trustedge
+DB_URL=postgresql+psycopg2://postgres:12345@db:5432/trustedge
 PYTHONUNBUFFERED=1
 ENVIRONMENT=development
 LOG_LEVEL=DEBUG
@@ -143,8 +143,8 @@ API_PORT=8000
 # Production Environment Variables
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=CHANGE_ME_IN_PRODUCTION
-POSTGRES_DB=netgarde
-DB_URL=postgresql+psycopg2://postgres:CHANGE_ME_IN_PRODUCTION@db:5432/netgarde
+POSTGRES_DB=trustedge
+DB_URL=postgresql+psycopg2://postgres:CHANGE_ME_IN_PRODUCTION@db:5432/trustedge
 PYTHONUNBUFFERED=1
 ENVIRONMENT=production
 LOG_LEVEL=INFO
@@ -173,8 +173,8 @@ GENERATE_SOURCEMAP=false
 cat > backend/.env.development << EOF
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=12345
-POSTGRES_DB=netgarde
-DB_URL=postgresql+psycopg2://postgres:12345@db:5432/netgarde
+POSTGRES_DB=trustedge
+DB_URL=postgresql+psycopg2://postgres:12345@db:5432/trustedge
 PYTHONUNBUFFERED=1
 ENVIRONMENT=development
 LOG_LEVEL=DEBUG
@@ -186,8 +186,8 @@ EOF
 cat > backend/.env.production << EOF
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=CHANGE_ME_IN_PRODUCTION
-POSTGRES_DB=netgarde
-DB_URL=postgresql+psycopg2://postgres:CHANGE_ME_IN_PRODUCTION@db:5432/netgarde
+POSTGRES_DB=trustedge
+DB_URL=postgresql+psycopg2://postgres:CHANGE_ME_IN_PRODUCTION@db:5432/trustedge
 PYTHONUNBUFFERED=1
 ENVIRONMENT=production
 LOG_LEVEL=INFO
@@ -243,13 +243,13 @@ The docker-compose files are already configured to use the appropriate `.env` fi
 |----------|---------|-------|
 | `ADMIN_API_TOKEN` | Dashboard, policy/device admin APIs | Empty = auth disabled (dev only) |
 | `DNS_INGEST_TOKEN` | `dns_log_watcher`, `dns-sync` | Required on EC2 for ingest and policy pull |
-| `WG_AGENT_TOKEN` | Backend → `netgarde-wg-agent` | Must match host agent token |
+| `WG_AGENT_TOKEN` | Backend → `trustedge-wg-agent` | Must match host agent token |
 | `DEVICE_TOKEN_SECRET` | VPN client device tokens | Signs tokens issued at enroll |
-| `ENROLL_BOOTSTRAP_TOKEN` | `POST /v1/enroll` (optional) | NetGardeClient `--api-token` |
+| `ENROLL_BOOTSTRAP_TOKEN` | `POST /v1/enroll` (optional) | TrustEdgeClient `--api-token` |
 
 Frontend: set `REACT_APP_ADMIN_API_TOKEN` to the same value as `ADMIN_API_TOKEN`.
 
-Host agent: set `NETGARDE_WG_AGENT_TOKEN` in the systemd unit — see [host-agent/README.md](../host-agent/README.md).
+Host agent: set `TRUSTEDGE_WG_AGENT_TOKEN` in the systemd unit — see [host-agent/README.md](../host-agent/README.md).
 
 ### VPN & host agent (backend)
 
@@ -322,4 +322,4 @@ Key tuning variables — full list in [backend/.env.example](../backend/.env.exa
 ### Policy blocks not reaching dnsmasq (EC2)
 
 - Verify `DNS_INGEST_TOKEN` is set and matches dns-sync / log-watcher config
-- Verify `WG_AGENT_TOKEN` matches `netgarde-wg-agent` — see [host-agent/README.md](../host-agent/README.md)
+- Verify `WG_AGENT_TOKEN` matches `trustedge-wg-agent` — see [host-agent/README.md](../host-agent/README.md)

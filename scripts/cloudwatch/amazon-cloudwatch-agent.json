@@ -11,14 +11,14 @@
       "journald": {
         "collect_list": [
           {
-            "unit": "netgarde-log-watcher.service",
-            "log_group_name": "/netgarde/prod/log-watcher",
+            "unit": "trustedge-log-watcher.service",
+            "log_group_name": "/trustedge/prod/log-watcher",
             "log_stream_name": "{instance_id}",
             "retention_in_days": 14
           },
           {
-            "unit": "netgarde-wg-agent.service",
-            "log_group_name": "/netgarde/prod/wg-agent",
+            "unit": "trustedge-wg-agent.service",
+            "log_group_name": "/trustedge/prod/wg-agent",
             "log_stream_name": "{instance_id}",
             "retention_in_days": 14
           }
@@ -27,14 +27,14 @@
       "docker": {
         "collect_list": [
           {
-            "docker_container": "netgarde-api",
-            "log_group_name": "/netgarde/prod/backend",
+            "docker_container": "trustedge-api",
+            "log_group_name": "/trustedge/prod/backend",
             "log_stream_name": "{instance_id}/backend",
             "retention_in_days": 30
           },
           {
-            "docker_container": "netgarde-dns-sync",
-            "log_group_name": "/netgarde/prod/dns-sync",
+            "docker_container": "trustedge-dns-sync",
+            "log_group_name": "/trustedge/prod/dns-sync",
             "log_stream_name": "{instance_id}/dns-sync",
             "retention_in_days": 14
           }

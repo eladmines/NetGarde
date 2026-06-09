@@ -1,5 +1,5 @@
 {
-  "name": "netgarde",
+  "name": "trustedge",
   "private": true,
   "scripts": {
     "install:frontend": "npm install --prefix frontend",

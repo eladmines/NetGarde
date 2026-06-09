@@ -75,7 +75,7 @@ export default function NetworkOverviewCard() {
           ) : (
             <>
               AI is configured ({data?.review_mode}) but the API returned a rules-based summary. Run on EC2:{' '}
-              <code>sudo bash ~/netgarde/scripts/ec2-setup-ollama.sh</code>
+              <code>sudo bash ~/trustedge/scripts/ec2-setup-ollama.sh</code>
             </>
           )}
         </Alert>

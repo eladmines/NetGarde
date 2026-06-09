@@ -3,7 +3,7 @@
 # Usage: sudo bash scripts/block-page-tls/generate-certs.sh [/etc/dnsmasq.d/blocked-domains.conf]
 set -euo pipefail
 
-TLS_DIR="${BLOCK_PAGE_TLS_DIR:-/etc/netgarde/block-page-tls}"
+TLS_DIR="${BLOCK_PAGE_TLS_DIR:-/etc/trustedge/block-page-tls}"
 BLOCKED_CONF="${1:-/etc/dnsmasq.d/blocked-domains.conf}"
 MAX_SANS="${BLOCK_PAGE_MAX_SANS:-80}"
 DAYS="${BLOCK_PAGE_CERT_DAYS:-825}"
@@ -46,14 +46,14 @@ build_san_file() {
   echo "IP.1 = 10.0.0.1" >>"$san_path"
 }
 
-echo "Generating NetGarde block-page TLS in $TLS_DIR"
+echo "Generating TrustEdge block-page TLS in $TLS_DIR"
 
 if [[ ! -f "$TLS_DIR/ca.key" ]]; then
   openssl genrsa -out "$TLS_DIR/ca.key" 4096
   chmod 600 "$TLS_DIR/ca.key"
   openssl req -x509 -new -nodes -key "$TLS_DIR/ca.key" -sha256 -days "$DAYS" \
     -out "$TLS_DIR/ca.crt" \
-    -subj "/CN=NetGarde Policy CA/O=NetGarde/C=US"
+    -subj "/CN=TrustEdge Policy CA/O=TrustEdge/C=US"
 fi
 
 SAN_EXT="$(mktemp)"
@@ -63,7 +63,7 @@ openssl genrsa -out "$TLS_DIR/block-page.key" 2048
 chmod 600 "$TLS_DIR/block-page.key"
 openssl req -new -key "$TLS_DIR/block-page.key" \
   -out "$TLS_DIR/block-page.csr" \
-  -subj "/CN=10.0.0.1/O=NetGarde/C=US"
+  -subj "/CN=10.0.0.1/O=TrustEdge/C=US"
 
 openssl x509 -req -in "$TLS_DIR/block-page.csr" \
   -CA "$TLS_DIR/ca.crt" -CAkey "$TLS_DIR/ca.key" -CAcreateserial \

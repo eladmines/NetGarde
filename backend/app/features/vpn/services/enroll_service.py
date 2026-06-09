@@ -54,22 +54,33 @@ class EnrollService:
         lease_row,
         hostname: str | None,
         mac_address: str | None,
-    ) -> None:
+    ) -> Device | None:
         dev = self.db.query(Device).filter(Device.ip_lease_id == lease_row.id).first()
-        if dev is None:
-            self.db.add(
-                Device(
-                    ip_lease_id=lease_row.id,
-                    source="vpn_enroll",
-                    hostname=hostname,
-                    mac_address=mac_address,
-                )
-            )
-            return
-        if hostname is not None:
-            dev.hostname = hostname
-        if mac_address is not None:
-            dev.mac_address = mac_address
+        if dev is not None:
+            if hostname is not None:
+                dev.hostname = hostname
+            if mac_address is not None:
+                dev.mac_address = mac_address
+            return dev
+
+        mac = (mac_address or "").strip().lower() or None
+        if mac:
+            by_mac = self.db.query(Device).filter(Device.mac_address == mac).first()
+            if by_mac is not None:
+                by_mac.ip_lease_id = lease_row.id
+                by_mac.source = "vpn_enroll"
+                if hostname is not None:
+                    by_mac.hostname = hostname
+                return by_mac
+
+        dev = Device(
+            ip_lease_id=lease_row.id,
+            source="vpn_enroll",
+            hostname=hostname,
+            mac_address=mac,
+        )
+        self.db.add(dev)
+        return dev
 
     def _validate_peer_identity(self, device_id: str, public_key: str) -> None:
         by_device = self.peers.get_by_device_id(device_id)
@@ -104,10 +115,8 @@ class EnrollService:
         lease_row = self.alloc.leases.get_active_by_peer_id(peer.id)
         if lease_row is None:
             raise RuntimeError("Lease row missing after allocation")
-        self._sync_device_for_lease(lease_row, payload.hostname, payload.mac_address)
+        dev = self._sync_device_for_lease(lease_row, payload.hostname, payload.mac_address)
         self.db.flush()
-
-        dev = self.db.query(Device).filter(Device.ip_lease_id == lease_row.id).first()
         if dev:
             from app.features.policy.services.policy_service import PolicyService
 

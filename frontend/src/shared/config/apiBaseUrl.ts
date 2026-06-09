@@ -13,7 +13,7 @@ export function resolveApiBaseUrl(): string {
     // Common misconfig: frontend CloudFront URL used as API base (returns 401/404 on /dns-queries).
     if (host.endsWith('.cloudfront.net') && !raw.includes(':8000')) {
       console.warn(
-        `[NetGarde] REACT_APP_API_BASE_URL looks like a CloudFront UI host (${host}). ` +
+        `[TrustEdge] REACT_APP_API_BASE_URL looks like a CloudFront UI host (${host}). ` +
           'Use the API origin, e.g. http://<ec2-ip>:8000'
       );
     }

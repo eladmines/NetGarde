@@ -1,6 +1,6 @@
 # AWS scripts
 
-Bash helpers in this folder provision or update a small set of AWS resources used around NetGarde (S3, CloudFront, IAM for GitHub Actions). They are optional, local tooling—not the main application runtime.
+Bash helpers in this folder provision or update a small set of AWS resources used around TrustEdge (S3, CloudFront, IAM for GitHub Actions). They are optional, local tooling—not the main application runtime.
 
 Configuration values are read from `aws/.env`; see `.env.example` for the variable names.
 

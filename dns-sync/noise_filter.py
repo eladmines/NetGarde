@@ -1,5 +1,5 @@
 """
-NetGarde DNS Noise Filter & Root Domain Extractor.
+TrustEdge DNS Noise Filter & Root Domain Extractor.
 
 Filters out system/telemetry/CDN noise domains and extracts
 root domains for grouping (e.g. www.ynet.co.il → ynet.co.il).

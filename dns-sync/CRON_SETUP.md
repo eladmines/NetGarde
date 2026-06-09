@@ -29,16 +29,16 @@ When running as a cron job, the container:
 3. Add one of these lines (choose your schedule):
    ```bash
    # Run every hour
-   0 * * * * /path/to/NetGarde/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
+   0 * * * * /path/to/TrustEdge/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
    
    # Run every 30 minutes
-   */30 * * * * /path/to/NetGarde/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
+   */30 * * * * /path/to/TrustEdge/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
    
    # Run every 15 minutes
-   */15 * * * * /path/to/NetGarde/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
+   */15 * * * * /path/to/TrustEdge/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
    
    # Run daily at 2 AM
-   0 2 * * * /path/to/NetGarde/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
+   0 2 * * * /path/to/TrustEdge/dns-sync/run-sync.sh >> /var/log/dns-sync.log 2>&1
    ```
 
 #### Windows (Task Scheduler)
@@ -48,14 +48,14 @@ When running as a cron job, the container:
 3. Set trigger (e.g., "Daily" or "When I log on")
 4. Set action: "Start a program"
 5. Program: `powershell.exe`
-6. Arguments: `-File "C:\path\to\NetGarde\dns-sync\run-sync.ps1"`
+6. Arguments: `-File "C:\path\to\TrustEdge\dns-sync\run-sync.ps1"`
 
 ### Option 2: Direct Docker Compose Command
 
 Add to crontab:
 ```bash
 # Run every hour
-0 * * * * cd /path/to/NetGarde && docker compose run --rm -e SYNC_INTERVAL=0 dns-sync >> /var/log/dns-sync.log 2>&1
+0 * * * * cd /path/to/TrustEdge && docker compose run --rm -e SYNC_INTERVAL=0 dns-sync >> /var/log/dns-sync.log 2>&1
 ```
 
 ### Option 3: Direct Docker Command
@@ -96,7 +96,7 @@ Test the cron job manually:
 ./dns-sync/run-sync.sh
 
 # Or directly
-cd /path/to/NetGarde
+cd /path/to/TrustEdge
 docker compose run --rm -e SYNC_INTERVAL=0 dns-sync
 ```
 

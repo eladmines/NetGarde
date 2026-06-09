@@ -137,7 +137,7 @@ export default function AppNavbar() {
                 letterSpacing: '0.01em',
               }}
             >
-              NetGarde
+              TrustEdge
             </Typography>
           </Stack>
 
@@ -148,7 +148,7 @@ export default function AppNavbar() {
             <ColorModeIconDropdown sx={navbarColorModeButtonSx(theme)} />
             <Avatar
               sizes="small"
-              alt="NetGarde"
+              alt="TrustEdge"
               sx={{
                 width: 32,
                 height: 32,

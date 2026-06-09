@@ -1,4 +1,4 @@
-# NetGarde block page
+# TrustEdge block page
 
 Shown when dnsmasq returns the WireGuard gateway IP (`10.0.0.1`) for blocked domains.
 
@@ -19,8 +19,8 @@ docker compose up -d block-page
 2. Copy the CA to your Mac (VPN on):
 
 ```bash
-scp ubuntu@YOUR_EC2:/etc/netgarde/block-page-tls/ca.crt ~/Downloads/netgarde-policy-ca.crt
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/Downloads/netgarde-policy-ca.crt
+scp ubuntu@YOUR_EC2:/etc/trustedge/block-page-tls/ca.crt ~/Downloads/trustedge-policy-ca.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/Downloads/trustedge-policy-ca.crt
 ```
 
 3. Open `https://facebook.com` — you should see **Access Blocked** (no “can’t be reached”).

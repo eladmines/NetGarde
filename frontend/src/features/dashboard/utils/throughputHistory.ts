@@ -3,7 +3,7 @@ import type { NetworkThroughputPoint } from '../types/networkThroughput';
 /** Rolling window shown on the live network chart. */
 export const THROUGHPUT_HISTORY_WINDOW_MS = 60 * 60 * 1000;
 
-export const THROUGHPUT_HISTORY_STORAGE_KEY = 'netgarde:throughput-history';
+export const THROUGHPUT_HISTORY_STORAGE_KEY = 'trustedge:throughput-history';
 
 /** ~1 sample / 5s for 60 min; bucket downsampling only above this. */
 export const THROUGHPUT_CHART_MAX_POINTS = 720;
