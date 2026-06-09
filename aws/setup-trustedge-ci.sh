@@ -84,17 +84,20 @@ echo "  CloudFront:  $FRONTEND_CLOUDFRONT_DISTRIBUTION_ID"
 echo "  IAM role:    $GITHUB_ACTIONS_ROLE_NAME"
 echo ""
 
-info "Step 1/4 — S3 frontend bucket"
+info "Step 1/5 — S3 frontend bucket"
 bash "$SCRIPT_DIR/s3-setup.sh"
 
-info "Step 2/4 — ECR backend repository"
+info "Step 2/5 — ECR backend repository"
 bash "$SCRIPT_DIR/ecr-setup.sh"
 
-info "Step 3/4 — GitHub Actions IAM policy"
+info "Step 3/5 — GitHub Actions IAM policy"
 bash "$SCRIPT_DIR/update-github-actions-role.sh"
 
-info "Step 4/4 — CloudFront origin"
+info "Step 4/5 — CloudFront frontend origin"
 bash "$SCRIPT_DIR/cloudfront-frontend-update-origin.sh"
+
+info "Step 5/5 — Backend CloudFront Authorization header"
+bash "$SCRIPT_DIR/cloudfront-backend-forward-auth.sh"
 
 CF_DOMAIN=$(aws cloudfront get-distribution \
     --id "$FRONTEND_CLOUDFRONT_DISTRIBUTION_ID" \
