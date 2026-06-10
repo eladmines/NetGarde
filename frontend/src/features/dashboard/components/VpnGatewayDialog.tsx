@@ -119,6 +119,7 @@ export default function VpnGatewayDialog({ open, onClose }: VpnGatewayDialogProp
               <Chip size="small" label={`${peers.length} enrolled peer${peers.length === 1 ? '' : 's'}`} variant="outlined" />
               <Chip size="small" label={`${connected} connected`} color="success" variant="outlined" />
               {idle > 0 && <Chip size="small" label={`${idle} idle`} variant="outlined" />}
+              {never > 0 && <Chip size="small" label={`${never} never connected`} variant="outlined" />}
             </Stack>
 
             <Box>
