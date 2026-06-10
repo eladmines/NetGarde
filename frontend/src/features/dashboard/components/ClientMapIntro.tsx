@@ -46,6 +46,10 @@ export default function ClientMapIntro() {
               that VPN login country, then open a profile for details.
             </li>
             <li>
+              <strong>Inspect the gateway</strong> — click the amber <strong>VPN</strong> pin for EC2
+              endpoint, pool, DNS gateway, and live peer counts from the control plane.
+            </li>
+            <li>
               <strong>See who is live</strong> — a green ring means at least one client in that
               country had recent DNS activity on the network.
             </li>

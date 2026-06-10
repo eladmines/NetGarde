@@ -20,6 +20,7 @@ import {
 import { formatMibPerSec } from '../utils/formatBandwidth';
 import { VPN_GATEWAY_COUNTRY, VPN_GATEWAY_LABEL } from '../../../shared/config/vpnGateway';
 import CountryClientsDialog, { CountryClientsSelection } from './CountryClientsDialog';
+import VpnGatewayDialog from './VpnGatewayDialog';
 
 const MAP_VIEW_BOX = worldMap.viewBox || WORLD_MAP_VIEW_BOX;
 
@@ -99,6 +100,7 @@ export default function ClientWorldMap({
 }: ClientWorldMapProps) {
   const theme = useTheme();
   const [selection, setSelection] = useState<CountryClientsSelection | null>(null);
+  const [gatewayOpen, setGatewayOpen] = useState(false);
 
   const countryMarkers = useMemo(() => buildCountryMarkers(clients), [clients]);
   const gatewayPoint = useMemo(() => resolveGatewayMapPoint(VPN_GATEWAY_COUNTRY), []);
@@ -161,7 +163,8 @@ export default function ClientWorldMap({
             )}
           </Stack>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-            Click a flag to see all clients in that country. Green ring = at least one active now.
+            Click a flag for clients in that country, or the amber VPN pin for gateway details. Green ring
+            = at least one active now.
           </Typography>
         </>
       )}
@@ -253,9 +256,21 @@ export default function ClientWorldMap({
             })}
 
           {gatewayPoint && (
-            <g transform={`translate(${gatewayPoint.x}, ${gatewayPoint.y})`}>
+            <g
+              transform={`translate(${gatewayPoint.x}, ${gatewayPoint.y})`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setGatewayOpen(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setGatewayOpen(true);
+                }
+              }}
+            >
               <title>
-                {VPN_GATEWAY_LABEL} · {gatewayLabel} ({VPN_GATEWAY_COUNTRY})
+                {VPN_GATEWAY_LABEL} · {gatewayLabel} ({VPN_GATEWAY_COUNTRY}) — click for EC2 details
               </title>
               <circle
                 r={20}
@@ -336,7 +351,7 @@ export default function ClientWorldMap({
         <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 1.5 }}>
           <VpnLockIcon sx={{ fontSize: 16, color: 'warning.main' }} />
           <Typography variant="caption" color="text.secondary">
-            Amber pin = {VPN_GATEWAY_LABEL} ({gatewayLabel}).{' '}
+            Amber pin = {VPN_GATEWAY_LABEL} ({gatewayLabel}) — click for EC2 / WireGuard details.{' '}
             {showTrafficFlows
               ? 'Green arcs show live VPN activity from enroll country to gateway (not literal routing).'
               : 'Enable traffic flows to see live VPN arcs.'}
@@ -345,6 +360,7 @@ export default function ClientWorldMap({
       )}
 
       <CountryClientsDialog selection={selection} onClose={() => setSelection(null)} />
+      <VpnGatewayDialog open={gatewayOpen} onClose={() => setGatewayOpen(false)} />
 
       {!loading && clients.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
